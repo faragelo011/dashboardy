@@ -1,0 +1,36 @@
+---
+description: Project Development Guidelines
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# dashboardy Development Guidelines
+
+Auto-generated from all feature plans. Last updated: 2026-04-17
+
+## Active Technologies
+
+- TypeScript 5.x (web), Python 3.12 (api) + Next.js 14 (App Router), Tailwind, shadcn/ui, `@supabase/ssr` (auth-only, scaffolded but unused this phase); FastAPI, Pydantic v2, SQLAlchemy 2.x, asyncpg, Alembic, structlog (or stdlib `logging` with JSON formatter) (001-platform-foundation)
+
+## Project Structure
+
+```text
+backend/
+frontend/
+tests/
+```
+
+## Commands
+
+cd src && pytest && ruff check .
+
+## Code Style
+
+TypeScript 5.x (web), Python 3.12 (api): Follow standard conventions
+
+## Recent Changes
+
+- 001-platform-foundation: Added TypeScript 5.x (web), Python 3.12 (api) + Next.js 14 (App Router), Tailwind, shadcn/ui, `@supabase/ssr` (auth-only, scaffolded but unused this phase); FastAPI, Pydantic v2, SQLAlchemy 2.x, asyncpg, Alembic, structlog (or stdlib `logging` with JSON formatter)
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
