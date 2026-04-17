@@ -1,0 +1,43 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy Web — Liveness
+  version: 0.1.0
+  description: |
+    Liveness probe exposed by the Dashboardy Next.js web container.
+    Realises FR-007 and the web side of US3.
+
+servers:
+  - url: https://staging.dashboardy.app
+    description: Staging
+  - url: https://dashboardy.app
+    description: Production
+
+paths:
+  /api/health:
+    get:
+      operationId: getWebHealth
+      summary: Web liveness probe
+      description: |
+        Returns 200 if the Next.js container is up. Performs no
+        external calls. Implemented as a Route Handler so it does
+        not require server components or rendering.
+      responses:
+        "200":
+          description: Web container is alive.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthOk"
+              example:
+                status: ok
+
+components:
+  schemas:
+    HealthOk:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]

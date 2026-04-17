@@ -1,0 +1,150 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy API — Health
+  version: 0.1.0
+  description: |
+    Operational endpoints exposed by the Dashboardy API in Phase 1
+    (Platform Foundation). No domain endpoints are exposed yet.
+
+    Realises FR-006 (liveness + readiness), FR-008 (correlation IDs),
+    US3 acceptance scenarios 1–3, and SC-004 (latency targets).
+
+servers:
+  - url: https://api.staging.dashboardy.app
+    description: Staging
+  - url: https://api.dashboardy.app
+    description: Production
+
+paths:
+  /health:
+    get:
+      operationId: getApiHealth
+      summary: Liveness probe
+      description: |
+        Returns 200 if the process is responsive. Performs no I/O.
+        Target latency under normal conditions: ≤ 100 ms p95 (SC-004).
+      responses:
+        "200":
+          description: Process is alive.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthOk"
+              example:
+                status: ok
+        default:
+          $ref: "#/components/responses/DefaultJsonError"
+
+  /ready:
+    get:
+      operationId: getApiReadiness
+      summary: Readiness probe
+      description: |
+        Returns 200 only if the API can reach its application database
+        within a short internal timeout (1 s). Returns 503 otherwise.
+        Target latency under normal conditions: ≤ 500 ms p95 (SC-004).
+        Must flip to not-ready within 5 s of database loss (SC-004).
+      responses:
+        "200":
+          description: API is ready to serve traffic.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyOk"
+              example:
+                status: ready
+        "503":
+          description: "API is not ready (typically: database unreachable)."
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadyNotReady"
+              example:
+                status: not_ready
+                reason: database_unreachable
+        default:
+          $ref: "#/components/responses/DefaultJsonError"
+
+components:
+  responses:
+    DefaultJsonError:
+      description: |
+        Catch-all for HTTP statuses not otherwise declared for this operation
+        (for example 4xx/5xx from the framework). Same correlation rules as
+        documented success responses.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UnexpectedError"
+
+  headers:
+    CorrelationId:
+      description: |
+        Every response defined for `/health` and `/ready` in this document lists
+        `X-Correlation-ID` (including this `default` response for unexpected
+        statuses). If the caller sends `X-Correlation-ID` on the request, it
+        MUST be a UUID version 4 (RFC 4122); otherwise the API generates a new
+        UUIDv4. The same identifier is echoed on `X-Correlation-ID` and in
+        structured logs for the request (FR-008, US3 acceptance scenario 3).
+      required: true
+      schema:
+        type: string
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+
+  schemas:
+    UnexpectedError:
+      type: object
+      description: Minimal placeholder for framework-provided error bodies.
+      additionalProperties: true
+      properties:
+        detail:
+          type: string
+          description: Human-readable error detail when provided by the stack.
+
+    HealthOk:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+
+    ReadyOk:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ready]
+
+    ReadyNotReady:
+      type: object
+      additionalProperties: false
+      required: [status, reason]
+      properties:
+        status:
+          type: string
+          enum: [not_ready]
+        reason:
+          type: string
+          description: |
+            Short machine-readable reason. MUST NOT contain secret values
+            or full database error messages (FR-011, SC-007).
+          enum:
+            - database_unreachable
+            - database_timeout
+            - startup_incomplete
