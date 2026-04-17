@@ -162,8 +162,8 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [ ] T013 Configure Alembic in `apps/api`. Create:
   - `apps/api/alembic.ini` (standard template, set `script_location = app/db/migrations`).
-  - `apps/api/app/db/migrations/env.py` with an **async** Alembic env that reads `DATABASE_URL` from `app.config.get_settings()` and runs migrations using `engine.begin()`.
-  - `apps/api/app/db/migrations/versions/0001_baseline.py` — a no-op revision (revision id `0001`, down_revision `None`, empty `upgrade()` and `downgrade()` bodies just `pass`).
+  - `apps/api/app/db/migrations/env.py` with an **async** Alembic env: read `DATABASE_URL` from `app.config.get_settings()`, construct an **async** SQLAlchemy engine (`asyncpg`), and run migrations via Alembic’s asyncio API (e.g. `async with engine.begin(): …` / `run_async` / the official async `env.py` pattern — do not drive an async engine with synchronous `context.begin_transaction()`-only code paths).
+  - `apps/api/app/db/migrations/versions/0001_baseline.py` — a no-op revision (revision id `0001`, down_revision `None`): declare `upgrade` and `downgrade` as **`async def`** with bodies `pass` only (sync `def` migrations will error at runtime against the async engine).
   
   **Done when**:
   - `DATABASE_URL=... uv run --directory apps/api alembic current` exits 0.
@@ -241,7 +241,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   2. Login to the container registry (`docker/login-action@v3`).
   3. `docker buildx build --push -t $REGISTRY/dashboardy-api:$TAG -t $REGISTRY/dashboardy-api:latest -f apps/api/Dockerfile apps/api`
   4. `docker buildx build --push -t $REGISTRY/dashboardy-web:$TAG -t $REGISTRY/dashboardy-web:latest -f apps/web/Dockerfile .`
-  5. (Migration step is added in T028. Leave a placeholder comment for now.)
+  5. (Migration step is added in T026. Leave a placeholder comment for now.)
   6. Deploy API container to Bunny staging using the Bunny CLI / API call (use whatever official mechanism Bunny exposes; abstract the call into a step named "Deploy API to Bunny staging").
   7. Wait until the API container responds 200 to `GET /health` (curl with retries, max 60s).
   8. Deploy Web container to Bunny staging.
@@ -337,11 +337,11 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 ### Tests for User Story 2
 
 - [ ] T032 [P] [US2] Create `apps/api/tests/test_migrations_idempotent.py` that:
-  - Stands up a tmp SQLite or testcontainers Postgres.
-  - Runs `alembic upgrade head` twice via subprocess.
-  - Asserts both invocations exit 0 and that exactly one row exists in `alembic_version` afterwards.
+  - Stands up a **testcontainers** PostgreSQL instance (not SQLite) so the migration path matches production (`asyncpg` / Postgres runtime).
+  - Runs `alembic upgrade head` **twice** via subprocess (each against the same container `DATABASE_URL`).
+  - Asserts both invocations exit 0 and that **exactly one** row exists in `alembic_version` afterwards.
   
-  **Done when**: `uv run --directory apps/api pytest tests/test_migrations_idempotent.py -q` passes locally.
+  **Done when**: `uv run --directory apps/api pytest tests/test_migrations_idempotent.py -q` passes locally (reviewers: validate Postgres + `alembic upgrade head` behavior, not SQLite).
 
 **Checkpoint US2**: Migrations run before API rollout; failures abort cleanly; production deploys require approval and use the same artifact; concurrent deploys serialize. US2 acceptance scenarios 1–4 all pass.
 
@@ -496,7 +496,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 - [ ] T041 [US4] Harden web env loading at startup. Create `apps/web/instrumentation.ts`:
   ```ts
   export async function register() {
-    const required = ["API_PUBLIC_URL", "WEB_PUBLIC_URL"];
+    const required = ["API_PUBLIC_URL"];
     const missing = required.filter((k) => !process.env[k] || process.env[k] === "");
     if (missing.length) {
       for (const name of missing) {
@@ -508,7 +508,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Add `experimental: { instrumentationHook: true }` to `apps/web/next.config.mjs` (Next 14 syntax). **Done when**: `unset API_PUBLIC_URL && pnpm --filter @dashboardy/web start` exits within 5 seconds with `Missing required environment variable: API_PUBLIC_URL` on stderr.
 
-- [ ] T042 [US4] Create `docs/env.md` — the single environment-variable reference (FR-009). Sections: "API variables" (`DATABASE_URL` required, `ENVIRONMENT` required-in-deployed, `LOG_LEVEL` optional), "Web variables" (`API_PUBLIC_URL` required, `WEB_PUBLIC_URL` required, `NEXT_PUBLIC_API_PUBLIC_URL` optional public mirror for browser code), "Deployment variables" (Bunny tokens, registry credentials — names only, never values), "Local development" (link to `.env.example`). **Done when**: file exists and every required variable named in the spec FR-009 / quickstart §3 is documented exactly once.
+- [ ] T042 [US4] Create `docs/env.md` — the single environment-variable reference (FR-009). Sections: "API variables" (`DATABASE_URL` required, `ENVIRONMENT` required-in-deployed, `LOG_LEVEL` optional), "Web variables" (`API_PUBLIC_URL` required, `WEB_PUBLIC_URL` optional, `NEXT_PUBLIC_API_PUBLIC_URL` optional public mirror for browser code), "Deployment variables" (Bunny tokens, registry credentials — names only, never values), "Local development" (link to `.env.example`). **Done when**: file exists and every required variable named in the spec FR-009 / quickstart §3 is documented exactly once.
 
 - [ ] T043 [US4] Add a secret-scan step to `.github/workflows/ci.yml`. Use `gitleaks/gitleaks-action@v2` with default config and `fail` on any finding. **Done when**: a deliberately-committed fake AWS key triggers a CI failure with a clear pointer to the line.
 
@@ -574,11 +574,11 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - All Setup tasks marked [P]: T001, T002, T006, T007.
 - All Foundational tasks marked [P]: T014, T015, T016, T017.
-- US1 parallelisable tasks: T019, T023, T024 (all touch different files).
-- US2 parallelisable tasks: T028, T029, T030, T031, T032 (all different files).
-- US3 parallelisable tasks: T037, T038, T039.
-- US4 parallelisable tasks: T045, T046.
-- Polish: T047, T048, T049 are all parallelisable.
+- US1 parallelizable tasks: T019, T023, T024 (all touch different files).
+- US2 parallelizable tasks: T028, T029, T030, T031, T032 (all different files).
+- US3 parallelizable tasks: T037, T038, T039.
+- US4 parallelizable tasks: T045, T046.
+- Polish: T047, T048, T049 are all parallelizable.
 
 ---
 
