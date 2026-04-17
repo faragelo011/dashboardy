@@ -127,7 +127,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: `uv run --directory apps/api uvicorn app.main:app --port 8000` starts and responds 404 to `GET /` (no routes yet, expected).
 
-- [X] T011 Create `apps/api/app/config.py` with a basic Pydantic Settings class. Initial content (will be hardened in T049):
+- [X] T011 Create `apps/api/app/config.py` with a basic Pydantic Settings class. Initial content (will be hardened in T040):
   ```python
   from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -234,7 +234,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
     );
   }
   ```
-  Note: `NEXT_PUBLIC_API_PUBLIC_URL` is the public-safe variant (Next.js requires the `NEXT_PUBLIC_` prefix to expose to the browser). Document this rule in T050 (env reference). **Done when**: opening `http://localhost:3000` shows the heading and the API URL.
+  Note: `NEXT_PUBLIC_API_PUBLIC_URL` is the public-safe variant (Next.js requires the `NEXT_PUBLIC_` prefix to expose to the browser). Document this rule in T042 (env reference). **Done when**: opening `http://localhost:3000` shows the heading and the API URL.
 
 - [ ] T021 [US1] Create `.github/workflows/release-staging.yml` triggered on `push: tags: ['v*']`. Steps in order:
   1. `actions/checkout@v4`
@@ -247,7 +247,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   8. Deploy Web container to Bunny staging.
   9. Wait until the Web container responds 200 to `GET /api/health` (curl with retries, max 60s).
   
-  Set `concurrency: { group: deploy-staging, cancel-in-progress: false }` at the workflow top level (this also satisfies part of US2's FR-016 requirement — see T029).  
+  Set `concurrency: { group: deploy-staging, cancel-in-progress: false }` at the workflow top level (this also satisfies part of US2's FR-016 requirement — see T027).  
   Use the GitHub `environment: staging` to scope the secrets used.  
   
   **Done when**: pushing a tag like `v0.0.1` triggers the workflow and both apps come up healthy on staging.
@@ -305,7 +305,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [ ] T028 [P] [US2] Create the production deploy workflow at `.github/workflows/release-production.yml`. It is `workflow_dispatch`-triggered with one input `tag` (string). Steps:
   1. `actions/checkout@v4`
-  2. Use `environment: production` (this is the GitHub Environment that has **required reviewers** configured — see T053 for that one-time setup).
+  2. Use `environment: production` (this is the GitHub Environment that has **required reviewers** configured — see T051 for that one-time setup).
   3. Pull the **same** images that staging used: `$REGISTRY/dashboardy-api:${{ inputs.tag }}` and `$REGISTRY/dashboardy-web:${{ inputs.tag }}`. Do **not** rebuild.
   4. Run migrations: `docker run --rm -e DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }} $REGISTRY/dashboardy-api:${{ inputs.tag }} alembic upgrade head` (timeout 10 minutes, fail-fast).
   5. Deploy API container to Bunny production.
@@ -550,7 +550,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [ ] T049 [P] Create `ops/runbooks/README.md` listing the runbooks (`deploy-staging.md`, `promote-production.md`, `rollback.md`) with one-line descriptions. **Done when**: the file exists and links work.
 
-- [ ] T050 Write release-tag convention into [`docs/env.md`](../../docs/env.md) (a "Release tags" section). Convention: `vYYYY.MM.DD-N` where N starts at 1 each day. **Done when**: convention documented; consistent with the example in T021's runbook.
+- [ ] T050 Write release-tag convention into [`docs/env.md`](../../docs/env.md) (a "Release tags" section). Convention: `vYYYY.MM.DD-N` where N starts at 1 each day. **Done when**: convention documented; consistent with the example in T022's runbook.
 
 - [ ] T051 Configure GitHub Environments (one-time, manual UI step — but **document this** so it is not forgotten). Create `ops/runbooks/github-environments-setup.md` documenting: create `staging` Environment (no required reviewers); create `production` Environment **with required reviewers** (the platform team); attach `STAGING_DATABASE_URL`, `PRODUCTION_DATABASE_URL`, registry credentials, and Bunny credentials to the appropriate environment. **Done when**: runbook exists and the production environment in the GitHub UI shows ≥ 1 required reviewer.
 
