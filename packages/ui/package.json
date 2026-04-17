@@ -2,5 +2,12 @@
   "name": "@dashboardy/ui",
   "version": "0.0.0",
   "private": true,
-  "main": "./src/index.ts"
+  "main": "./dist/index.js",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
 }

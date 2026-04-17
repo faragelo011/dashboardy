@@ -4,7 +4,7 @@
 **Audience**: a platform engineer setting up local dev or running the first staging deploy.  
 **Goal**: prove SC-001 — a fresh engineer can complete a staging deploy in under 30 minutes.
 
-This quickstart describes the runtime behaviour the substrate provides. Code does not exist yet at the moment this plan was generated; the actual scaffolding will be produced by `/speckit.tasks` and `/speckit.implement`.
+This quickstart describes the runtime behaviour the platform substrate provides. The repository already includes the initial monorepo and tooling substrate (for example, pnpm workspaces, Turbo, and shared packages under `packages/`); additional application scaffolding will continue to land via `/speckit.tasks` and `/speckit.implement`.
 
 ---
 

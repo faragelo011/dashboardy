@@ -48,12 +48,12 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: `pnpm install` (next task) accepts it.
 
-- [X] T004 Create root `package.json` with `"private": true`, `"name": "dashboardy"`, `"packageManager": "pnpm@9"`, and scripts `"dev": "turbo dev"`, `"build": "turbo build"`, `"lint": "turbo lint"`, `"test": "turbo test"`. Add `"devDependencies": { "turbo": "^2" }`. Run `pnpm install`. **Done when**: `pnpm install` exits 0 and `node_modules/turbo/` exists.
+- [X] T004 Create root `package.json` with `"private": true`, `"name": "dashboardy"`, `"packageManager": "pnpm@9.15.9"` (full semver — required by Turborepo’s `packageManager` parser), and scripts `"dev": "turbo dev"`, `"build": "turbo build"`, `"lint": "turbo lint"`, `"test": "turbo test"`. Add `"devDependencies": { "turbo": "^2" }`. Run `pnpm install`. **Done when**: `pnpm install` exits 0 and `node_modules/turbo/` exists.
 
 - [X] T005 Create `turbo.json` at repo root with pipeline definitions for `build`, `lint`, `test`, `dev` (for `dev`, set `"cache": false, "persistent": true`). **Done when**: `pnpm dev` shows turbo's task graph (it will then idle because nothing is wired yet).
 
 - [X] T006 [P] Create empty workspace package skeletons:
-  - `packages/ui/package.json` with `{ "name": "@dashboardy/ui", "version": "0.0.0", "private": true, "main": "./src/index.ts" }`
+  - `packages/ui/package.json` with `{ "name": "@dashboardy/ui", "version": "0.0.0", "private": true, "main": "./dist/index.js", "types": "./src/index.ts", "scripts": { "build": "tsc -p tsconfig.json" }, "devDependencies": { "typescript": "^5.6.0" } }` plus `packages/ui/tsconfig.json` so `pnpm build` emits `dist/index.js`
   - `packages/types/package.json` with `{ "name": "@dashboardy/types", "version": "0.0.0", "private": true, "main": "./src/index.ts" }`
   - `packages/config/package.json` with `{ "name": "@dashboardy/config", "version": "0.0.0", "private": true }`
   - Add a placeholder `src/index.ts` with `export {}` in `ui/` and `types/`.
@@ -62,13 +62,23 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [X] T007 [P] Create `.env.example` at repo root with placeholder values (NO real secrets):
   ```dotenv
-  # API
-  DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/dashboardy
+  # Safe template — replace angle-bracket placeholders; never commit a real `.env`.
+
+  # --- API ---
+  # DATABASE_URL (required): async PostgreSQL URL for SQLAlchemy + asyncpg.
+  DATABASE_URL=postgresql+asyncpg://<DB_USER>:<DB_PASS>@<DB_HOST>:<DB_PORT>/<DB_NAME>
+
+  # ENVIRONMENT (required): runtime environment name. Allowed: local | staging | production (extend as needed for your org).
   ENVIRONMENT=local
+
+  # LOG_LEVEL (optional, default=info): API log verbosity (e.g. debug, info, warning, error).
   LOG_LEVEL=info
 
-  # Web
+  # --- Web ---
+  # API_PUBLIC_URL (required): browser- and server-side base URL for calling the API in this environment.
   API_PUBLIC_URL=http://localhost:8000
+
+  # WEB_PUBLIC_URL (optional): public canonical URL of the web app (e.g. for links or callbacks). Omit if not used yet.
   WEB_PUBLIC_URL=http://localhost:3000
   ```
   **Done when**: file exists and `git diff --staged --quiet -- .env.example || true` finds no real credential pattern.

@@ -58,7 +58,7 @@ paths:
               example:
                 status: ready
         "503":
-          description: API is not ready (typically: database unreachable).
+          description: "API is not ready (typically: database unreachable)."
           headers:
             X-Correlation-ID:
               $ref: "#/components/headers/CorrelationId"
@@ -74,11 +74,13 @@ components:
   headers:
     CorrelationId:
       description: |
-        Correlation identifier for this request. Set by API middleware.
-        The same value appears in every structured log entry produced
-        while handling the request (FR-008, US3 acceptance scenario 3).
-        If the caller supplied `X-Correlation-ID` on the request, the
-        same value is echoed back; otherwise the API generates a UUIDv4.
+        The API always includes an `X-Correlation-ID` response header on every
+        response (including errors). If the caller sends `X-Correlation-ID` on
+        the request, it MUST be a UUID version 4; otherwise the API generates
+        a new UUIDv4 and uses that value. The same identifier is echoed on
+        `X-Correlation-ID` and in structured logs for the request (FR-008, US3
+        acceptance scenario 3).
+      required: true
       schema:
         type: string
         format: uuid
