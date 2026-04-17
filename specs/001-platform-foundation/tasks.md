@@ -177,7 +177,13 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [ ] T017 [P] Create `.github/workflows/ci.yml` triggered on `pull_request` and `push: branches: [main]`. It MUST:
   - Run `pnpm install --frozen-lockfile`, then `pnpm -r lint`, then `pnpm -r build`.
-  - Run `uv sync --directory apps/api --frozen`, then `uv run --directory apps/api ruff check .`, then `uv run --directory apps/api pytest -q` (allowing zero tests to pass at this point).
+  - Run `uv sync --directory apps/api --frozen`, then `uv run --directory apps/api ruff check .`, then run `uv run --directory apps/api pytest -q` and **treat exit code 0 or 5 as success** (pytest uses **5** = no tests collected; fail the job for any other non-zero exit code). In the workflow step, capture pytest’s status and exit 0 when `ec` is 0 or 5, otherwise exit `ec` — for example:
+    ```bash
+    uv run --directory apps/api pytest -q
+    ec=$?
+    if [ "$ec" -eq 0 ] || [ "$ec" -eq 5 ]; then exit 0; fi
+    exit "$ec"
+    ```
   - Use Node 20, Python 3.12, and pnpm 9 in `setup-node` / `setup-python` / `pnpm/action-setup`.
   
   **Done when**: opening a PR triggers the workflow and all jobs pass.
