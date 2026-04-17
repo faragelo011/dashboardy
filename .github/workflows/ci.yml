@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm lint
+        run: pnpm -r lint
+
+      - name: pnpm build
+        run: pnpm -r build
+
+      - name: uv sync (api)
+        run: uv sync --directory apps/api --frozen
+
+      - name: ruff (api)
+        run: uv run --directory apps/api ruff check .
+
+      - name: pytest (api)
+        shell: bash
+        run: |
+          set +e
+          uv run --directory apps/api pytest -q
+          ec=$?
+          set -e
+          if [ "$ec" -eq 0 ] || [ "$ec" -eq 5 ]; then exit 0; fi
+          exit "$ec"

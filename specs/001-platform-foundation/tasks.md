@@ -93,7 +93,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 **CRITICAL**: No US1–US4 task may begin until this phase is complete.
 
-- [ ] T008 Initialize `apps/web` as a minimal Next.js 14 App Router project (TypeScript, Tailwind). Create:
+- [X] T008 Initialize `apps/web` as a minimal Next.js 14 App Router project (TypeScript, Tailwind). Create:
   - `apps/web/package.json` with `"name": "@dashboardy/web"`, deps `next@^14`, `react@^18`, `react-dom@^18`, devDeps `typescript@^5`, `@types/react`, `@types/node`, `tailwindcss`, `postcss`, `autoprefixer`, `eslint`, `eslint-config-next`.
   - `apps/web/tsconfig.json` extending Next defaults.
   - `apps/web/next.config.mjs` exporting an empty config.
@@ -106,7 +106,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   
   **Done when**: `pnpm --filter @dashboardy/web build` exits 0 AND `pnpm --filter @dashboardy/web dev` shows the placeholder at `http://localhost:3000`.
 
-- [ ] T009 Initialize `apps/api` as a Python 3.12 project managed by `uv`. Create:
+- [X] T009 Initialize `apps/api` as a Python 3.12 project managed by `uv`. Create:
   - `apps/api/pyproject.toml` with `[project]` name `dashboardy-api`, requires-python `>=3.12`, dependencies: `fastapi>=0.115`, `uvicorn[standard]>=0.32`, `pydantic>=2.9`, `pydantic-settings>=2.6`, `sqlalchemy[asyncio]>=2.0`, `asyncpg>=0.30`, `alembic>=1.14`, `structlog>=24.4`, `python-json-logger>=2.0`, `httpx>=0.27`. dev deps: `pytest>=8`, `pytest-asyncio>=0.24`, `ruff>=0.7`.
   - `apps/api/.python-version` with `3.12`.
   - `apps/api/app/__init__.py` (empty).
@@ -114,7 +114,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   
   Run `uv sync --directory apps/api`. **Done when**: `uv sync --directory apps/api` exits 0 and creates `apps/api/.venv/`.
 
-- [ ] T010 Create `apps/api/app/main.py` with a minimal FastAPI app and a lifespan context. Initial content:
+- [X] T010 Create `apps/api/app/main.py` with a minimal FastAPI app and a lifespan context. Initial content:
   ```python
   from contextlib import asynccontextmanager
   from fastapi import FastAPI
@@ -127,7 +127,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: `uv run --directory apps/api uvicorn app.main:app --port 8000` starts and responds 404 to `GET /` (no routes yet, expected).
 
-- [ ] T011 Create `apps/api/app/config.py` with a basic Pydantic Settings class. Initial content (will be hardened in T049):
+- [X] T011 Create `apps/api/app/config.py` with a basic Pydantic Settings class. Initial content (will be hardened in T049):
   ```python
   from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -143,7 +143,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: `uv run --directory apps/api python -c "from app.config import get_settings; print(get_settings().ENVIRONMENT)"` prints the value of `ENVIRONMENT` when set.
 
-- [ ] T012 Create `apps/api/app/db/__init__.py` (empty) and `apps/api/app/db/session.py` with an async engine factory:
+- [X] T012 Create `apps/api/app/db/__init__.py` (empty) and `apps/api/app/db/session.py` with an async engine factory:
   ```python
   from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
   from app.config import get_settings
@@ -160,7 +160,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: importing `app.db.session` does not raise.
 
-- [ ] T013 Configure Alembic in `apps/api`. Create:
+- [X] T013 Configure Alembic in `apps/api`. Create:
   - `apps/api/alembic.ini` (standard template, set `script_location = app/db/migrations`).
   - `apps/api/app/db/migrations/env.py` with an **async** Alembic env: read `DATABASE_URL` from `app.config.get_settings()`, construct an **async** SQLAlchemy engine (`asyncpg`), and run migrations via Alembic’s asyncio API (e.g. `async with engine.begin(): …` / `run_async` / the official async `env.py` pattern — do not drive an async engine with synchronous `context.begin_transaction()`-only code paths).
   - `apps/api/app/db/migrations/versions/0001_baseline.py` — a no-op revision (revision id `0001`, down_revision `None`): declare `upgrade` and `downgrade` as **synchronous** `def` with bodies `pass` only (Alembic revision entrypoints stay sync; async work stays in `env.py` via the async engine and `connection.run_sync()` / `run_async` per Alembic’s async template).
@@ -169,13 +169,13 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   - `DATABASE_URL=... uv run --directory apps/api alembic current` exits 0.
   - `DATABASE_URL=... uv run --directory apps/api alembic upgrade head` exits 0 and creates the `alembic_version` table containing `0001`.
 
-- [ ] T014 [P] Create `apps/api/Dockerfile` — multi-stage, Python 3.12-slim base, install `uv`, copy `pyproject.toml` + lockfile, run `uv sync --frozen`, copy app, default `CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`. Expose 8000. Use a non-root user. **Done when**: `docker build -t dashboardy-api apps/api` succeeds locally.
+- [X] T014 [P] Create `apps/api/Dockerfile` — multi-stage, Python 3.12-slim base, install `uv`, copy `pyproject.toml` + lockfile, run `uv sync --frozen`, copy app, default `CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`. Expose 8000. Use a non-root user. **Done when**: `docker build -t dashboardy-api apps/api` succeeds locally.
 
-- [ ] T015 [P] Create `apps/web/Dockerfile` — multi-stage Node 20-alpine, install pnpm, build standalone Next.js output, final image runs `node server.js`. Expose 3000. Use a non-root user. (Reference: Next.js standalone output docs.) **Done when**: `docker build -t dashboardy-web apps/web -f apps/web/Dockerfile .` succeeds with the build context at repo root (so the workspace can be used).
+- [X] T015 [P] Create `apps/web/Dockerfile` — multi-stage Node 20-alpine, install pnpm, build standalone Next.js output, final image runs `node server.js`. Expose 3000. Use a non-root user. (Reference: Next.js standalone output docs.) **Done when**: `docker build -t dashboardy-web apps/web -f apps/web/Dockerfile .` succeeds with the build context at repo root (so the workspace can be used).
 
-- [ ] T016 [P] Create `ops/docker-compose.yml` with a single `postgres:16-alpine` service exposing 5432, with env `POSTGRES_DB=dashboardy`, `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres`, and a named volume for data. **Done when**: `docker compose -f ops/docker-compose.yml up -d` starts Postgres and `psql` from the host can connect on `localhost:5432`.
+- [X] T016 [P] Create `ops/docker-compose.yml` with a single `postgres:16-alpine` service exposing 5432, with env `POSTGRES_DB=dashboardy`, `POSTGRES_USER=postgres`, `POSTGRES_PASSWORD=postgres`, and a named volume for data. **Done when**: `docker compose -f ops/docker-compose.yml up -d` starts Postgres and `psql` from the host can connect on `localhost:5432`.
 
-- [ ] T017 [P] Create `.github/workflows/ci.yml` triggered on `pull_request` and `push: branches: [main]`. It MUST:
+- [X] T017 [P] Create `.github/workflows/ci.yml` triggered on `pull_request` and `push: branches: [main]`. It MUST:
   - Run `pnpm install --frozen-lockfile`, then `pnpm -r lint`, then `pnpm -r build`.
   - Run `uv sync --directory apps/api --frozen`, then `uv run --directory apps/api ruff check .`, then run `uv run --directory apps/api pytest -q` and **treat exit code 0 or 5 as success** (pytest uses **5** = no tests collected; fail the job for any other non-zero exit code). In the workflow step, capture pytest’s status and exit 0 when `ec` is 0 or 5, otherwise exit `ec` — for example:
     ```bash
