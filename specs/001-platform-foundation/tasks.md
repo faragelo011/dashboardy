@@ -129,6 +129,9 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [X] T011 Create `apps/api/app/config.py` with a basic Pydantic Settings class. Initial content (will be hardened in T040):
   ```python
+  from functools import lru_cache
+
+  from pydantic import field_validator
   from pydantic_settings import BaseSettings, SettingsConfigDict
 
   class Settings(BaseSettings):
@@ -138,6 +141,14 @@ This is a monorepo (constitution §12). All paths are repository-relative.
       ENVIRONMENT: str = "local"
       LOG_LEVEL: str = "info"
 
+      @field_validator("DATABASE_URL")
+      @classmethod
+      def database_url_uses_asyncpg(cls, v: str) -> str:
+          if "+asyncpg" not in v:
+              raise ValueError("DATABASE_URL must use postgresql+asyncpg://…")
+          return v
+
+  @lru_cache(maxsize=1)
   def get_settings() -> Settings:
       return Settings()  # raises ValidationError if required env missing
   ```
@@ -145,23 +156,34 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [X] T012 Create `apps/api/app/db/__init__.py` (empty) and `apps/api/app/db/session.py` with an async engine factory:
   ```python
-  from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
+  from functools import lru_cache
+
+  from sqlalchemy.ext.asyncio import (
+      AsyncEngine,
+      AsyncSession,
+      async_sessionmaker,
+      create_async_engine,
+  )
+
   from app.config import get_settings
 
-  _engine: AsyncEngine | None = None
-
+  @lru_cache(maxsize=1)
   def get_engine() -> AsyncEngine:
-      global _engine
-      if _engine is None:
-          _engine = create_async_engine(get_settings().DATABASE_URL, pool_pre_ping=True)
-      return _engine
+      return create_async_engine(get_settings().DATABASE_URL, pool_pre_ping=True)
 
-  SessionLocal = async_sessionmaker(bind=None, expire_on_commit=False)
+  @lru_cache(maxsize=1)
+  def get_async_session_maker() -> async_sessionmaker[AsyncSession]:
+      return async_sessionmaker(
+          bind=get_engine(),
+          expire_on_commit=False,
+          class_=AsyncSession,
+      )
   ```
   **Done when**: importing `app.db.session` does not raise.
 
 - [X] T013 Configure Alembic in `apps/api`. Create:
   - `apps/api/alembic.ini` (standard template, set `script_location = app/db/migrations`).
+  - `apps/api/app/models/__init__.py` with a SQLAlchemy `DeclarativeBase` subclass `Base` (for `target_metadata = Base.metadata` in Alembic).
   - `apps/api/app/db/migrations/env.py` with an **async** Alembic env: read `DATABASE_URL` from `app.config.get_settings()`, construct an **async** SQLAlchemy engine (`asyncpg`), and run migrations via Alembic’s asyncio API (e.g. `async with engine.begin(): …` / `run_async` / the official async `env.py` pattern — do not drive an async engine with synchronous `context.begin_transaction()`-only code paths).
   - `apps/api/app/db/migrations/versions/0001_baseline.py` — a no-op revision (revision id `0001`, down_revision `None`): declare `upgrade` and `downgrade` as **synchronous** `def` with bodies `pass` only (Alembic revision entrypoints stay sync; async work stays in `env.py` via the async engine and `connection.run_sync()` / `run_async` per Alembic’s async template).
   

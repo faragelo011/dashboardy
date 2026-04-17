@@ -26,7 +26,7 @@ jobs:
 
       - uses: astral-sh/setup-uv@v5
         with:
-          version: "latest"
+          version: "0.6.14"
 
       - name: pnpm install
         run: pnpm install --frozen-lockfile
@@ -50,5 +50,6 @@ jobs:
           uv run --directory apps/api pytest -q
           ec=$?
           set -e
+          # pytest exit 5 = no tests collected; treat as success until API tests land (see tasks T017).
           if [ "$ec" -eq 0 ] || [ "$ec" -eq 5 ]; then exit 0; fi
           exit "$ec"

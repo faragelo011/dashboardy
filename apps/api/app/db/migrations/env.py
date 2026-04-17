@@ -5,7 +5,8 @@ from logging.config import fileConfig
 
 from alembic import context
 from app.config import get_settings
-from sqlalchemy import MetaData, pool
+from app.models import Base
+from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
@@ -19,7 +20,8 @@ section = config.get_section(config.config_ini_section, {}) or {}
 configuration = dict(section)
 configuration["sqlalchemy.url"] = settings.DATABASE_URL
 
-target_metadata = MetaData()
+# Import models on `Base` so tables register for `alembic revision --autogenerate`.
+target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:

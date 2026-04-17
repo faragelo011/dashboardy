@@ -2,10 +2,14 @@
   "name": "@dashboardy/types",
   "version": "0.0.0",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "node -e \"process.exit(0)\"",
+    "build": "tsc -p tsconfig.json",
     "lint": "node -e \"process.exit(0)\"",
     "test": "node -e \"process.exit(0)\""
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
   }
 }
