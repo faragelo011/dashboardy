@@ -35,6 +35,8 @@ paths:
                 $ref: "#/components/schemas/HealthOk"
               example:
                 status: ok
+        default:
+          $ref: "#/components/responses/DefaultJsonError"
 
   /ready:
     get:
@@ -69,23 +71,48 @@ paths:
               example:
                 status: not_ready
                 reason: database_unreachable
+        default:
+          $ref: "#/components/responses/DefaultJsonError"
 
 components:
+  responses:
+    DefaultJsonError:
+      description: |
+        Catch-all for HTTP statuses not otherwise declared for this operation
+        (for example 4xx/5xx from the framework). Same correlation rules as
+        documented success responses.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UnexpectedError"
+
   headers:
     CorrelationId:
       description: |
-        The API always includes an `X-Correlation-ID` response header on every
-        response (including errors). If the caller sends `X-Correlation-ID` on
-        the request, it MUST be a UUID version 4; otherwise the API generates
-        a new UUIDv4 and uses that value. The same identifier is echoed on
-        `X-Correlation-ID` and in structured logs for the request (FR-008, US3
-        acceptance scenario 3).
+        Every response defined for `/health` and `/ready` in this document lists
+        `X-Correlation-ID` (including this `default` response for unexpected
+        statuses). If the caller sends `X-Correlation-ID` on the request, it
+        MUST be a UUID version 4 (RFC 4122); otherwise the API generates a new
+        UUIDv4. The same identifier is echoed on `X-Correlation-ID` and in
+        structured logs for the request (FR-008, US3 acceptance scenario 3).
       required: true
       schema:
         type: string
-        format: uuid
+        pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
 
   schemas:
+    UnexpectedError:
+      type: object
+      description: Minimal placeholder for framework-provided error bodies.
+      additionalProperties: true
+      properties:
+        detail:
+          type: string
+          description: Human-readable error detail when provided by the stack.
+
     HealthOk:
       type: object
       additionalProperties: false

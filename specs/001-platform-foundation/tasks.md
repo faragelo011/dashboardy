@@ -633,4 +633,4 @@ After Foundational:
 - Setup: 7 (T001–T007). Foundational: 10 (T008–T017). Polish: 6 (T047–T052).
 - Independent test criteria for each user story: stated at the top of each phase ("Independent test").
 - Suggested MVP scope: **US1 only** (cut a tag → staging up; sufficient to demo).
-- Format check: every task above starts with `- [ ]`, includes a sequential `T###` ID, includes `[P]` only when truly file-disjoint, includes a `[US#]` label only in Phases 3–6, and names exact file paths.
+- Format check: each task line starts with `- [ ]` (or `- [X]` for completed tasks), includes a sequential `T###` ID, includes `[P]` only when truly file-disjoint, includes a `[US#]` label only in Phases 3–6, and names exact file paths.
