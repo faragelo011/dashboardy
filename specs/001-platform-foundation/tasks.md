@@ -163,7 +163,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 - [ ] T013 Configure Alembic in `apps/api`. Create:
   - `apps/api/alembic.ini` (standard template, set `script_location = app/db/migrations`).
   - `apps/api/app/db/migrations/env.py` with an **async** Alembic env: read `DATABASE_URL` from `app.config.get_settings()`, construct an **async** SQLAlchemy engine (`asyncpg`), and run migrations via Alembic’s asyncio API (e.g. `async with engine.begin(): …` / `run_async` / the official async `env.py` pattern — do not drive an async engine with synchronous `context.begin_transaction()`-only code paths).
-  - `apps/api/app/db/migrations/versions/0001_baseline.py` — a no-op revision (revision id `0001`, down_revision `None`): declare `upgrade` and `downgrade` as **`async def`** with bodies `pass` only (sync `def` migrations will error at runtime against the async engine).
+  - `apps/api/app/db/migrations/versions/0001_baseline.py` — a no-op revision (revision id `0001`, down_revision `None`): declare `upgrade` and `downgrade` as **synchronous** `def` with bodies `pass` only (Alembic revision entrypoints stay sync; async work stays in `env.py` via the async engine and `connection.run_sync()` / `run_async` per Alembic’s async template).
   
   **Done when**:
   - `DATABASE_URL=... uv run --directory apps/api alembic current` exits 0.
@@ -392,7 +392,16 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
   class CorrelationIdMiddleware(BaseHTTPMiddleware):
       async def dispatch(self, request: Request, call_next):
-          cid = request.headers.get(HEADER) or str(uuid.uuid4())
+          raw = request.headers.get(HEADER)
+          if raw is None:
+              cid = str(uuid.uuid4())
+          else:
+              try:
+                  parsed = uuid.UUID(raw)
+              except ValueError:
+                  cid = str(uuid.uuid4())
+              else:
+                  cid = str(parsed) if parsed.version == 4 else str(uuid.uuid4())
           token = correlation_id_var.set(cid)
           try:
               response = await call_next(request)
@@ -441,8 +450,8 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [ ] T038 [P] [US3] Create `apps/api/tests/test_logging_correlation.py` that:
   - Builds the FastAPI app once.
-  - Sends a request with `X-Correlation-ID: 11111111-1111-1111-1111-111111111111`.
-  - Asserts the response `X-Correlation-ID` header equals the request value.
+  - Sends a request with `X-Correlation-ID: 3fa85f64-5717-4562-b3fc-2c963f66afa6` (a valid UUIDv4).
+  - Asserts the response `X-Correlation-ID` header equals the request value (normalized string form is acceptable if middleware canonicalizes via `uuid.UUID`).
   - Sends a request **without** the header and asserts the response header is a valid UUID.
   
   **Done when**: `uv run --directory apps/api pytest tests/test_logging_correlation.py -q` passes.
