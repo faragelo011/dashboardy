@@ -14,9 +14,16 @@ class Settings(BaseSettings):
     @field_validator("DATABASE_URL")
     @classmethod
     def database_url_uses_asyncpg(cls, v: str) -> str:
-        if "+asyncpg" not in v:
+        if "://" not in v:
             msg = (
-                "DATABASE_URL must use the asyncpg driver "
+                "DATABASE_URL must include a scheme "
+                "(e.g. postgresql+asyncpg://user:pass@host:5432/dbname)"
+            )
+            raise ValueError(msg)
+        scheme, _, _ = v.partition("://")
+        if not scheme or not scheme.endswith("+asyncpg"):
+            msg = (
+                "DATABASE_URL scheme must end with +asyncpg "
                 "(e.g. postgresql+asyncpg://user:pass@host:5432/dbname)"
             )
             raise ValueError(msg)

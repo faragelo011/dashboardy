@@ -144,8 +144,11 @@ This is a monorepo (constitution §12). All paths are repository-relative.
       @field_validator("DATABASE_URL")
       @classmethod
       def database_url_uses_asyncpg(cls, v: str) -> str:
-          if "+asyncpg" not in v:
-              raise ValueError("DATABASE_URL must use postgresql+asyncpg://…")
+          if "://" not in v:
+              raise ValueError("DATABASE_URL must include a scheme (…://…)")
+          scheme, _, _ = v.partition("://")
+          if not scheme or not scheme.endswith("+asyncpg"):
+              raise ValueError("DATABASE_URL scheme must end with +asyncpg")
           return v
 
   @lru_cache(maxsize=1)
@@ -199,10 +202,13 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 - [X] T017 [P] Create `.github/workflows/ci.yml` triggered on `pull_request` and `push: branches: [main]`. It MUST:
   - Run `pnpm install --frozen-lockfile`, then `pnpm -r lint`, then `pnpm -r build`.
-  - Run `uv sync --directory apps/api --frozen`, then `uv run --directory apps/api ruff check .`, then run `uv run --directory apps/api pytest -q` and **treat exit code 0 or 5 as success** (pytest uses **5** = no tests collected; fail the job for any other non-zero exit code). In the workflow step, capture pytest’s status and exit 0 when `ec` is 0 or 5, otherwise exit `ec` — for example:
+  - Run `uv sync --directory apps/api --frozen`, then `uv run --directory apps/api ruff check .`, then run `uv run --directory apps/api pytest -q` and **treat exit code 0 or 5 as success** (pytest uses **5** = no tests collected; fail the job for any other non-zero exit code). In the workflow step, temporarily disable `set -e`, capture pytest’s exit code, re-enable `set -e`, then exit 0 only when `ec` is 0 or 5 — match `.github/workflows/ci.yml`, for example:
     ```bash
+    set +e
     uv run --directory apps/api pytest -q
     ec=$?
+    set -e
+    # pytest exit 5 = no tests collected; treat as success until API tests land (see T017).
     if [ "$ec" -eq 0 ] || [ "$ec" -eq 5 ]; then exit 0; fi
     exit "$ec"
     ```
