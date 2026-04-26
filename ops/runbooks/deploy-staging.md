@@ -35,10 +35,13 @@ git push origin v2026.04.26-1
 4. Watch the workflow complete in this order:
    - Build & push API image
    - Build & push Web image
+   - Apply migrations to staging Postgres
    - Deploy API to Bunny staging
    - Wait for API `/health`
    - Deploy Web to Bunny staging
    - Wait for Web `/api/health`
+
+If a migration lacks a safe `downgrade()`, a sibling `<revision_id>.forward-fix.md` MUST be committed using the template at `apps/api/app/db/migrations/forward-fix-template.md`.
 
 ## Troubleshooting
 
