@@ -1,0 +1,107 @@
+name: release-staging
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Compute image tags
+        id: meta
+        run: |
+          echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: apps/api
+          file: apps/api/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY }}/dashboardy-api:${{ steps.meta.outputs.tag }}
+            ${{ secrets.REGISTRY }}/dashboardy-api:latest
+
+      - name: Build & push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY }}/dashboardy-web:${{ steps.meta.outputs.tag }}
+            ${{ secrets.REGISTRY }}/dashboardy-web:latest
+
+      # Placeholder for migrations (wired in Phase 4 / T026)
+      - name: Migrations placeholder
+        run: |
+          echo "Migrations are wired in Phase 4 (T026)."
+
+      - name: Deploy API to Bunny staging
+        uses: BunnyWay/actions/container-update-image@main
+        with:
+          app_id: ${{ vars.STAGING_API_APP_ID }}
+          api_key: ${{ secrets.BUNNYNET_API_KEY }}
+          container: ${{ vars.STAGING_API_CONTAINER || 'app' }}
+          image_tag: ${{ steps.meta.outputs.tag }}
+
+      - name: Wait for API health
+        run: |
+          set -euo pipefail
+          url="${{ secrets.STAGING_API_URL }}/health"
+          for i in {1..30}; do
+            if curl -fsS "$url" >/dev/null; then
+              echo "API healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy at $url"
+          exit 1
+
+      - name: Deploy Web to Bunny staging
+        uses: BunnyWay/actions/container-update-image@main
+        with:
+          app_id: ${{ vars.STAGING_WEB_APP_ID }}
+          api_key: ${{ secrets.BUNNYNET_API_KEY }}
+          container: ${{ vars.STAGING_WEB_CONTAINER || 'app' }}
+          image_tag: ${{ steps.meta.outputs.tag }}
+
+      - name: Wait for Web liveness
+        run: |
+          set -euo pipefail
+          url="${{ secrets.STAGING_WEB_URL }}/api/health"
+          for i in {1..30}; do
+            if curl -fsS "$url" >/dev/null; then
+              echo "Web healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Web did not become healthy at $url"
+          exit 1
+

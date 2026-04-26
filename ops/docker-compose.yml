@@ -16,5 +16,34 @@ services:
       retries: 5
       start_period: 10s
 
+  api:
+    build:
+      context: ../apps/api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dashboardy
+      ENVIRONMENT: local
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      # server-side (inside docker network)
+      API_PUBLIC_URL: http://api:8000
+      # browser display + local dev convenience
+      NEXT_PUBLIC_API_PUBLIC_URL: http://localhost:8000
+    depends_on:
+      api:
+        condition: service_started
+
 volumes:
   pgdata:

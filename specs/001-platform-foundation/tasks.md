@@ -228,7 +228,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 ### Implementation for User Story 1
 
-- [ ] T018 [US1] Add a baseline `GET /health` route stub to the API. Create `apps/api/app/routes/__init__.py` (empty) and `apps/api/app/routes/health.py`:
+- [X] T018 [US1] Add a baseline `GET /health` route stub to the API. Create `apps/api/app/routes/__init__.py` (empty) and `apps/api/app/routes/health.py`:
   ```python
   from fastapi import APIRouter
 
@@ -240,7 +240,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Then in `apps/api/app/main.py` add `from app.routes.health import router as health_router` and `app.include_router(health_router)`. **Done when**: `curl -s http://localhost:8000/health` returns `{"status":"ok"}`. (Latency contract is enforced in US3 — do not optimise yet.)
 
-- [ ] T019 [P] [US1] Add a web liveness route. Create `apps/web/app/api/health/route.ts`:
+- [X] T019 [P] [US1] Add a web liveness route. Create `apps/web/app/api/health/route.ts`:
   ```ts
   import { NextResponse } from "next/server";
   export async function GET() {
@@ -250,7 +250,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: `curl -s http://localhost:3000/api/health` returns `{"status":"ok"}`.
 
-- [ ] T020 [US1] Update `apps/web/app/page.tsx` to render the placeholder home and display the resolved API base URL (read from `process.env.NEXT_PUBLIC_API_PUBLIC_URL`). Content:
+- [X] T020 [US1] Update `apps/web/app/page.tsx` to render the placeholder home and display the resolved API base URL (read from `process.env.NEXT_PUBLIC_API_PUBLIC_URL`). Content:
   ```tsx
   export default function Home() {
     const apiUrl = process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "(unset)";
@@ -264,7 +264,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Note: `NEXT_PUBLIC_API_PUBLIC_URL` is the public-safe variant (Next.js requires the `NEXT_PUBLIC_` prefix to expose to the browser). Document this rule in T042 (env reference). **Done when**: opening `http://localhost:3000` shows the heading and the API URL.
 
-- [ ] T021 [US1] Create `.github/workflows/release-staging.yml` triggered on `push: tags: ['v*']`. Steps in order:
+- [X] T021 [US1] Create `.github/workflows/release-staging.yml` triggered on `push: tags: ['v*']`. Steps in order:
   1. `actions/checkout@v4`
   2. Login to the container registry (`docker/login-action@v3`).
   3. `docker buildx build --push -t $REGISTRY/dashboardy-api:$TAG -t $REGISTRY/dashboardy-api:latest -f apps/api/Dockerfile apps/api`
@@ -280,11 +280,11 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   
   **Done when**: pushing a tag like `v0.0.1` triggers the workflow and both apps come up healthy on staging.
 
-- [ ] T022 [US1] Create `ops/runbooks/deploy-staging.md`. Content covers: prerequisites, exact tag format (recommend `vYYYY.MM.DD-N`), how to push the tag, how to watch the workflow, what to do if it fails (check the build job, then the deploy job, then `/health` retries), and the staging URLs. Target reading time ≤ 10 minutes (SC-001 ≤ 30 min total). **Done when**: another engineer can follow the runbook and complete a tag-deploy without asking questions.
+- [X] T022 [US1] Create `ops/runbooks/deploy-staging.md`. Content covers: prerequisites, exact tag format (recommend `vYYYY.MM.DD-N`), how to push the tag, how to watch the workflow, what to do if it fails (check the build job, then the deploy job, then `/health` retries), and the staging URLs. Target reading time ≤ 10 minutes (SC-001 ≤ 30 min total). **Done when**: another engineer can follow the runbook and complete a tag-deploy without asking questions.
 
 ### Tests for User Story 1
 
-- [ ] T023 [P] [US1] Create `apps/api/tests/__init__.py` (empty) and `apps/api/tests/test_health.py`:
+- [X] T023 [P] [US1] Create `apps/api/tests/__init__.py` (empty) and `apps/api/tests/test_health.py`:
   ```python
   from fastapi.testclient import TestClient
   from app.main import app
@@ -297,7 +297,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Add `[tool.pytest.ini_options] asyncio_mode = "auto"` to `apps/api/pyproject.toml` if not already set. **Done when**: `uv run --directory apps/api pytest tests/test_health.py -q` passes.
 
-- [ ] T024 [P] [US1] Create a Playwright smoke test at `apps/web/tests/smoke.spec.ts`:
+- [X] T024 [P] [US1] Create a Playwright smoke test at `apps/web/tests/smoke.spec.ts`:
   ```ts
   import { test, expect } from "@playwright/test";
 
