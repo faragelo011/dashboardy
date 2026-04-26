@@ -21,6 +21,12 @@ Install once on your workstation:
   - the Supabase Postgres connection string for staging and (separately) production
   - the GitHub repository with permission to push tags
 
+After cloning, install the local commit hooks:
+
+```bash
+uv run --directory apps/api pre-commit install
+```
+
 ## 2. Local bring-up (FR-003)
 
 ```bash

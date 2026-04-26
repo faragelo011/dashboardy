@@ -8,8 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      API_PUBLIC_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v4
+
+      - name: gitleaks (secrets)
+        uses: gitleaks/gitleaks-action@v2
 
       - uses: pnpm/action-setup@v4
 

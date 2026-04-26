@@ -502,7 +502,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 ### Implementation for User Story 4
 
-- [ ] T040 [US4] Harden `apps/api/app/config.py` to fail fast with a named-variable error message. Replace its body with:
+- [X] T040 [US4] Harden `apps/api/app/config.py` to fail fast with a named-variable error message. Replace its body with:
   ```python
   import sys
   from pydantic import ValidationError
@@ -530,7 +530,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Update `apps/api/app/main.py` to call `get_settings()` once at module import (or inside `lifespan` startup) so the process exits before serving traffic if env is wrong. **Done when**: `unset DATABASE_URL && uv run --directory apps/api uvicorn app.main:app` exits within 5 seconds and stderr contains exactly `Missing required environment variable: DATABASE_URL`.
 
-- [ ] T041 [US4] Harden web env loading at startup. Create `apps/web/instrumentation.ts`:
+- [X] T041 [US4] Harden web env loading at startup. Create `apps/web/instrumentation.ts`:
   ```ts
   export async function register() {
     const required = ["API_PUBLIC_URL"];
@@ -545,21 +545,21 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Add `experimental: { instrumentationHook: true }` to `apps/web/next.config.mjs` (Next 14 syntax). **Done when**: `unset API_PUBLIC_URL && pnpm --filter @dashboardy/web start` exits within 5 seconds with `Missing required environment variable: API_PUBLIC_URL` on stderr.
 
-- [ ] T042 [US4] Create `docs/env.md` — the single environment-variable reference (FR-009). Sections: "API variables" (`DATABASE_URL` required, `ENVIRONMENT` required-in-deployed, `LOG_LEVEL` optional), "Web variables" (`API_PUBLIC_URL` required, `WEB_PUBLIC_URL` optional, `NEXT_PUBLIC_API_PUBLIC_URL` optional public mirror for browser code), "Deployment variables" (Bunny tokens, registry credentials — names only, never values), "Local development" (link to `.env.example`). **Done when**: file exists and every required variable named in the spec FR-009 / quickstart §3 is documented exactly once.
+- [X] T042 [US4] Create `docs/env.md` — the single environment-variable reference (FR-009). Sections: "API variables" (`DATABASE_URL` required, `ENVIRONMENT` required-in-deployed, `LOG_LEVEL` optional), "Web variables" (`API_PUBLIC_URL` required, `WEB_PUBLIC_URL` optional, `NEXT_PUBLIC_API_PUBLIC_URL` optional public mirror for browser code), "Deployment variables" (Bunny tokens, registry credentials — names only, never values), "Local development" (link to `.env.example`). **Done when**: file exists and every required variable named in the spec FR-009 / quickstart §3 is documented exactly once.
 
-- [ ] T043 [US4] Add a secret-scan step to `.github/workflows/ci.yml`. Use `gitleaks/gitleaks-action@v2` with default config and `fail` on any finding. **Done when**: a deliberately-committed fake AWS key triggers a CI failure with a clear pointer to the line.
+- [X] T043 [US4] Add a secret-scan step to `.github/workflows/ci.yml`. Use `gitleaks/gitleaks-action@v2` with default config and `fail` on any finding. **Done when**: a deliberately-committed fake AWS key triggers a CI failure with a clear pointer to the line.
 
-- [ ] T044 [US4] Add a pre-commit config at `.pre-commit-config.yaml` with `gitleaks` and `ruff` hooks. Add `pre-commit` to API dev deps and document `pre-commit install` in the root README and quickstart §1. **Done when**: `pre-commit run --all-files` runs both hooks locally.
+- [X] T044 [US4] Add a pre-commit config at `.pre-commit-config.yaml` with `gitleaks` and `ruff` hooks. Add `pre-commit` to API dev deps and document `pre-commit install` in the root README and quickstart §1. **Done when**: `pre-commit run --all-files` runs both hooks locally.
 
 ### Tests for User Story 4
 
-- [ ] T045 [P] [US4] Create `apps/api/tests/test_config_fail_fast.py`:
+- [X] T045 [P] [US4] Create `apps/api/tests/test_config_fail_fast.py`:
   - Spawn the API as a subprocess (`uv run uvicorn app.main:app --port <random>`) with `DATABASE_URL` unset and a 6-second wait timeout.
   - Assert the process exits within 5 seconds, exit code is non-zero, and stderr contains `Missing required environment variable: DATABASE_URL`.
   
   **Done when**: the test passes locally and in CI.
 
-- [ ] T046 [P] [US4] Create `apps/api/tests/test_no_secret_in_logs.py`:
+- [X] T046 [P] [US4] Create `apps/api/tests/test_no_secret_in_logs.py`:
   - Set `DATABASE_URL=postgresql+asyncpg://probe:s3cret-do-not-leak@localhost:5432/x`, configure logging, log an info message, capture stdout, assert the substring `s3cret-do-not-leak` is NOT present.
   
   This validates the substrate's logger does not auto-dump environment values. **Done when**: the test passes.

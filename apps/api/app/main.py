@@ -8,10 +8,12 @@ from app.middleware import CorrelationIdMiddleware
 from app.routes.health import router as health_router
 from app.routes.ready import router as ready_router
 
+settings = get_settings()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    configure_logging(get_settings().LOG_LEVEL)
+    configure_logging(settings.LOG_LEVEL)
     yield
 
 
