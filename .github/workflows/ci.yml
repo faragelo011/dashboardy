@@ -12,6 +12,8 @@ jobs:
       API_PUBLIC_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: gitleaks (secrets)
         uses: gitleaks/gitleaks-action@v2
