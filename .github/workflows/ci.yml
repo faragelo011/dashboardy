@@ -29,6 +29,12 @@ jobs:
       - name: pnpm install
         run: pnpm install --frozen-lockfile
 
+      - name: playwright install (web)
+        run: pnpm --filter @dashboardy/web exec playwright install --with-deps
+
+      - name: playwright test (web)
+        run: pnpm --filter @dashboardy/web test
+
       - name: pnpm lint
         run: pnpm -r lint
 
