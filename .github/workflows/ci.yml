@@ -38,31 +38,17 @@ jobs:
       - name: pnpm install
         run: pnpm install --frozen-lockfile
 
+      - name: uv sync (api)
+        run: uv sync --directory apps/api --frozen
+
       - name: playwright install (web)
         run: pnpm --filter @dashboardy/web exec playwright install --with-deps
 
-      - name: playwright test (web)
-        run: pnpm --filter @dashboardy/web test
+      - name: pnpm test (web + api)
+        run: pnpm test
 
       - name: pnpm lint
         run: pnpm -r lint
 
       - name: pnpm build
         run: pnpm -r build
-
-      - name: uv sync (api)
-        run: uv sync --directory apps/api --frozen
-
-      - name: ruff (api)
-        run: uv run --directory apps/api ruff check .
-
-      - name: pytest (api)
-        shell: bash
-        run: |
-          set +e
-          uv run --directory apps/api pytest -q
-          ec=$?
-          set -e
-          # pytest exit 5 = no tests collected; treat as success until API tests land (see tasks T017).
-          if [ "$ec" -eq 0 ] || [ "$ec" -eq 5 ]; then exit 0; fi
-          exit "$ec"

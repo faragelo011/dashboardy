@@ -2,6 +2,15 @@
 
 This is the single reference for Dashboardy's Phase 1 environment contract. Store real values in the deployment platform or local shell only; do not commit secrets.
 
+## Release tags
+
+Cut release tags from `main` using the form **`vYYYY.MM.DD-N`** (for example `v2026.04.17-1`):
+
+- **`YYYY.MM.DD`** is the calendar date of the release.
+- **`N`** is a per-day sequence starting at **1** the first time you tag that day, then **2**, **3**, and so on for additional tags the same day.
+
+This matches the staging deploy runbook and keeps tags sortable and human-readable.
+
 ## API Variables
 
 | Name | Required | Description |
@@ -20,7 +29,7 @@ This is the single reference for Dashboardy's Phase 1 environment contract. Stor
 
 ## Deployment Variables
 
-Configure these as environment-scoped secrets in GitHub Actions and the container platform. Record names only, never values:
+Configure these as environment-scoped secrets in GitHub Actions and the container platform (see [ops/runbooks/github-environments-setup.md](../ops/runbooks/github-environments-setup.md)). Record names only, never values:
 
 - `REGISTRY`, `REGISTRY_USERNAME`, `REGISTRY_PASSWORD` for container registry access.
 - `BUNNYNET_API_KEY` for Bunny container image updates.

@@ -572,15 +572,15 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 **Purpose**: Wire everything together for SC-001..SC-007 verification. No new features.
 
-- [ ] T047 [P] Update root `README.md` to link to: [`docs/env.md`](../../docs/env.md), [`specs/001-platform-foundation/quickstart.md`](quickstart.md), [`ops/runbooks/`](../../ops/runbooks). Add a "Required tooling" subsection (Node 20, pnpm 9, Python 3.12, uv, Docker). **Done when**: README contains all four links and they resolve.
+- [X] T047 [P] Update root `README.md` to link to: [`docs/env.md`](../../docs/env.md), [`specs/001-platform-foundation/quickstart.md`](quickstart.md), [`ops/runbooks/`](../../ops/runbooks). Add a "Required tooling" subsection (Node 20, pnpm 9, Python 3.12, uv, Docker). **Done when**: README contains all four links and they resolve.
 
-- [ ] T048 [P] Add `lint` and `test` scripts to `apps/web/package.json` (`"lint": "next lint"`, `"test": "vitest run"`) and ensure both are wired through `turbo.json` so `pnpm lint` and `pnpm test` exercise the web app. (Vitest is added if not already present; otherwise use Playwright `--project=ci` for the smoke test.) **Done when**: `pnpm test` from repo root runs the web smoke test and the API pytest suite.
+- [X] T048 [P] Add `lint` and `test` scripts to `apps/web/package.json` (`"lint": "next lint"`, `"test": "vitest run"`) and ensure both are wired through `turbo.json` so `pnpm lint` and `pnpm test` exercise the web app. (Vitest is added if not already present; otherwise use Playwright `--project=ci` for the smoke test.) **Done when**: `pnpm test` from repo root runs the web smoke test and the API pytest suite.
 
-- [ ] T049 [P] Create `ops/runbooks/README.md` listing the runbooks (`deploy-staging.md`, `promote-production.md`, `rollback.md`) with one-line descriptions. **Done when**: the file exists and links work.
+- [X] T049 [P] Create `ops/runbooks/README.md` listing the runbooks (`deploy-staging.md`, `promote-production.md`, `rollback.md`) with one-line descriptions. **Done when**: the file exists and links work.
 
-- [ ] T050 Write release-tag convention into [`docs/env.md`](../../docs/env.md) (a "Release tags" section). Convention: `vYYYY.MM.DD-N` where N starts at 1 each day. **Done when**: convention documented; consistent with the example in T022's runbook.
+- [X] T050 Write release-tag convention into [`docs/env.md`](../../docs/env.md) (a "Release tags" section). Convention: `vYYYY.MM.DD-N` where N starts at 1 each day. **Done when**: convention documented; consistent with the example in T022's runbook.
 
-- [ ] T051 Configure GitHub Environments (one-time, manual UI step — but **document this** so it is not forgotten). Create `ops/runbooks/github-environments-setup.md` documenting: create `staging` Environment (no required reviewers); create `production` Environment **with required reviewers** (the platform team); attach `STAGING_DATABASE_URL`, `PRODUCTION_DATABASE_URL`, registry credentials, and Bunny credentials to the appropriate environment. **Done when**: runbook exists and the production environment in the GitHub UI shows ≥ 1 required reviewer.
+- [X] T051 Configure GitHub Environments (one-time, manual UI step — but **document this** so it is not forgotten). Create `ops/runbooks/github-environments-setup.md` documenting: create `staging` Environment (no required reviewers); create `production` Environment **with required reviewers** (the platform team); attach `STAGING_DATABASE_URL`, `PRODUCTION_DATABASE_URL`, registry credentials, and Bunny credentials to the appropriate environment. **Done when**: runbook exists and the production environment in the GitHub UI shows ≥ 1 required reviewer.
 
 - [ ] T052 Run [quickstart.md](quickstart.md) §7 end-to-end against staging once. Tick every box in the validation checklist. Record any deviations as follow-up items. **Done when**: all 13 checkboxes in quickstart §7 are ticked on a printed copy, screenshot, or a task-tracker comment.
 

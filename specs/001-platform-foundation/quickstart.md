@@ -118,6 +118,8 @@ Target: complete end-to-end within 10 minutes (SC-006).
 
 ## 7. Validating the substrate against the spec
 
+Complete this section **after** an end-to-end pass against **staging** (or your designated pre-production environment). Tick each box only when you have observed the behaviour; record deviations as follow-up issues or runbook notes.
+
 A simple manual checklist that maps directly to acceptance scenarios:
 
 - [ ] **US1.1** Tagged release deploys both containers; both report healthy.
