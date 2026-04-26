@@ -19,4 +19,5 @@ def test_correlation_id_generated_when_missing():
         r = client.get("/health")
 
     assert r.status_code == 200
-    uuid.UUID(r.headers["X-Correlation-ID"])  # raises if invalid
+    uuid_obj = uuid.UUID(r.headers["X-Correlation-ID"])
+    assert uuid_obj.version == 4

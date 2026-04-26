@@ -2,6 +2,7 @@ import asyncio
 
 from fastapi import APIRouter, Response, status
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError, SQLAlchemyError
 
 from app.db.session import get_engine
 
@@ -18,7 +19,7 @@ async def ready(response: Response) -> dict:
     except TimeoutError:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"status": "not_ready", "reason": "database_timeout"}
-    except Exception:
+    except (SQLAlchemyError, DBAPIError, OSError, ConnectionError, BrokenPipeError):
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE
         return {"status": "not_ready", "reason": "database_unreachable"}
     return {"status": "ready"}

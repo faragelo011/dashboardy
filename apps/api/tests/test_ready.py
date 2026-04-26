@@ -36,3 +36,20 @@ def test_ready_db_down(monkeypatch):
 
     assert r.status_code == 503
     assert r.json() == {"status": "not_ready", "reason": "database_unreachable"}
+
+
+def test_ready_db_timeout(monkeypatch):
+    class _TimeoutCM:
+        async def __aenter__(self):
+            raise TimeoutError
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    monkeypatch.setattr(ready_routes.asyncio, "timeout", lambda _seconds: _TimeoutCM())
+
+    with TestClient(app) as client:
+        r = client.get("/ready")
+
+    assert r.status_code == 503
+    assert r.json() == {"status": "not_ready", "reason": "database_timeout"}
