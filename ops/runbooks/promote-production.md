@@ -27,7 +27,7 @@ Minimum signals:
 
 It performs, in order:
 
-1. Pulls the exact same images that were built for staging (no rebuild).
+1. Pulls the same images that were built for staging (no rebuild).
 2. Applies migrations against the production database (fail-fast).
 3. Deploys the API container to Bunny production.
 4. Waits for `GET /health` to return 200.

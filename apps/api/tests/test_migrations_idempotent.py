@@ -26,6 +26,17 @@ def _to_asyncpg_dsn(sync_url: str) -> str:
     return sync_url
 
 
+def _format_subprocess_result(
+    result: subprocess.CompletedProcess[str],
+    label: str,
+) -> str:
+    return (
+        f"{label} failed (exit={result.returncode})\n"
+        f"--- stdout ---\n{result.stdout}\n"
+        f"--- stderr ---\n{result.stderr}\n"
+    )
+
+
 def test_migrations_are_idempotent():
     api_dir = Path(__file__).resolve().parents[1]
 
@@ -38,11 +49,31 @@ def test_migrations_are_idempotent():
         env["DATABASE_URL"] = asyncpg_url
 
         cmd = ["uv", "run", "alembic", "upgrade", "head"]
-        r1 = subprocess.run(cmd, cwd=api_dir, env=env, capture_output=True, text=True)
-        assert r1.returncode == 0, r1.stderr
+        r1 = subprocess.run(
+            cmd,
+            cwd=api_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert r1.returncode == 0, _format_subprocess_result(
+            r1,
+            "alembic upgrade head (1/2)",
+        )
 
-        r2 = subprocess.run(cmd, cwd=api_dir, env=env, capture_output=True, text=True)
-        assert r2.returncode == 0, r2.stderr
+        r2 = subprocess.run(
+            cmd,
+            cwd=api_dir,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        assert r2.returncode == 0, _format_subprocess_result(
+            r2,
+            "alembic upgrade head (2/2)",
+        )
 
         async def check_version_table():
             conn = await asyncpg.connect(dsn)

@@ -34,16 +34,26 @@ jobs:
       - name: Pull release images (no rebuild)
         run: |
           set -euo pipefail
-          docker pull "${{ secrets.REGISTRY }}/dashboardy-api:${{ inputs.tag }}"
-          docker pull "${{ secrets.REGISTRY }}/dashboardy-web:${{ inputs.tag }}"
+          TAG="${{ inputs.tag }}"
+          if [[ ! "$TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Invalid tag: $TAG (allowed: alphanumerics, '.', '-', '_')" >&2
+            exit 1
+          fi
+          docker pull "${{ secrets.REGISTRY }}/dashboardy-api:${TAG}"
+          docker pull "${{ secrets.REGISTRY }}/dashboardy-web:${TAG}"
 
       - name: Apply migrations to production Postgres
         timeout-minutes: 10
         run: |
           set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          if [[ ! "$TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Invalid tag: $TAG (allowed: alphanumerics, '.', '-', '_')" >&2
+            exit 1
+          fi
           docker run --rm \
             -e DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
-            "${{ secrets.REGISTRY }}/dashboardy-api:${{ inputs.tag }}" \
+            "${{ secrets.REGISTRY }}/dashboardy-api:${TAG}" \
             alembic upgrade head
 
       - name: Deploy API to Bunny production
