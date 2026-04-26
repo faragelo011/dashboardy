@@ -56,10 +56,14 @@ jobs:
             ${{ secrets.REGISTRY }}/dashboardy-web:${{ steps.meta.outputs.tag }}
             ${{ secrets.REGISTRY }}/dashboardy-web:latest
 
-      # Placeholder for migrations (wired in Phase 4 / T026)
-      - name: Migrations placeholder
+      - name: Apply migrations to staging Postgres
+        timeout-minutes: 10
         run: |
-          echo "Migrations are wired in Phase 4 (T026)."
+          set -euo pipefail
+          docker run --rm \
+            -e DATABASE_URL="${{ secrets.STAGING_DATABASE_URL }}" \
+            "${{ secrets.REGISTRY }}/dashboardy-api:${{ steps.meta.outputs.tag }}" \
+            alembic upgrade head
 
       - name: Deploy API to Bunny staging
         uses: BunnyWay/actions/container-update-image@d15f94f8fd513950561a5996a40f99d1dd1c357c # container-update-image_0.2.1

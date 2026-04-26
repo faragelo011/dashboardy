@@ -1,0 +1,92 @@
+name: release-production
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to promote (e.g. v2026.04.26-1)"
+        required: true
+        type: string
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.0
+
+      - name: Login to registry
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ${{ secrets.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Pull release images (no rebuild)
+        run: |
+          set -euo pipefail
+          docker pull "${{ secrets.REGISTRY }}/dashboardy-api:${{ inputs.tag }}"
+          docker pull "${{ secrets.REGISTRY }}/dashboardy-web:${{ inputs.tag }}"
+
+      - name: Apply migrations to production Postgres
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -e DATABASE_URL="${{ secrets.PRODUCTION_DATABASE_URL }}" \
+            "${{ secrets.REGISTRY }}/dashboardy-api:${{ inputs.tag }}" \
+            alembic upgrade head
+
+      - name: Deploy API to Bunny production
+        uses: BunnyWay/actions/container-update-image@d15f94f8fd513950561a5996a40f99d1dd1c357c # container-update-image_0.2.1
+        with:
+          app_id: ${{ vars.PRODUCTION_API_APP_ID }}
+          api_key: ${{ secrets.BUNNYNET_API_KEY }}
+          container: ${{ vars.PRODUCTION_API_CONTAINER || 'app' }}
+          image_tag: ${{ inputs.tag }}
+
+      - name: Wait for API health
+        run: |
+          set -euo pipefail
+          url="${{ secrets.PRODUCTION_API_URL }}/health"
+          for i in {1..30}; do
+            if curl -fsS --connect-timeout 2 --max-time 5 "$url" >/dev/null; then
+              echo "API healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not become healthy at $url"
+          exit 1
+
+      - name: Deploy Web to Bunny production
+        uses: BunnyWay/actions/container-update-image@d15f94f8fd513950561a5996a40f99d1dd1c357c # container-update-image_0.2.1
+        with:
+          app_id: ${{ vars.PRODUCTION_WEB_APP_ID }}
+          api_key: ${{ secrets.BUNNYNET_API_KEY }}
+          container: ${{ vars.PRODUCTION_WEB_CONTAINER || 'app' }}
+          image_tag: ${{ inputs.tag }}
+
+      - name: Wait for Web liveness
+        run: |
+          set -euo pipefail
+          url="${{ secrets.PRODUCTION_WEB_URL }}/api/health"
+          for i in {1..30}; do
+            if curl -fsS --connect-timeout 2 --max-time 5 "$url" >/dev/null; then
+              echo "Web healthy"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Web did not become healthy at $url"
+          exit 1
+

@@ -320,18 +320,18 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Add a one-shot migration entrypoint that reuses the API image. In `apps/api/Dockerfile` confirm the image already contains `alembic`, then document the override in a comment at the bottom: `# Migration job: docker run --rm -e DATABASE_URL=... <this-image> alembic upgrade head`. No new image is needed. **Done when**: `docker run --rm -e DATABASE_URL=$LOCAL_DB_URL dashboardy-api alembic upgrade head` exits 0 against local Postgres.
+- [X] T025 [US2] Add a one-shot migration entrypoint that reuses the API image. In `apps/api/Dockerfile` confirm the image already contains `alembic`, then document the override in a comment at the bottom: `# Migration job: docker run --rm -e DATABASE_URL=... <this-image> alembic upgrade head`. No new image is needed. **Done when**: `docker run --rm -e DATABASE_URL=$LOCAL_DB_URL dashboardy-api alembic upgrade head` exits 0 against local Postgres.
 
-- [ ] T026 [US2] Update `.github/workflows/release-staging.yml` (the placeholder added in T021 step 5). Insert a new job step **after** the API image push and **before** the API container deploy, named "Apply migrations to staging Postgres". The step must:
+- [X] T026 [US2] Update `.github/workflows/release-staging.yml` (the placeholder added in T021 step 5). Insert a new job step **after** the API image push and **before** the API container deploy, named "Apply migrations to staging Postgres". The step must:
   - Use the just-pushed API image with override entrypoint: `docker run --rm -e DATABASE_URL=${{ secrets.STAGING_DATABASE_URL }} $REGISTRY/dashboardy-api:$TAG alembic upgrade head`
   - Use `timeout-minutes: 10` (matches FR-013 and the runbook's reasonable upper bound).
   - The workflow MUST fail and skip subsequent deploy steps if this step fails. (GitHub Actions behaves this way by default — do **not** add `continue-on-error`.)
   
   **Done when**: a deliberately-broken migration in a test branch causes the workflow to fail at this step and never reach the API deploy step (verifiable via the workflow run UI).
 
-- [ ] T027 [US2] Confirm that `concurrency: { group: deploy-staging, cancel-in-progress: false }` exists at the workflow top of `release-staging.yml` (added in T021). If absent, add it. **Done when**: triggering a second tag while the first deploy is mid-flight visibly queues the second run in the GitHub Actions UI rather than cancelling the first.
+- [X] T027 [US2] Confirm that `concurrency: { group: deploy-staging, cancel-in-progress: false }` exists at the workflow top of `release-staging.yml` (added in T021). If absent, add it. **Done when**: triggering a second tag while the first deploy is mid-flight visibly queues the second run in the GitHub Actions UI rather than cancelling the first.
 
-- [ ] T028 [P] [US2] Create the production deploy workflow at `.github/workflows/release-production.yml`. It is `workflow_dispatch`-triggered with one input `tag` (string). Steps:
+- [X] T028 [P] [US2] Create the production deploy workflow at `.github/workflows/release-production.yml`. It is `workflow_dispatch`-triggered with one input `tag` (string). Steps:
   1. `actions/checkout@v4`
   2. Use `environment: production` (this is the GitHub Environment that has **required reviewers** configured — see T051 for that one-time setup).
   3. Pull the **same** images that staging used: `$REGISTRY/dashboardy-api:${{ inputs.tag }}` and `$REGISTRY/dashboardy-web:${{ inputs.tag }}`. Do **not** rebuild.
@@ -345,7 +345,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   
   **Done when**: a workflow_dispatch with a known-good tag waits for an approver and, after approval, deploys to production using the same image tags.
 
-- [ ] T029 [P] [US2] Create a forward-fix-plan template at `apps/api/app/db/migrations/forward-fix-template.md`:
+- [X] T029 [P] [US2] Create a forward-fix-plan template at `apps/api/app/db/migrations/forward-fix-template.md`:
   ```markdown
   # Forward-fix plan for migration <revision_id>
 
@@ -358,13 +358,13 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   Add a sentence to `ops/runbooks/deploy-staging.md` saying "If a migration lacks a safe `downgrade()`, a sibling `<revision_id>.forward-fix.md` MUST be committed using the template at `apps/api/app/db/migrations/forward-fix-template.md`." **Done when**: file exists.
 
-- [ ] T030 [P] [US2] Create `ops/runbooks/promote-production.md` documenting the manual approval flow: who is authorised to approve, the staging signals to verify before approving (`/health`, `/ready`, no error spike, manual smoke), how to run the workflow_dispatch, what to do if production health checks fail (immediately re-run with the previous good tag — see T031). **Done when**: the runbook is internally consistent with [T028]'s workflow steps.
+- [X] T030 [P] [US2] Create `ops/runbooks/promote-production.md` documenting the manual approval flow: who is authorised to approve, the staging signals to verify before approving (`/health`, `/ready`, no error spike, manual smoke), how to run the workflow_dispatch, what to do if production health checks fail (immediately re-run with the previous good tag — see T031). **Done when**: the runbook is internally consistent with [T028]'s workflow steps.
 
-- [ ] T031 [P] [US2] Create `ops/runbooks/rollback.md` documenting that rollback = re-run `release-production.yml` with the previous known-good `tag`. Include: how to identify the last good tag (`git tag --sort=-creatordate | head -10`), how to handle a forward-only migration (reference T029), and the SC-006 ≤ 10-minute target. **Done when**: the runbook is internally consistent with T028 and T029.
+- [X] T031 [P] [US2] Create `ops/runbooks/rollback.md` documenting that rollback = re-run `release-production.yml` with the previous known-good `tag`. Include: how to identify the last good tag (`git tag --sort=-creatordate | head -10`), how to handle a forward-only migration (reference T029), and the SC-006 ≤ 10-minute target. **Done when**: the runbook is internally consistent with T028 and T029.
 
 ### Tests for User Story 2
 
-- [ ] T032 [P] [US2] Create `apps/api/tests/test_migrations_idempotent.py` that:
+- [X] T032 [P] [US2] Create `apps/api/tests/test_migrations_idempotent.py` that:
   - Stands up a **testcontainers** PostgreSQL instance (not SQLite) so the migration path matches production (`asyncpg` / Postgres runtime).
   - Runs `alembic upgrade head` **twice** via subprocess (each against the same container `DATABASE_URL`).
   - Asserts both invocations exit 0 and that **exactly one** row exists in `alembic_version` afterwards.

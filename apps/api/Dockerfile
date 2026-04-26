@@ -8,7 +8,7 @@ ENV PIP_NO_CACHE_DIR=1 \
 
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock alembic.ini ./
 COPY app ./app
 
 RUN uv sync --frozen
@@ -27,6 +27,7 @@ COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/app /app/app
 COPY --from=builder /app/pyproject.toml /app/pyproject.toml
 COPY --from=builder /app/uv.lock /app/uv.lock
+COPY --from=builder /app/alembic.ini /app/alembic.ini
 
 RUN chown -R app:app /app
 
@@ -35,3 +36,5 @@ USER app
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# Migration job: docker run --rm -e DATABASE_URL=... <this-image> alembic upgrade head
