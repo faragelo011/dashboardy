@@ -1,35 +1,29 @@
-from functools import lru_cache
+import sys
 
-from pydantic import field_validator
+from pydantic import Field, ValidationError
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=None, case_sensitive=True)
 
-    DATABASE_URL: str
+    DATABASE_URL: str = Field(min_length=1)
     ENVIRONMENT: str = "local"
     LOG_LEVEL: str = "info"
 
-    @field_validator("DATABASE_URL")
-    @classmethod
-    def database_url_uses_asyncpg(cls, v: str) -> str:
-        if "://" not in v:
-            msg = (
-                "DATABASE_URL must include a scheme "
-                "(e.g. postgresql+asyncpg://user:pass@host:5432/dbname)"
-            )
-            raise ValueError(msg)
-        scheme, _, _ = v.partition("://")
-        if not scheme or not scheme.endswith("+asyncpg"):
-            msg = (
-                "DATABASE_URL scheme must end with +asyncpg "
-                "(e.g. postgresql+asyncpg://user:pass@host:5432/dbname)"
-            )
-            raise ValueError(msg)
-        return v
 
-
-@lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()  # raises ValidationError if required env missing
+    try:
+        return Settings()
+    except ValidationError as e:
+        missing = [
+            str(err["loc"][0])
+            for err in e.errors()
+            if err["type"] in ("missing", "string_type", "string_too_short")
+            or "required" in err["msg"].lower()
+        ]
+        for name in missing:
+            print(f"Missing required environment variable: {name}", file=sys.stderr)
+        if not missing:
+            print(f"Invalid environment configuration: {e}", file=sys.stderr)
+        sys.exit(2)
