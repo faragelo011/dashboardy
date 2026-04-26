@@ -383,7 +383,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] Create `apps/api/app/logging.py` with a JSON formatter and a correlation-id contextvar:
+- [X] T033 [US3] Create `apps/api/app/logging.py` with a JSON formatter and a correlation-id contextvar:
   ```python
   import logging, sys
   from contextvars import ContextVar
@@ -409,7 +409,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: importing the module does not raise.
 
-- [ ] T034 [US3] Create `apps/api/app/middleware.py` with a Starlette middleware that reads or generates `X-Correlation-ID`, sets the contextvar, and writes the same header on the response:
+- [X] T034 [US3] Create `apps/api/app/middleware.py` with a Starlette middleware that reads or generates `X-Correlation-ID`, sets the contextvar, and writes the same header on the response:
   ```python
   import uuid
   from starlette.middleware.base import BaseHTTPMiddleware
@@ -440,9 +440,9 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   ```
   **Done when**: importing the module does not raise.
 
-- [ ] T035 [US3] Wire logging and middleware into `apps/api/app/main.py`. Update `lifespan` to call `configure_logging(get_settings().LOG_LEVEL)` on startup, and add `app.add_middleware(CorrelationIdMiddleware)`. **Done when**: `curl -i http://localhost:8000/health` shows an `X-Correlation-ID` response header AND the API stdout shows a JSON log line that includes the same `correlation_id` value.
+- [X] T035 [US3] Wire logging and middleware into `apps/api/app/main.py`. Update `lifespan` to call `configure_logging(get_settings().LOG_LEVEL)` on startup, and add `app.add_middleware(CorrelationIdMiddleware)`. **Done when**: `curl -i http://localhost:8000/health` shows an `X-Correlation-ID` response header AND the API stdout shows a JSON log line that includes the same `correlation_id` value.
 
-- [ ] T036 [US3] Implement `GET /ready`. Create `apps/api/app/routes/ready.py`:
+- [X] T036 [US3] Implement `GET /ready`. Create `apps/api/app/routes/ready.py`:
   ```python
   import asyncio
   from fastapi import APIRouter, Response, status
@@ -470,13 +470,13 @@ This is a monorepo (constitution §12). All paths are repository-relative.
 
 ### Tests for User Story 3
 
-- [ ] T037 [P] [US3] Create `apps/api/tests/test_ready.py` with two tests:
+- [X] T037 [P] [US3] Create `apps/api/tests/test_ready.py` with two tests:
   - DB-up case: monkeypatch `get_engine()` to return an engine that successfully runs `SELECT 1`; assert 200 and `{"status":"ready"}`.
   - DB-down case: monkeypatch to raise; assert 503 and `{"status":"not_ready","reason":"database_unreachable"}`.
   
   **Done when**: `uv run --directory apps/api pytest tests/test_ready.py -q` passes.
 
-- [ ] T038 [P] [US3] Create `apps/api/tests/test_logging_correlation.py` that:
+- [X] T038 [P] [US3] Create `apps/api/tests/test_logging_correlation.py` that:
   - Builds the FastAPI app once.
   - Sends a request with `X-Correlation-ID: 3fa85f64-5717-4562-b3fc-2c963f66afa6` (a valid UUIDv4).
   - Asserts the response `X-Correlation-ID` header equals the request value (normalized string form is acceptable if middleware canonicalizes via `uuid.UUID`).
@@ -484,7 +484,7 @@ This is a monorepo (constitution §12). All paths are repository-relative.
   
   **Done when**: `uv run --directory apps/api pytest tests/test_logging_correlation.py -q` passes.
 
-- [ ] T039 [P] [US3] Create `apps/api/tests/test_health_latency.py` — a non-flaky in-process latency check:
+- [X] T039 [P] [US3] Create `apps/api/tests/test_health_latency.py` — a non-flaky in-process latency check:
   - Hit `/health` 100 times via `TestClient` and measure wall time per call.
   - Assert the **median** is < 50 ms and the **max** is < 100 ms.
   
