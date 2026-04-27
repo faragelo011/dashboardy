@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "node scripts/next-cli.cjs dev",
+    "build": "node scripts/next-cli.cjs build",
+    "start": "node scripts/next-cli.cjs start",
+    "lint": "node scripts/next-cli.cjs lint",
     "test": "playwright test --project=ci"
   },
   "dependencies": {

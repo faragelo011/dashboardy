@@ -38,6 +38,19 @@ async def get_membership_for_user_workspace(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def list_memberships_for_user(
+    session: AsyncSession,
+    user_id: UUID,
+) -> list[Membership]:
+    stmt = (
+        select(Membership)
+        .where(Membership.user_id == user_id)
+        .order_by(Membership.created_at.asc(), Membership.id.asc())
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
 async def list_active_memberships_for_user(
     session: AsyncSession,
     user_id: UUID,

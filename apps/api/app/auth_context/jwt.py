@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from functools import lru_cache
+from typing import Any
 from uuid import UUID
 
 import jwt
@@ -27,8 +28,8 @@ def reset_jwks_client_cache() -> None:
     _jwks_client.cache_clear()
 
 
-def verify_supabase_jwt(token: str) -> UUID:
-    """Verify a Supabase JWT and return the authenticated user id (`sub` claim)."""
+def decode_supabase_jwt(token: str) -> dict[str, Any]:
+    """Verify JWT signature and standard claims; return the decoded payload."""
 
     settings = get_settings()
     try:
@@ -36,7 +37,7 @@ def verify_supabase_jwt(token: str) -> UUID:
     except Exception as exc:  # noqa: BLE001 - map all JWKS fetch/parse errors
         raise InvalidJwtError("Unable to resolve signing key for JWT") from exc
 
-    decode_kwargs: dict = {
+    decode_kwargs: dict[str, Any] = {
         "algorithms": ["RS256"],
         "issuer": settings.SUPABASE_JWT_ISSUER,
     }
@@ -53,12 +54,17 @@ def verify_supabase_jwt(token: str) -> UUID:
             )
 
     try:
-        payload = jwt.decode(token, signing_key.key, **decode_kwargs)
+        return jwt.decode(token, signing_key.key, **decode_kwargs)
     except jwt.ExpiredSignatureError as exc:
         raise InvalidJwtError("JWT has expired") from exc
     except jwt.InvalidTokenError as exc:
         raise InvalidJwtError("JWT is invalid") from exc
 
+
+def verify_supabase_jwt(token: str) -> UUID:
+    """Verify a Supabase JWT and return the authenticated user id (`sub` claim)."""
+
+    payload = decode_supabase_jwt(token)
     sub = payload.get("sub")
     if not isinstance(sub, str):
         raise InvalidJwtError("JWT is missing string `sub` claim")

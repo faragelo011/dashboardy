@@ -22,6 +22,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    # Load repo-root .env so SUPABASE_* and other secrets reach the process (Compose
+    # does not pass the host .env into containers unless env_file or environment maps them).
+    env_file:
+      - ../.env
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dashboardy
       ENVIRONMENT: local
@@ -34,6 +38,10 @@ services:
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_API_PUBLIC_URL: ${NEXT_PUBLIC_API_PUBLIC_URL:-http://localhost:8000}
     ports:
       - "3001:3000"
     environment:
@@ -41,6 +49,9 @@ services:
       API_PUBLIC_URL: http://api:8000
       # browser display + local dev convenience
       NEXT_PUBLIC_API_PUBLIC_URL: http://localhost:8000
+      # Supabase (set in host env or compose --env-file; not the full repo .env)
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     depends_on:
       api:
         condition: service_started
