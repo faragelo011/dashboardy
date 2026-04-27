@@ -2,19 +2,11 @@ This package is the Dashboardy FastAPI service: HTTP API, configuration, databas
 
 ## Auth + Tenancy (Feature 2) environment variables
 
-Feature 2 introduces JWT verification for Supabase Auth. The API expects the following variables (names only; set values in your shell or deployment platform):
+Feature 2 adds Supabase JWT settings to `app.config.Settings`. They are **required** at API process startup (including Alembic, which imports `get_settings()`). Protected routes use `app.auth_context.dependencies.get_current_user_id`, which calls `verify_supabase_jwt()` against your JWKS URL.
 
-**Planned for Phase 2 wiring** (not yet loaded by the current API code):
-
-- `SUPABASE_JWKS_URL` (planned required)
-- `SUPABASE_JWT_ISSUER` (planned required)
-- `SUPABASE_JWT_AUDIENCE` (planned optional)
-
-When implemented, these will be added to `app.config.Settings` (as
-`Settings.SUPABASE_JWKS_URL`, `Settings.SUPABASE_JWT_ISSUER`,
-`Settings.SUPABASE_JWT_AUDIENCE`) and used by an auth initializer such as
-`app.main.init_auth()` (or middleware like `verify_jwt_middleware`) to enforce
-token validation on protected endpoints.
+- `SUPABASE_JWKS_URL` (required): JWKS endpoint for RS256 verification (e.g. `https://<ref>.supabase.co/auth/v1/.well-known/jwks.json`).
+- `SUPABASE_JWT_ISSUER` (required): expected JWT `iss` (typically `https://<ref>.supabase.co/auth/v1`).
+- `SUPABASE_JWT_AUDIENCE` (optional): when unset, audience is not enforced; when set, tokens must include a matching `aud`.
 
 Feature 1 variables still apply:
 

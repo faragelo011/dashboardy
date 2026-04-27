@@ -34,23 +34,23 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T009 Create Feature 2 Alembic migration for `tenants`, `workspaces`, `memberships`, `collection_grants`, and `asset_grants` in `apps/api/app/db/migrations/versions/0002_auth_tenancy.py`.
-- [ ] T010 Create SQLAlchemy tenant/workspace/membership/grant models with enums in `apps/api/app/models/auth_tenancy.py`.
-- [ ] T011 Update model exports so Alembic can discover Feature 2 models in `apps/api/app/models/__init__.py`.
-- [ ] T012 [P] Add Pydantic schemas for auth context, workspace context, members, and grants in `apps/api/app/auth_context/schemas.py`.
-- [ ] T013 [P] Add Pydantic schemas for admin member and grant requests/responses in `apps/api/app/admin/schemas.py`.
-- [ ] T014 Create authenticated user context dataclass and token error types in `apps/api/app/auth_context/context.py`.
-- [ ] T015 Implement Supabase JWT verification helpers with JWKS/cache-safe validation in `apps/api/app/auth_context/jwt.py`.
-- [ ] T016 Implement FastAPI dependency that returns authenticated `user_id` or raises 401 in `apps/api/app/auth_context/dependencies.py`.
-- [ ] T017 Create tenancy resolver skeleton that loads active membership, tenant, workspace, role, and status in `apps/api/app/tenancy/resolver.py`.
-- [ ] T018 Create central permission decision object and reason-code enum in `apps/api/app/tenancy/permissions.py`.
-- [ ] T019 Implement base permission rules for admin, analyst, viewer, external client, inactive membership, tenant mismatch, collection grants, and asset grants in `apps/api/app/tenancy/permissions.py`.
-- [ ] T020 Add database repository helpers for tenants, workspaces, memberships, collection grants, and asset grants in `apps/api/app/tenancy/repository.py`.
-- [ ] T021 Add a test fixture factory for tenants, workspaces, users, memberships, and grants in `apps/api/tests/factories/auth_tenancy.py`.
-- [ ] T022 [P] Add unit tests for JWT dependency success/failure behavior in `apps/api/tests/unit/test_auth_context.py`.
-- [ ] T023 [P] Add unit tests for permission reason codes and role baseline in `apps/api/tests/unit/test_permission_service.py`.
-- [ ] T024 [P] Add migration tests for Feature 2 tables, enums/checks, tenant indexes, and unique constraints in `apps/api/tests/test_auth_tenancy_migration.py`.
-- [ ] T025 Create package marker files for new backend domains in `apps/api/app/auth_context/__init__.py`, `apps/api/app/tenancy/__init__.py`, and `apps/api/app/admin/__init__.py`.
+- [X] T009 Create Feature 2 Alembic migration for `tenants`, `workspaces`, `memberships`, `collection_grants`, and `asset_grants` in `apps/api/app/db/migrations/versions/0002_auth_tenancy.py`.
+- [X] T010 Create SQLAlchemy tenant/workspace/membership/grant models with enums in `apps/api/app/models/auth_tenancy.py`.
+- [X] T011 Update model exports so Alembic can discover Feature 2 models in `apps/api/app/models/__init__.py`.
+- [X] T012 [P] Add Pydantic schemas for auth context, workspace context, members, and grants in `apps/api/app/auth_context/schemas.py`.
+- [X] T013 [P] Add Pydantic schemas for admin member and grant requests/responses in `apps/api/app/admin/schemas.py`.
+- [X] T014 Create authenticated user context dataclass and token error types in `apps/api/app/auth_context/context.py`.
+- [X] T015 Implement Supabase JWT verification helpers with JWKS/cache-safe validation in `apps/api/app/auth_context/jwt.py`.
+- [X] T016 Implement FastAPI dependency that returns authenticated `user_id` or raises 401 in `apps/api/app/auth_context/dependencies.py`.
+- [X] T017 Create tenancy resolver skeleton that loads active membership, tenant, workspace, role, and status in `apps/api/app/tenancy/resolver.py`.
+- [X] T018 Create central permission decision object and reason-code enum in `apps/api/app/tenancy/permissions.py`.
+- [X] T019 Implement base permission rules for admin, analyst, viewer, external client, inactive membership, tenant mismatch, collection grants, and asset grants in `apps/api/app/tenancy/permissions.py`.
+- [X] T020 Add database repository helpers for tenants, workspaces, memberships, collection grants, and asset grants in `apps/api/app/tenancy/repository.py`.
+- [X] T021 Add a test fixture factory for tenants, workspaces, users, memberships, and grants in `apps/api/tests/factories/auth_tenancy.py`.
+- [X] T022 [P] Add unit tests for JWT dependency success/failure behavior in `apps/api/tests/unit/test_auth_context.py`.
+- [X] T023 [P] Add unit tests for permission reason codes and role baseline in `apps/api/tests/unit/test_permission_service.py`.
+- [X] T024 [P] Add migration tests for Feature 2 tables, enums/checks, tenant indexes, and unique constraints in `apps/api/tests/test_auth_tenancy_migration.py`.
+- [X] T025 Create package marker files for new backend domains in `apps/api/app/auth_context/__init__.py`, `apps/api/app/tenancy/__init__.py`, and `apps/api/app/admin/__init__.py`.
 
 **Checkpoint**: Foundation ready. Database schema, auth dependency, tenancy resolver, permission service, and reusable fixtures are in place.
 
