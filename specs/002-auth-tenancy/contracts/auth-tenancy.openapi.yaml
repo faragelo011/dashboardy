@@ -77,7 +77,10 @@ paths:
   /workspaces/{workspace_id}/members:
     get:
       operationId: listWorkspaceMembers
-      summary: List workspace members
+      summary: List workspace members (admin-only)
+      description: |
+        Admin-only. Returns the workspace member list; callers without the admin
+        role receive HTTP 403 (`authz_denied`), consistent with other member-management operations.
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
       responses:
