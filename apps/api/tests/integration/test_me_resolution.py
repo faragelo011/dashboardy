@@ -30,7 +30,7 @@ def test_me_invalid_jwt_returns_401(monkeypatch: pytest.MonkeyPatch):
 
 
 def test_me_valid_token_no_membership_returns_403(
-    live_postgres: None,
+    use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
     uid = uuid.uuid4()
@@ -45,7 +45,7 @@ def test_me_valid_token_no_membership_returns_403(
 
 
 def test_me_active_membership_returns_200(
-    live_postgres: None,
+    use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
     uid = uuid.uuid4()
@@ -68,7 +68,7 @@ def test_me_active_membership_returns_200(
 
 
 def test_me_inactive_membership_returns_403(
-    live_postgres: None,
+    use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
     uid = uuid.uuid4()

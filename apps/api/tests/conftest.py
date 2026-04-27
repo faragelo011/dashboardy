@@ -41,45 +41,47 @@ def _to_asyncpg_database_url(sync_url: str) -> str:
 
 
 @pytest.fixture(scope="session")
-def live_postgres() -> None:
-    """Run DB-backed tests against an isolated migrated Postgres container."""
+def live_postgres() -> str:
+    """Start migrated Postgres once per session; yields async DATABASE_URL string."""
 
     skip_if_no_docker()
     api_dir = Path(__file__).resolve().parents[1]
-    # Session-scoped fixtures cannot request pytest's function-scoped `monkeypatch`;
-    # use MonkeyPatch here so DATABASE_URL / Supabase env overrides are undone after
-    # the session and do not leak to unrelated tests.
-    mp = pytest.MonkeyPatch()
-    try:
-        with PostgresContainer("postgres:16-alpine") as pg:
-            mp.setenv(
-                "DATABASE_URL",
-                _to_asyncpg_database_url(pg.get_connection_url()),
-            )
-            mp.setenv("SUPABASE_JWKS_URL", TEST_SUPABASE_JWKS_URL)
-            mp.setenv("SUPABASE_JWT_ISSUER", TEST_SUPABASE_JWT_ISSUER)
 
-            from app.db.session import get_async_session_maker, get_engine
+    with PostgresContainer("postgres:16-alpine") as pg:
+        db_url = _to_asyncpg_database_url(pg.get_connection_url())
+        alembic_env = {
+            **os.environ,
+            "DATABASE_URL": db_url,
+            "SUPABASE_JWKS_URL": TEST_SUPABASE_JWKS_URL,
+            "SUPABASE_JWT_ISSUER": TEST_SUPABASE_JWT_ISSUER,
+        }
+        result = subprocess.run(
+            ["uv", "run", "alembic", "upgrade", "head"],
+            cwd=api_dir,
+            env=alembic_env,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert result.returncode == 0, (
+            "alembic upgrade head failed\n"
+            f"--- stdout ---\n{result.stdout}\n"
+            f"--- stderr ---\n{result.stderr}\n"
+        )
+        yield db_url
 
-            get_engine.cache_clear()
-            get_async_session_maker.cache_clear()
 
-            result = subprocess.run(
-                ["uv", "run", "alembic", "upgrade", "head"],
-                cwd=api_dir,
-                env=os.environ.copy(),
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
-            assert result.returncode == 0, (
-                "alembic upgrade head failed\n"
-                f"--- stdout ---\n{result.stdout}\n"
-                f"--- stderr ---\n{result.stderr}\n"
-            )
+@pytest.fixture
+def use_live_postgres(live_postgres: str, monkeypatch: pytest.MonkeyPatch):
+    """Point the app at the session container for this test only; env restored after."""
 
-            get_engine.cache_clear()
-            get_async_session_maker.cache_clear()
-            yield
-    finally:
-        mp.undo()
+    monkeypatch.setenv("DATABASE_URL", live_postgres)
+    monkeypatch.setenv("SUPABASE_JWKS_URL", TEST_SUPABASE_JWKS_URL)
+    monkeypatch.setenv("SUPABASE_JWT_ISSUER", TEST_SUPABASE_JWT_ISSUER)
+    from app.db.session import get_async_session_maker, get_engine
+
+    get_engine.cache_clear()
+    get_async_session_maker.cache_clear()
+    yield
+    get_engine.cache_clear()
+    get_async_session_maker.cache_clear()

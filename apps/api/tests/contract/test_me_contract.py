@@ -33,7 +33,7 @@ def test_me_401_invalid_jwt(monkeypatch: pytest.MonkeyPatch):
     assert r.json()["error_code"] == "auth_required"
 
 
-def test_me_403_no_membership(live_postgres: None, monkeypatch: pytest.MonkeyPatch):
+def test_me_403_no_membership(use_live_postgres: None, monkeypatch: pytest.MonkeyPatch):
     uid = uuid.uuid4()
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
@@ -46,7 +46,7 @@ def test_me_403_no_membership(live_postgres: None, monkeypatch: pytest.MonkeyPat
 
 
 def test_me_403_inactive_membership(
-    live_postgres: None,
+    use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ):
     uid = uuid.uuid4()
@@ -61,7 +61,7 @@ def test_me_403_inactive_membership(
     assert r.json()["error_code"] == "inactive_membership"
 
 
-def test_me_200_active_member(live_postgres: None, monkeypatch: pytest.MonkeyPatch):
+def test_me_200_active_member(use_live_postgres: None, monkeypatch: pytest.MonkeyPatch):
     uid = uuid.uuid4()
     asyncio.run(seed_active_member(uid))
     monkeypatch.setattr(
