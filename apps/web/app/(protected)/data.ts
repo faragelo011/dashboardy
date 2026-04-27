@@ -35,7 +35,8 @@ export const getProtectedMe = cache(async (): Promise<MeResponse> => {
     redirect("/sign-in");
   }
   if (!res.ok) {
-    redirect("/sign-in");
+    const body = await res.text().catch(() => "");
+    throw new Error(`GET /me failed: ${res.status} ${body}`);
   }
   return (await res.json()) as MeResponse;
 });

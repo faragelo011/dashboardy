@@ -14,6 +14,13 @@ from app.auth_context.jwt import decode_supabase_jwt, verify_supabase_jwt
 _http_bearer = HTTPBearer(auto_error=False)
 
 
+def _raise_auth_required() -> None:
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail={"error_code": "auth_required", "message": "Sign in is required."},
+    )
+
+
 def get_bearer_token(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(_http_bearer)],
 ) -> str:
@@ -48,24 +55,15 @@ def get_verified_supabase_user(
 
     try:
         payload = decode_supabase_jwt(token)
-    except InvalidJwtError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error_code": "auth_required", "message": "Sign in is required."},
-        ) from exc
+    except InvalidJwtError:
+        _raise_auth_required()
 
     sub = payload.get("sub")
     if not isinstance(sub, str):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error_code": "auth_required", "message": "Sign in is required."},
-        )
+        _raise_auth_required()
     try:
         user_id = UUID(sub)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"error_code": "auth_required", "message": "Sign in is required."},
-        ) from exc
+    except ValueError:
+        _raise_auth_required()
 
     return VerifiedSupabaseUser(user_id=user_id, jwt_payload=payload)

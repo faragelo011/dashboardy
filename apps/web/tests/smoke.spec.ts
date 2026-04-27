@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("unauthenticated user is sent to sign-in from /", async ({ page }) => {
-  await page.goto("/");
-  await expect(page).toHaveURL(/\/sign-in/);
+test("public /about page loads without auth redirect", async ({ page }) => {
+  await page.goto("/about");
+  await expect(page).toHaveURL(/\/about$/);
+  await expect(page.getByRole("heading", { name: "About" })).toBeVisible();
 });
 

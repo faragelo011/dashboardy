@@ -59,7 +59,16 @@ export default function SignInPage() {
             onChange={(ev) => setPassword(ev.target.value)}
           />
         </label>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? (
+          <p
+            role="alert"
+            aria-live="assertive"
+            aria-atomic="true"
+            className="text-sm text-red-600"
+          >
+            {error}
+          </p>
+        ) : null}
         <button
           type="submit"
           disabled={loading}

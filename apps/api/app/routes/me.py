@@ -6,7 +6,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import EmailStr, TypeAdapter
+from pydantic import EmailStr, TypeAdapter, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth_context.context import VerifiedSupabaseUser
@@ -25,8 +25,11 @@ _email_adapter = TypeAdapter(EmailStr)
 def _user_email_from_jwt(*, user_id: UUID, jwt_payload: dict[str, Any]) -> EmailStr:
     raw = jwt_payload.get("email")
     if isinstance(raw, str) and raw.strip():
-        return _email_adapter.validate_python(raw.strip())
-    # Synthetic placeholder when Supabase omits `email` in access token claims.
+        try:
+            return _email_adapter.validate_python(raw.strip())
+        except ValidationError:
+            pass
+    # Synthetic when `email` is missing, blank, or not a valid email string.
     return _email_adapter.validate_python(f"user+{user_id.hex[:20]}@example.com")
 
 

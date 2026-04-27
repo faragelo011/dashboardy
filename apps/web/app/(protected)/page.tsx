@@ -14,9 +14,14 @@ export default async function ProtectedHomePage() {
       </p>
       <p className="mt-4 text-xs text-gray-400">Signed in as {me.user.email}</p>
       <p className="mt-6">
-        <a className="text-sm text-blue-600 underline" href="/sign-out">
-          Sign out
-        </a>
+        <form action="/sign-out" method="post">
+          <button
+            type="submit"
+            className="text-sm text-blue-600 underline disabled:opacity-50"
+          >
+            Sign out
+          </button>
+        </form>
       </p>
     </main>
   );

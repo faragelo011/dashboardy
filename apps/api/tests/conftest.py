@@ -46,31 +46,40 @@ def live_postgres() -> None:
 
     skip_if_no_docker()
     api_dir = Path(__file__).resolve().parents[1]
+    # Session-scoped fixtures cannot request pytest's function-scoped `monkeypatch`;
+    # use MonkeyPatch here so DATABASE_URL / Supabase env overrides are undone after
+    # the session and do not leak to unrelated tests.
+    mp = pytest.MonkeyPatch()
+    try:
+        with PostgresContainer("postgres:16-alpine") as pg:
+            mp.setenv(
+                "DATABASE_URL",
+                _to_asyncpg_database_url(pg.get_connection_url()),
+            )
+            mp.setenv("SUPABASE_JWKS_URL", TEST_SUPABASE_JWKS_URL)
+            mp.setenv("SUPABASE_JWT_ISSUER", TEST_SUPABASE_JWT_ISSUER)
 
-    with PostgresContainer("postgres:16-alpine") as pg:
-        os.environ["DATABASE_URL"] = _to_asyncpg_database_url(pg.get_connection_url())
-        os.environ["SUPABASE_JWKS_URL"] = TEST_SUPABASE_JWKS_URL
-        os.environ["SUPABASE_JWT_ISSUER"] = TEST_SUPABASE_JWT_ISSUER
+            from app.db.session import get_async_session_maker, get_engine
 
-        from app.db.session import get_async_session_maker, get_engine
+            get_engine.cache_clear()
+            get_async_session_maker.cache_clear()
 
-        get_engine.cache_clear()
-        get_async_session_maker.cache_clear()
+            result = subprocess.run(
+                ["uv", "run", "alembic", "upgrade", "head"],
+                cwd=api_dir,
+                env=os.environ.copy(),
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            assert result.returncode == 0, (
+                "alembic upgrade head failed\n"
+                f"--- stdout ---\n{result.stdout}\n"
+                f"--- stderr ---\n{result.stderr}\n"
+            )
 
-        result = subprocess.run(
-            ["uv", "run", "alembic", "upgrade", "head"],
-            cwd=api_dir,
-            env=os.environ.copy(),
-            capture_output=True,
-            text=True,
-            timeout=120,
-        )
-        assert result.returncode == 0, (
-            "alembic upgrade head failed\n"
-            f"--- stdout ---\n{result.stdout}\n"
-            f"--- stderr ---\n{result.stderr}\n"
-        )
-
-        get_engine.cache_clear()
-        get_async_session_maker.cache_clear()
-        yield
+            get_engine.cache_clear()
+            get_async_session_maker.cache_clear()
+            yield
+    finally:
+        mp.undo()

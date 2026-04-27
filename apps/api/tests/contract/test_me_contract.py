@@ -83,6 +83,6 @@ def test_me_200_active_member(live_postgres: None, monkeypatch: pytest.MonkeyPat
         "role",
         "membership_status",
     }
-    assert required_ws <= set(ws.keys())
+    assert set(ws.keys()) == required_ws
     assert len(data["workspaces"]) == 1
     assert data["workspaces"][0]["workspace_id"] == ws["workspace_id"]
