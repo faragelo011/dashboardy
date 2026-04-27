@@ -385,6 +385,8 @@ components:
           $ref: "#/components/schemas/WorkspaceContext"
         workspaces:
           type: array
+          maxItems: 1
+          description: MVP exposes at most one workspace per tenant; clients should treat this as a single-item list.
           items:
             $ref: "#/components/schemas/WorkspaceContext"
 

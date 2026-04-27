@@ -104,7 +104,7 @@ Expected:
 
 - HTTP 201.
 - Membership has role `analyst` and status `active`.
-- Repeating the same invite does not create a duplicate membership.
+- Repeating the same invite returns **HTTP 409 Conflict** (per `inviteWorkspaceMember`); no duplicate membership is created.
 
 As non-admin:
 
@@ -155,6 +155,8 @@ curl -s -X POST http://localhost:8000/workspaces/<workspace_id>/members \
   -H "Content-Type: application/json" \
   -d '{"email":"client@example.com","role":"external_client"}'
 ```
+
+**Prerequisite:** the `user_id` in the payload below must be the Supabase Auth user id of someone who is already an **active** workspace member with role **`external_client`** (use the same user you invited above, or substitute your real id for `<external_user_id>`). Asset grant creation fails if that user is not an active external-client member of this workspace.
 
 Create an explicit asset grant:
 
