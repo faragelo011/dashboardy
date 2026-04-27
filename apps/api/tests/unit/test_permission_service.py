@@ -57,10 +57,12 @@ def test_collection_grants_blocked_for_external_client():
 
 def test_external_asset_grant_requires_explicit_grant():
     asset_id = uuid.uuid4()
+    actor_uid = uuid.uuid4()
+    actor_wid = uuid.uuid4()
     grant = AssetGrant(
         tenant_id=uuid.uuid4(),
-        workspace_id=uuid.uuid4(),
-        user_id=uuid.uuid4(),
+        workspace_id=actor_wid,
+        user_id=actor_uid,
         asset_type=AssetType.dashboard,
         asset_id=asset_id,
         can_export=False,
@@ -79,6 +81,8 @@ def test_external_asset_grant_requires_explicit_grant():
 
     d = can_access_asset_via_explicit_grant(
         actor_role=MembershipRole.external_client,
+        actor_user_id=actor_uid,
+        actor_workspace_id=actor_wid,
         asset_type=AssetType.dashboard,
         asset_id=asset_id,
         grants=[],
@@ -89,6 +93,8 @@ def test_external_asset_grant_requires_explicit_grant():
     assert (
         can_access_asset_via_explicit_grant(
             actor_role=MembershipRole.external_client,
+            actor_user_id=actor_uid,
+            actor_workspace_id=actor_wid,
             asset_type=AssetType.dashboard,
             asset_id=asset_id,
             grants=[grant],
@@ -99,10 +105,12 @@ def test_external_asset_grant_requires_explicit_grant():
 
 def test_external_asset_grant_requires_matching_asset_type():
     asset_id = uuid.uuid4()
+    actor_uid = uuid.uuid4()
+    actor_wid = uuid.uuid4()
     grant = AssetGrant(
         tenant_id=uuid.uuid4(),
-        workspace_id=uuid.uuid4(),
-        user_id=uuid.uuid4(),
+        workspace_id=actor_wid,
+        user_id=actor_uid,
         asset_type=AssetType.dashboard,
         asset_id=asset_id,
         can_export=False,
@@ -111,7 +119,63 @@ def test_external_asset_grant_requires_matching_asset_type():
 
     d = can_access_asset_via_explicit_grant(
         actor_role=MembershipRole.external_client,
+        actor_user_id=actor_uid,
+        actor_workspace_id=actor_wid,
         asset_type=AssetType.question,
+        asset_id=asset_id,
+        grants=[grant],
+    )
+    assert d.allowed is False
+    assert d.reason == PermissionReason.grant_required
+
+
+def test_external_asset_grant_requires_matching_asset_id():
+    grant_asset_id = uuid.uuid4()
+    other_asset_id = uuid.uuid4()
+    actor_uid = uuid.uuid4()
+    actor_wid = uuid.uuid4()
+    grant = AssetGrant(
+        tenant_id=uuid.uuid4(),
+        workspace_id=actor_wid,
+        user_id=actor_uid,
+        asset_type=AssetType.dashboard,
+        asset_id=grant_asset_id,
+        can_export=False,
+        created_by_membership_id=uuid.uuid4(),
+    )
+
+    d = can_access_asset_via_explicit_grant(
+        actor_role=MembershipRole.external_client,
+        actor_user_id=actor_uid,
+        actor_workspace_id=actor_wid,
+        asset_type=AssetType.dashboard,
+        asset_id=other_asset_id,
+        grants=[grant],
+    )
+    assert d.allowed is False
+    assert d.reason == PermissionReason.grant_required
+
+
+def test_external_asset_grant_requires_matching_user_and_workspace():
+    asset_id = uuid.uuid4()
+    grant_user = uuid.uuid4()
+    grant_ws = uuid.uuid4()
+    other_user = uuid.uuid4()
+    grant = AssetGrant(
+        tenant_id=uuid.uuid4(),
+        workspace_id=grant_ws,
+        user_id=grant_user,
+        asset_type=AssetType.dashboard,
+        asset_id=asset_id,
+        can_export=False,
+        created_by_membership_id=uuid.uuid4(),
+    )
+
+    d = can_access_asset_via_explicit_grant(
+        actor_role=MembershipRole.external_client,
+        actor_user_id=other_user,
+        actor_workspace_id=grant_ws,
+        asset_type=AssetType.dashboard,
         asset_id=asset_id,
         grants=[grant],
     )

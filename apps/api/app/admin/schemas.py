@@ -4,21 +4,12 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
+from typing import Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
-
-class MembershipRole(StrEnum):
-    admin = "admin"
-    analyst = "analyst"
-    viewer = "viewer"
-    external_client = "external_client"
-
-
-class MembershipStatus(StrEnum):
-    active = "active"
-    inactive = "inactive"
+from app.common.enums import MembershipRole, MembershipStatus
 
 
 class AssetType(StrEnum):
@@ -51,10 +42,11 @@ class UpdateMemberRequest(BaseModel):
     role: MembershipRole | None = None
     status: MembershipStatus | None = None
 
-    def model_post_init(self, __context: object) -> None:  # noqa: D401
+    @model_validator(mode="after")
+    def require_role_or_status(self) -> Self:
         if self.role is None and self.status is None:
-            msg = "At least one of `role` or `status` must be provided"
-            raise ValueError(msg)
+            raise ValueError("At least one of `role` or `status` must be provided")
+        return self
 
 
 class CreateAssetGrantRequest(BaseModel):

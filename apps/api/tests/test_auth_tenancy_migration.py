@@ -55,11 +55,8 @@ def test_auth_tenancy_migration_schema():
 
         env = os.environ.copy()
         env["DATABASE_URL"] = asyncpg_url
-        env.setdefault(
-            "SUPABASE_JWKS_URL",
-            "https://example.invalid/.well-known/jwks.json",
-        )
-        env.setdefault("SUPABASE_JWT_ISSUER", "https://example.invalid/auth/v1")
+        env["SUPABASE_JWKS_URL"] = "https://example.invalid/.well-known/jwks.json"
+        env["SUPABASE_JWT_ISSUER"] = "https://example.invalid/auth/v1"
 
         r = subprocess.run(
             ["uv", "run", "alembic", "upgrade", "head"],

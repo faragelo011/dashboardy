@@ -2,22 +2,11 @@
 
 from __future__ import annotations
 
-from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
 
-
-class MembershipRole(StrEnum):
-    admin = "admin"
-    analyst = "analyst"
-    viewer = "viewer"
-    external_client = "external_client"
-
-
-class MembershipStatus(StrEnum):
-    active = "active"
-    inactive = "inactive"
+from app.common.enums import MembershipRole, MembershipStatus
 
 
 class UserContext(BaseModel):

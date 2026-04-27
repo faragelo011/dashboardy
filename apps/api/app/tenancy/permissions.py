@@ -66,6 +66,8 @@ def can_use_collection_grant_path(actor_role: MembershipRole) -> PermissionDecis
 def can_access_asset_via_explicit_grant(
     *,
     actor_role: MembershipRole,
+    actor_user_id: UUID | None = None,
+    actor_workspace_id: UUID | None = None,
     asset_type: AssetType,
     asset_id: UUID,
     grants: list[AssetGrant],
@@ -75,8 +77,16 @@ def can_access_asset_via_explicit_grant(
     if actor_role != MembershipRole.external_client:
         return PermissionDecision(True, PermissionReason.allowed)
 
+    if actor_user_id is None or actor_workspace_id is None:
+        return PermissionDecision(False, PermissionReason.grant_required)
+
     for grant in grants:
-        if grant.asset_type == asset_type and grant.asset_id == asset_id:
+        if (
+            grant.asset_type == asset_type
+            and grant.asset_id == asset_id
+            and grant.user_id == actor_user_id
+            and grant.workspace_id == actor_workspace_id
+        ):
             return PermissionDecision(True, PermissionReason.allowed)
 
     return PermissionDecision(False, PermissionReason.grant_required)

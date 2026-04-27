@@ -34,6 +34,7 @@ def test_invalid_scheme_returns_401(auth_app):
     client, _monkeypatch, _jwt_mod = auth_app
     r = client.get("/__whoami", headers={"Authorization": "Basic abc"})
     assert r.status_code == 401
+    assert r.json()["detail"]["error_code"] == "auth_required"
 
 
 def test_invalid_jwt_returns_401(auth_app):

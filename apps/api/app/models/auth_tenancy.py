@@ -21,19 +21,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.common.enums import MembershipRole, MembershipStatus
 from app.models.base import Base
-
-
-class MembershipRole(StrEnum):
-    admin = "admin"
-    analyst = "analyst"
-    viewer = "viewer"
-    external_client = "external_client"
-
-
-class MembershipStatus(StrEnum):
-    active = "active"
-    inactive = "inactive"
 
 
 class CollectionPermission(StrEnum):

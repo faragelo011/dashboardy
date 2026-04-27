@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 from uuid import UUID
 
@@ -10,6 +11,9 @@ from jwt import PyJWKClient
 
 from app.auth_context.context import InvalidJwtError
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
+_audience_verification_warned = False
 
 
 @lru_cache(maxsize=1)
@@ -40,6 +44,13 @@ def verify_supabase_jwt(token: str) -> UUID:
         decode_kwargs["audience"] = settings.SUPABASE_JWT_AUDIENCE
     else:
         decode_kwargs["options"] = {"verify_aud": False}
+        global _audience_verification_warned
+        if not _audience_verification_warned:
+            _audience_verification_warned = True
+            logger.warning(
+                "SUPABASE_JWT_AUDIENCE is unset; JWT audience verification is disabled "
+                "(verify_aud=False). Set SUPABASE_JWT_AUDIENCE in production."
+            )
 
     try:
         payload = jwt.decode(token, signing_key.key, **decode_kwargs)

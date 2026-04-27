@@ -9,8 +9,8 @@ TEST_SUPABASE_JWKS_URL = "https://example.invalid/.well-known/jwks.json"
 TEST_SUPABASE_JWT_ISSUER = "https://example.invalid/auth/v1"
 
 os.environ.setdefault("DATABASE_URL", TEST_DATABASE_URL)
-os.environ.setdefault("SUPABASE_JWKS_URL", TEST_SUPABASE_JWKS_URL)
-os.environ.setdefault("SUPABASE_JWT_ISSUER", TEST_SUPABASE_JWT_ISSUER)
+os.environ["SUPABASE_JWKS_URL"] = TEST_SUPABASE_JWKS_URL
+os.environ["SUPABASE_JWT_ISSUER"] = TEST_SUPABASE_JWT_ISSUER
 
 
 @pytest.fixture(autouse=True)

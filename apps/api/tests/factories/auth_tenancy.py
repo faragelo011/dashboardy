@@ -19,6 +19,12 @@ from app.models.auth_tenancy import (
 from sqlalchemy.ext.asyncio import AsyncSession
 
 
+def _require_tenant_matches_workspace(tenant: Tenant, workspace: Workspace) -> None:
+    if workspace.tenant_id != tenant.id:
+        msg = "workspace.tenant_id must equal tenant.id"
+        raise ValueError(msg)
+
+
 async def create_tenant(session: AsyncSession, *, name: str = "Acme") -> Tenant:
     tenant = Tenant(name=name)
     session.add(tenant)
@@ -49,6 +55,7 @@ async def create_membership(
     status: MembershipStatus = MembershipStatus.active,
     invited_email: str | None = None,
 ) -> Membership:
+    _require_tenant_matches_workspace(tenant, workspace)
     m = Membership(
         tenant_id=tenant.id,
         workspace_id=workspace.id,
@@ -71,6 +78,13 @@ async def create_collection_grant(
     collection_id: uuid.UUID,
     permission: CollectionPermission = CollectionPermission.read,
 ) -> CollectionGrant:
+    _require_tenant_matches_workspace(tenant, workspace)
+    if membership.tenant_id != tenant.id or membership.workspace_id != workspace.id:
+        msg = (
+            "membership.tenant_id and membership.workspace_id must match "
+            "the grant's tenant and workspace"
+        )
+        raise ValueError(msg)
     g = CollectionGrant(
         tenant_id=tenant.id,
         workspace_id=workspace.id,
@@ -94,6 +108,13 @@ async def create_asset_grant(
     asset_type: AssetType = AssetType.dashboard,
     can_export: bool = False,
 ) -> AssetGrant:
+    _require_tenant_matches_workspace(tenant, workspace)
+    if created_by.tenant_id != tenant.id or created_by.workspace_id != workspace.id:
+        msg = (
+            "created_by membership must belong to the same tenant and workspace "
+            "as the asset grant"
+        )
+        raise ValueError(msg)
     g = AssetGrant(
         tenant_id=tenant.id,
         workspace_id=workspace.id,

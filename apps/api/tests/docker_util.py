@@ -8,7 +8,11 @@ import pytest
 def skip_if_no_docker() -> None:
     try:
         import docker
+        from docker.errors import DockerException
+    except ImportError as exc:
+        pytest.skip(f"Docker not available: {exc}")
 
+    try:
         docker.from_env().ping()
-    except Exception as exc:
+    except DockerException as exc:
         pytest.skip(f"Docker not available: {exc}")

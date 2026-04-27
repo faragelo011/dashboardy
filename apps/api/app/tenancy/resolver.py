@@ -8,7 +8,13 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.auth_tenancy import Membership, MembershipStatus, Tenant, Workspace
+from app.models.auth_tenancy import (
+    Membership,
+    MembershipRole,
+    MembershipStatus,
+    Tenant,
+    Workspace,
+)
 from app.tenancy import repository
 
 
@@ -20,7 +26,7 @@ class ResolvedTenancy:
     workspace_id: UUID
     workspace_name: str
     membership_id: UUID
-    role: str
+    role: MembershipRole
     membership_status: MembershipStatus
 
 
@@ -42,6 +48,7 @@ async def resolve_active_membership(
             Membership.user_id == user_id,
             Membership.status == MembershipStatus.active,
         )
+        .order_by(Membership.created_at.asc(), Membership.id.asc())
     )
     row = (await session.execute(stmt)).first()
     if row is None:
@@ -53,7 +60,7 @@ async def resolve_active_membership(
         workspace_id=workspace.id,
         workspace_name=workspace.name,
         membership_id=membership.id,
-        role=membership.role.value,
+        role=membership.role,
         membership_status=membership.status,
     )
 
@@ -81,6 +88,6 @@ async def resolve_membership_for_workspace(
         workspace_id=workspace.id,
         workspace_name=workspace.name,
         membership_id=membership.id,
-        role=membership.role.value,
+        role=membership.role,
         membership_status=membership.status,
     )
