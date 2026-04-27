@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "local"
     LOG_LEVEL: str = "info"
 
+    SUPABASE_JWKS_URL: str = Field(min_length=1)
+    SUPABASE_JWT_ISSUER: str = Field(min_length=1)
+    SUPABASE_JWT_AUDIENCE: str | None = None
+
 
 def get_settings() -> Settings:
     try:

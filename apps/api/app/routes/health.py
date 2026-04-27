@@ -10,4 +10,3 @@ logger = logging.getLogger("dashboardy.health")
 async def health() -> dict:
     logger.info("health_check")
     return {"status": "ok"}
-

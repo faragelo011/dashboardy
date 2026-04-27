@@ -5,6 +5,8 @@ from pathlib import Path
 import asyncpg
 from testcontainers.postgres import PostgresContainer
 
+from tests.docker_util import skip_if_no_docker
+
 
 def _to_asyncpg_database_url(sync_url: str) -> str:
     if sync_url.startswith("postgresql+asyncpg://"):
@@ -38,6 +40,7 @@ def _format_subprocess_result(
 
 
 def test_migrations_are_idempotent():
+    skip_if_no_docker()
     api_dir = Path(__file__).resolve().parents[1]
 
     with PostgresContainer("postgres:16-alpine") as pg:
@@ -47,6 +50,8 @@ def test_migrations_are_idempotent():
 
         env = os.environ.copy()
         env["DATABASE_URL"] = asyncpg_url
+        env["SUPABASE_JWKS_URL"] = "https://example.invalid/.well-known/jwks.json"
+        env["SUPABASE_JWT_ISSUER"] = "https://example.invalid/auth/v1"
 
         cmd = ["uv", "run", "alembic", "upgrade", "head"]
         r1 = subprocess.run(
@@ -86,4 +91,3 @@ def test_migrations_are_idempotent():
         import asyncio
 
         asyncio.run(check_version_table())
-

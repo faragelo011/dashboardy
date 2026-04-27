@@ -1,7 +1,27 @@
 """SQLAlchemy declarative base and ORM models (extend as features land)."""
 
-from sqlalchemy.orm import DeclarativeBase
+from app.models.auth_tenancy import (
+    AssetGrant,
+    AssetType,
+    CollectionGrant,
+    CollectionPermission,
+    Membership,
+    MembershipRole,
+    MembershipStatus,
+    Tenant,
+    Workspace,
+)
+from app.models.base import Base
 
-
-class Base(DeclarativeBase):
-    """Declarative base for Alembic autogenerate and ORM models."""
+__all__ = [
+    "AssetGrant",
+    "AssetType",
+    "Base",
+    "CollectionGrant",
+    "CollectionPermission",
+    "Membership",
+    "MembershipRole",
+    "MembershipStatus",
+    "Tenant",
+    "Workspace",
+]

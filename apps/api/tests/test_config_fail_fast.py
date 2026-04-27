@@ -14,6 +14,8 @@ def _unused_port() -> int:
 def test_api_exits_fast_when_database_url_missing():
     api_dir = Path(__file__).resolve().parents[1]
     env = os.environ.copy()
+    env["SUPABASE_JWKS_URL"] = "https://example.invalid/.well-known/jwks.json"
+    env["SUPABASE_JWT_ISSUER"] = "https://example.invalid/auth/v1"
     env.pop("DATABASE_URL", None)
 
     start = time.perf_counter()
