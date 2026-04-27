@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "playwright test tests/smoke.spec.ts"
+    "test": "playwright test --project=ci"
   },
   "dependencies": {
     "next": "^14.2.18",
