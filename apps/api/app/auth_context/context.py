@@ -3,7 +3,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
+
+
+@dataclass(frozen=True, slots=True)
+class VerifiedSupabaseUser:
+    """Verified JWT subject plus raw claims (e.g. email) for `/me` assembly."""
+
+    user_id: UUID
+    jwt_payload: dict[str, Any]
 
 
 @dataclass(frozen=True, slots=True)

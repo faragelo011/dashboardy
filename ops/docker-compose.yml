@@ -22,6 +22,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    # Load repo-root .env so SUPABASE_* and other secrets reach the process (Compose
+    # does not pass the host .env into containers unless env_file or environment maps them).
+    env_file:
+      - ../.env
     environment:
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dashboardy
       ENVIRONMENT: local
@@ -36,6 +40,8 @@ services:
       dockerfile: apps/web/Dockerfile
     ports:
       - "3001:3000"
+    env_file:
+      - ../.env
     environment:
       # server-side (inside docker network)
       API_PUBLIC_URL: http://api:8000

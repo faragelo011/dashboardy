@@ -64,22 +64,22 @@
 
 ### Tests for User Story 1
 
-- [ ] T026 [P] [US1] Add contract tests for `GET /me` 200/401/403 responses in `apps/api/tests/contract/test_me_contract.py`.
-- [ ] T027 [P] [US1] Add integration tests for missing JWT, invalid JWT, no membership, active membership, and inactive membership in `apps/api/tests/integration/test_me_resolution.py`.
-- [ ] T028 [P] [US1] Add Playwright smoke test for signed-out protected-route redirect/denied state in `apps/web/tests/auth-tenancy.spec.ts`.
+- [X] T026 [P] [US1] Add contract tests for `GET /me` 200/401/403 responses in `apps/api/tests/contract/test_me_contract.py`.
+- [X] T027 [P] [US1] Add integration tests for missing JWT, invalid JWT, no membership, active membership, and inactive membership in `apps/api/tests/integration/test_me_resolution.py`.
+- [X] T028 [P] [US1] Add Playwright smoke test for signed-out protected-route redirect/denied state in `apps/web/tests/auth-tenancy.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T029 [P] [US1] Implement `/me` response builder using resolved tenancy context in `apps/api/app/routes/me.py`.
-- [ ] T030 [US1] Implement `GET /me` route with auth dependency and tenancy resolver in `apps/api/app/routes/me.py`.
-- [ ] T031 [US1] Ensure `GET /me` returns 401 for missing/invalid JWT and 403 for no active membership in `apps/api/app/routes/me.py`.
-- [ ] T032 [P] [US1] Add API client helper for `GET /me` in `apps/web/app/lib/api.ts`.
-- [ ] T033 [P] [US1] Add Supabase browser/server session helpers in `apps/web/app/lib/supabase.ts`.
-- [ ] T034 [US1] Create protected layout that restores session, calls `GET /me`, and blocks protected content on denial in `apps/web/app/(protected)/layout.tsx`.
-- [ ] T035 [US1] Create a minimal protected home page that displays workspace name and role in `apps/web/app/(protected)/page.tsx`.
-- [ ] T036 [US1] Create sign-in page using Supabase auth session flow in `apps/web/app/(auth)/sign-in/page.tsx`.
-- [ ] T037 [US1] Create sign-out route or action that clears Supabase session in `apps/web/app/(auth)/sign-out/route.ts`.
-- [ ] T038 [US1] Wire API router import for `me` route in `apps/api/app/routes/__init__.py`.
+- [X] T029 [P] [US1] Implement `/me` response builder using resolved tenancy context in `apps/api/app/routes/me.py`.
+- [X] T030 [US1] Implement `GET /me` route with auth dependency and tenancy resolver in `apps/api/app/routes/me.py`.
+- [X] T031 [US1] Ensure `GET /me` returns 401 for missing/invalid JWT and 403 for no active membership in `apps/api/app/routes/me.py`.
+- [X] T032 [P] [US1] Add API client helper for `GET /me` in `apps/web/app/lib/api.ts`.
+- [X] T033 [P] [US1] Add Supabase browser/server session helpers in `apps/web/app/lib/supabase-browser.ts` and `apps/web/app/lib/supabase-server.ts`.
+- [X] T034 [US1] Create protected layout that restores session, calls `GET /me`, and blocks protected content on denial in `apps/web/app/(protected)/layout.tsx`.
+- [X] T035 [US1] Create a minimal protected home page that displays workspace name and role in `apps/web/app/(protected)/page.tsx`.
+- [X] T036 [US1] Create sign-in page using Supabase auth session flow in `apps/web/app/(auth)/sign-in/page.tsx`.
+- [X] T037 [US1] Create sign-out route or action that clears Supabase session in `apps/web/app/(auth)/sign-out/route.ts`.
+- [X] T038 [US1] Wire API router import for `me` route in `apps/api/app/routes/__init__.py`.
 
 **Checkpoint**: User Story 1 is complete when `/me` satisfies the contract and the web protected shell shows only for active members.
 
