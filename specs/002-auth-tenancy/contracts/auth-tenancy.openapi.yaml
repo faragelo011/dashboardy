@@ -1,0 +1,510 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy API - Auth + Tenancy
+  version: 0.2.0
+  description: |
+    Feature 2 API contract for authenticated user context, one-workspace MVP
+    behavior, workspace member management, and external asset grants.
+
+servers:
+  - url: https://api.staging.dashboardy.app
+    description: Staging
+  - url: https://api.dashboardy.app
+    description: Production
+
+security:
+  - bearerAuth: []
+
+paths:
+  /me:
+    get:
+      operationId: getMe
+      summary: Resolve signed-in user's tenant/workspace context
+      description: |
+        Returns the authenticated user, their available workspace context, and
+        authoritative membership role. A valid token without active membership
+        returns 403 and no tenant-scoped data.
+      responses:
+        "200":
+          description: Signed-in user has an active workspace membership.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /workspaces/switch:
+    post:
+      operationId: switchWorkspace
+      summary: Future-proof workspace switch endpoint
+      description: |
+        MVP supports one workspace per tenant. This endpoint accepts the current
+        workspace ID and returns the same resolved context. Attempts to switch
+        to an unavailable workspace are denied.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [workspace_id]
+              properties:
+                workspace_id:
+                  type: string
+                  format: uuid
+      responses:
+        "200":
+          description: Workspace context confirmed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /workspaces/{workspace_id}/members:
+    get:
+      operationId: listWorkspaceMembers
+      summary: List workspace members
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Members in the workspace.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [members]
+                properties:
+                  members:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Member"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: inviteWorkspaceMember
+      summary: Invite a workspace member
+      description: Admin-only. Creates or invites an authenticated user and creates an active membership.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteMemberRequest"
+      responses:
+        "201":
+          description: Invitation accepted for processing and membership created or returned.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /workspaces/{workspace_id}/members/{membership_id}:
+    patch:
+      operationId: updateWorkspaceMember
+      summary: Update a workspace member role or status
+      description: Admin-only. Supports role changes and membership deactivation.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/MembershipId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMemberRequest"
+      responses:
+        "200":
+          description: Updated member.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Member"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspace_id}/asset-grants:
+    get:
+      operationId: listExternalAssetGrants
+      summary: List external asset grants
+      description: Admin-only. Lists explicit grants for external-client users.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: user_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: asset_type
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/AssetType"
+      responses:
+        "200":
+          description: External asset grants.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [grants]
+                properties:
+                  grants:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AssetGrant"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createExternalAssetGrant
+      summary: Create or update an external asset grant
+      description: Admin-only. Grants an external client access to one question or dashboard.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAssetGrantRequest"
+      responses:
+        "201":
+          description: Grant created or updated.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssetGrant"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /workspaces/{workspace_id}/asset-grants/{grant_id}:
+    delete:
+      operationId: deleteExternalAssetGrant
+      summary: Remove an external asset grant
+      description: Admin-only. Removes future access granted by this asset grant.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: grant_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Grant removed.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MembershipId:
+      name: membership_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  headers:
+    CorrelationId:
+      description: Request correlation ID echoed from request or generated by API.
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Invalid request payload.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid authentication token.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missingToken:
+              value:
+                error_code: auth_required
+                message: Sign in is required.
+    Forbidden:
+      description: Authenticated user is not allowed to perform the action.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            noMembership:
+              value:
+                error_code: no_membership
+                message: Workspace access is required.
+            inactiveMembership:
+              value:
+                error_code: inactive_membership
+                message: Workspace access is inactive.
+            roleDenied:
+              value:
+                error_code: authz_denied
+                message: You do not have permission to perform this action.
+    NotFound:
+      description: Resource not found in the resolved tenant/workspace scope.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with an existing membership or grant.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error_code, message]
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+
+    MeResponse:
+      type: object
+      additionalProperties: false
+      required: [user, current_workspace, workspaces]
+      properties:
+        user:
+          $ref: "#/components/schemas/UserContext"
+        current_workspace:
+          $ref: "#/components/schemas/WorkspaceContext"
+        workspaces:
+          type: array
+          items:
+            $ref: "#/components/schemas/WorkspaceContext"
+
+    UserContext:
+      type: object
+      additionalProperties: false
+      required: [id, email]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+
+    WorkspaceContext:
+      type: object
+      additionalProperties: false
+      required: [tenant_id, workspace_id, workspace_name, role, membership_status]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        workspace_name:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+        membership_status:
+          $ref: "#/components/schemas/MembershipStatus"
+
+    Member:
+      type: object
+      additionalProperties: false
+      required: [id, user_id, email, role, status, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/Role"
+        status:
+          $ref: "#/components/schemas/MembershipStatus"
+        created_at:
+          type: string
+          format: date-time
+        deactivated_at:
+          type: [string, "null"]
+          format: date-time
+
+    InviteMemberRequest:
+      type: object
+      additionalProperties: false
+      required: [email, role]
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/Role"
+
+    UpdateMemberRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        role:
+          $ref: "#/components/schemas/Role"
+        status:
+          $ref: "#/components/schemas/MembershipStatus"
+      minProperties: 1
+
+    CreateAssetGrantRequest:
+      type: object
+      additionalProperties: false
+      required: [user_id, asset_type, asset_id]
+      properties:
+        user_id:
+          type: string
+          format: uuid
+        asset_type:
+          $ref: "#/components/schemas/AssetType"
+        asset_id:
+          type: string
+          format: uuid
+        can_export:
+          type: boolean
+          default: false
+
+    AssetGrant:
+      type: object
+      additionalProperties: false
+      required: [id, user_id, asset_type, asset_id, can_export, created_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        asset_type:
+          $ref: "#/components/schemas/AssetType"
+        asset_id:
+          type: string
+          format: uuid
+        can_export:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    Role:
+      type: string
+      enum: [admin, analyst, viewer, external_client]
+
+    MembershipStatus:
+      type: string
+      enum: [active, inactive]
+
+    AssetType:
+      type: string
+      enum: [question, dashboard]
