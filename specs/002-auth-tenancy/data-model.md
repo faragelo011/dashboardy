@@ -171,6 +171,13 @@ The decision output is:
 - `allowed`: boolean
 - `reason`: machine-readable deny reason when not allowed, such as `missing_token`, `invalid_token`, `no_membership`, `inactive_membership`, `role_not_allowed`, `grant_required`, or `tenant_mismatch`
 
+Mapping note (internal → public API response `error_code`):
+
+- `missing_token`, `invalid_token` → `auth_required`
+- `no_membership` → `no_membership`
+- `inactive_membership` → `inactive_membership`
+- `role_not_allowed`, `grant_required`, `tenant_mismatch` → `authz_denied`
+
 ## Validation Rules From Requirements
 
 - Missing/invalid JWT results in authentication failure before tenant data is returned.

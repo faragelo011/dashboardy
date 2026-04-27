@@ -95,6 +95,9 @@ paths:
                 properties:
                   members:
                     type: array
+                    description: |
+                      Members in the workspace. Responses are capped to a fixed size for predictability.
+                    maxItems: 200
                     items:
                       $ref: "#/components/schemas/Member"
         "401":
@@ -198,6 +201,9 @@ paths:
                 properties:
                   grants:
                     type: array
+                    description: |
+                      Explicit external asset grants. Responses are capped to a fixed size for predictability.
+                    maxItems: 200
                     items:
                       $ref: "#/components/schemas/AssetGrant"
         "401":
@@ -408,7 +414,7 @@ components:
         workspace_name:
           type: string
         role:
-          $ref: "#/components/schemas/Role"
+          $ref: "#/components/schemas/MembershipRole"
         membership_status:
           $ref: "#/components/schemas/MembershipStatus"
 
@@ -427,7 +433,7 @@ components:
           type: string
           format: email
         role:
-          $ref: "#/components/schemas/Role"
+          $ref: "#/components/schemas/MembershipRole"
         status:
           $ref: "#/components/schemas/MembershipStatus"
         created_at:
@@ -446,14 +452,14 @@ components:
           type: string
           format: email
         role:
-          $ref: "#/components/schemas/Role"
+          $ref: "#/components/schemas/MembershipRole"
 
     UpdateMemberRequest:
       type: object
       additionalProperties: false
       properties:
         role:
-          $ref: "#/components/schemas/Role"
+          $ref: "#/components/schemas/MembershipRole"
         status:
           $ref: "#/components/schemas/MembershipStatus"
       minProperties: 1
@@ -497,7 +503,7 @@ components:
           type: string
           format: date-time
 
-    Role:
+    MembershipRole:
       type: string
       enum: [admin, analyst, viewer, external_client]
 

@@ -83,11 +83,11 @@ Negative checks:
 curl -i http://localhost:8000/me
 ```
 
-Expected: HTTP 401.
+Expected: HTTP 401 with `error_code: auth_required`.
 
 Call `/me` with a valid user who has no membership.
 
-Expected: HTTP 403 and no tenant-scoped data.
+Expected: HTTP 403 with `error_code: no_membership` (or `inactive_membership` if the user has a membership but it is inactive) and no tenant-scoped data.
 
 ## 5. Validate member management
 

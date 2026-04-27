@@ -38,10 +38,19 @@ export interface InviteMemberRequest {
   role: MembershipRole;
 }
 
-export interface UpdateMemberRequest {
+type RequireAtLeastOne<T, Keys extends keyof T = keyof T> = T & {
+  [K in Keys]-?: Required<Pick<T, K>> & Partial<Omit<T, K>>;
+}[Keys];
+
+type UpdateMemberRequestFields = {
   role?: MembershipRole;
   status?: MembershipStatus;
-}
+};
+
+export type UpdateMemberRequest = RequireAtLeastOne<
+  UpdateMemberRequestFields,
+  "role" | "status"
+>;
 
 export interface AssetGrant {
   id: string;
