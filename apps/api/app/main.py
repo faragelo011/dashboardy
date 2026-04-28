@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 
+from app.admin.routes import router as admin_router
 from app.config import get_settings
 from app.logging import configure_logging
 from app.middleware import CorrelationIdMiddleware
@@ -48,3 +49,4 @@ async def normalized_http_exception_handler(
 app.include_router(health_router)
 app.include_router(ready_router)
 app.include_router(me_router)
+app.include_router(admin_router)

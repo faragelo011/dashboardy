@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 from uuid import UUID
 
@@ -11,6 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.auth_context.context import InvalidJwtError, VerifiedSupabaseUser
 from app.auth_context.jwt import decode_supabase_jwt, verify_supabase_jwt
 
+logger = logging.getLogger(__name__)
 _http_bearer = HTTPBearer(auto_error=False)
 
 
@@ -29,6 +31,11 @@ def get_bearer_token(
         or credentials.scheme.lower() != "bearer"
         or not credentials.credentials.strip()
     ):
+        logger.info(
+            "Authorization header missing/invalid (scheme=%s, has_credentials=%s)",
+            getattr(credentials, "scheme", None),
+            bool(getattr(credentials, "credentials", "") or ""),
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error_code": "auth_required", "message": "Sign in is required."},
@@ -42,6 +49,8 @@ def get_current_user_id(token: Annotated[str, Depends(get_bearer_token)]) -> UUI
     try:
         return verify_supabase_jwt(token)
     except InvalidJwtError as exc:
+        # Never log tokens. Only log the failure reason to aid local debugging.
+        logger.info("Supabase JWT rejected: %s", str(exc))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error_code": "auth_required", "message": "Sign in is required."},
@@ -55,7 +64,8 @@ def get_verified_supabase_user(
 
     try:
         payload = decode_supabase_jwt(token)
-    except InvalidJwtError:
+    except InvalidJwtError as exc:
+        logger.info("Supabase JWT rejected while decoding payload: %s", str(exc))
         _raise_auth_required()
 
     sub = payload.get("sub")

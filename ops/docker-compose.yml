@@ -39,19 +39,21 @@ services:
       context: ..
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        # NOTE: build args come from Compose interpolation (shell env or an `--env-file`),
+        # not from `env_file:` below. We use `:?` so missing values fail fast.
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?Set NEXT_PUBLIC_SUPABASE_URL (e.g. via `--env-file ../.env` or ops/.env)}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:?Set NEXT_PUBLIC_SUPABASE_ANON_KEY (e.g. via `--env-file ../.env` or ops/.env)}
         NEXT_PUBLIC_API_PUBLIC_URL: ${NEXT_PUBLIC_API_PUBLIC_URL:-http://localhost:8000}
     ports:
       - "3001:3000"
+    # Load repo-root .env into the running container (runtime env).
+    env_file:
+      - ../.env
     environment:
       # server-side (inside docker network)
       API_PUBLIC_URL: http://api:8000
       # browser display + local dev convenience
       NEXT_PUBLIC_API_PUBLIC_URL: http://localhost:8000
-      # Supabase (set in host env or compose --env-file; not the full repo .env)
-      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     depends_on:
       api:
         condition: service_started
