@@ -1,6 +1,6 @@
 import sys
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,9 +11,28 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "local"
     LOG_LEVEL: str = "info"
 
-    SUPABASE_JWKS_URL: str = Field(min_length=1)
+    # Supabase project details used by admin-only operations (invites).
+    SUPABASE_URL: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+
+    # Supabase JWT verification:
+    # - RS256: set SUPABASE_JWKS_URL (recommended when available)
+    # - HS256: set SUPABASE_JWT_SECRET (Project Settings → API → JWT Secret)
+    SUPABASE_JWKS_URL: str | None = None
+    SUPABASE_JWT_SECRET: str | None = None
     SUPABASE_JWT_ISSUER: str = Field(min_length=1)
     SUPABASE_JWT_AUDIENCE: str | None = None
+
+    @model_validator(mode="after")
+    def _validate_supabase_jwt_config(self) -> "Settings":
+        if not (self.SUPABASE_JWKS_URL and self.SUPABASE_JWKS_URL.strip()) and not (
+            self.SUPABASE_JWT_SECRET and self.SUPABASE_JWT_SECRET.strip()
+        ):
+            raise ValueError(
+                "Set SUPABASE_JWKS_URL (RS256) or SUPABASE_JWT_SECRET (HS256) "
+                "for JWT verification"
+            )
+        return self
 
 
 def get_settings() -> Settings:

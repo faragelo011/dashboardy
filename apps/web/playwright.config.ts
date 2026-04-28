@@ -30,9 +30,9 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       ...process.env,
-      API_PUBLIC_URL: process.env.API_PUBLIC_URL ?? "http://localhost:8000",
+      API_PUBLIC_URL: process.env.API_PUBLIC_URL ?? "http://127.0.0.1:4010",
       NEXT_PUBLIC_API_PUBLIC_URL:
-        process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "http://localhost:8000",
+        process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "http://127.0.0.1:4010",
       NEXT_PUBLIC_SUPABASE_URL:
         process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://example.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY:

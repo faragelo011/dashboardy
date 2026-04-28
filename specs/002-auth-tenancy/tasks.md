@@ -93,24 +93,24 @@
 
 ### Tests for User Story 2
 
-- [ ] T039 [P] [US2] Add contract tests for `GET/POST /workspaces/{workspace_id}/members` in `apps/api/tests/contract/test_members_contract.py`.
-- [ ] T040 [P] [US2] Add contract tests for `PATCH /workspaces/{workspace_id}/members/{membership_id}` in `apps/api/tests/contract/test_member_update_contract.py`.
-- [ ] T041 [P] [US2] Add integration tests for admin invite, duplicate invite conflict/idempotency, role change, deactivation, and non-admin denial in `apps/api/tests/integration/test_member_management.py`.
-- [ ] T042 [P] [US2] Add Playwright smoke tests for admin member page access and non-admin denial in `apps/web/tests/auth-tenancy.spec.ts`.
+- [X] T039 [P] [US2] Add contract tests for `GET/POST /workspaces/{workspace_id}/members` in `apps/api/tests/contract/test_members_contract.py`.
+- [X] T040 [P] [US2] Add contract tests for `PATCH /workspaces/{workspace_id}/members/{membership_id}` in `apps/api/tests/contract/test_member_update_contract.py`.
+- [X] T041 [P] [US2] Add integration tests for admin invite, duplicate invite conflict/idempotency, role change, deactivation, and non-admin denial in `apps/api/tests/integration/test_member_management.py`.
+- [X] T042 [P] [US2] Add Playwright smoke tests for admin member page access and non-admin denial in `apps/web/tests/auth-tenancy.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T043 [P] [US2] Implement membership repository methods for list, create, update role, deactivate, and duplicate lookup in `apps/api/app/tenancy/repository.py`.
-- [ ] T044 [P] [US2] Implement Supabase Admin invite adapter interface with a test double-friendly boundary in `apps/api/app/admin/supabase_admin.py`.
-- [ ] T045 [US2] Implement member management service that enforces admin-only actions and duplicate membership behavior in `apps/api/app/admin/members_service.py`.
-- [ ] T046 [US2] Implement `GET /workspaces/{workspace_id}/members` admin route in `apps/api/app/admin/routes.py`.
-- [ ] T047 [US2] Implement `POST /workspaces/{workspace_id}/members` admin invite route in `apps/api/app/admin/routes.py`.
-- [ ] T048 [US2] Implement `PATCH /workspaces/{workspace_id}/members/{membership_id}` role/status update route in `apps/api/app/admin/routes.py`.
-- [ ] T049 [US2] Ensure deactivation sets `status=inactive` and `deactivated_at` without deleting the membership in `apps/api/app/admin/members_service.py`.
-- [ ] T050 [US2] Add admin router registration in `apps/api/app/main.py`.
-- [ ] T051 [P] [US2] Add web API helpers for listing, inviting, and updating members in `apps/web/app/lib/members-api.ts`.
-- [ ] T052 [US2] Create admin members page with member list, invite form, role selector, and deactivate action in `apps/web/app/members/page.tsx`.
-- [ ] T053 [US2] Hide or block the members page for non-admin roles using `/me` role context in `apps/web/app/members/page.tsx`.
+- [X] T043 [P] [US2] Implement membership repository methods for list, create, update role, deactivate, and duplicate lookup in `apps/api/app/tenancy/repository.py`.
+- [X] T044 [P] [US2] Implement Supabase Admin invite adapter interface with a test double-friendly boundary in `apps/api/app/admin/supabase_admin.py`.
+- [X] T045 [US2] Implement member management service that enforces admin-only actions and duplicate membership behavior in `apps/api/app/admin/members_service.py`.
+- [X] T046 [US2] Implement `GET /workspaces/{workspace_id}/members` admin route in `apps/api/app/admin/routes.py`.
+- [X] T047 [US2] Implement `POST /workspaces/{workspace_id}/members` admin invite route in `apps/api/app/admin/routes.py`.
+- [X] T048 [US2] Implement `PATCH /workspaces/{workspace_id}/members/{membership_id}` role/status update route in `apps/api/app/admin/routes.py`.
+- [X] T049 [US2] Ensure deactivation sets `status=inactive` and `deactivated_at` without deleting the membership in `apps/api/app/admin/members_service.py`.
+- [X] T050 [US2] Add admin router registration in `apps/api/app/main.py`.
+- [X] T051 [P] [US2] Add web API helpers for listing, inviting, and updating members in `apps/web/app/lib/members-api.ts`.
+- [X] T052 [US2] Create admin members page with member list, invite form, role selector, and deactivate action in `apps/web/app/members/page.tsx`.
+- [X] T053 [US2] Hide or block the members page for non-admin roles using `/me` role context in `apps/web/app/members/page.tsx`.
 
 **Checkpoint**: User Story 2 is complete when admins can manage memberships and every non-admin member-management attempt is denied.
 
