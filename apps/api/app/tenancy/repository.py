@@ -184,6 +184,39 @@ async def set_membership_status(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def update_membership(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    membership_id: UUID,
+    role: MembershipRole | None = None,
+    status: MembershipStatus | None = None,
+) -> Membership | None:
+    values: dict[str, object] = {}
+    if role is not None:
+        values["role"] = role
+    if status is not None:
+        if status == MembershipStatus.inactive:
+            values["status"] = status
+            values["deactivated_at"] = datetime.now(tz=UTC)
+        else:
+            values["status"] = status
+            values["deactivated_at"] = None
+
+    if not values:
+        return await get_membership_for_workspace_by_id(
+            session, workspace_id=workspace_id, membership_id=membership_id
+        )
+
+    stmt = (
+        update(Membership)
+        .where(Membership.workspace_id == workspace_id, Membership.id == membership_id)
+        .values(**values)
+        .returning(Membership)
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
 async def list_collection_grants_for_membership(
     session: AsyncSession,
     membership_id: UUID,

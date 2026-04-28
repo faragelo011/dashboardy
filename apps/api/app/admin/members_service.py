@@ -8,6 +8,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.admin.schemas import Member as MemberSchema
 from app.common.enums import MembershipRole, MembershipStatus
 from app.models.auth_tenancy import Membership
@@ -67,7 +70,7 @@ def _to_member_schema(m: Membership) -> MemberSchema:
 
 async def list_members(
     *,
-    session,
+    session: AsyncSession,
     actor: ResolvedTenancy,
     workspace_id: UUID,
 ) -> list[MemberSchema]:
@@ -80,7 +83,7 @@ async def list_members(
 
 async def invite_member(
     *,
-    session,
+    session: AsyncSession,
     actor: ResolvedTenancy,
     workspace_id: UUID,
     email: str,
@@ -120,21 +123,43 @@ async def invite_member(
             message="Membership already exists but is inactive.",
         )
 
-    membership = await repository.create_membership(
-        session,
-        tenant_id=actor.tenant_id,
-        workspace_id=workspace_id,
-        user_id=invited.user_id,
-        role=role,
-        status=MembershipStatus.active,
-        invited_email=normalized_email,
-    )
-    return _to_member_schema(membership)
+    try:
+        membership = await repository.create_membership(
+            session,
+            tenant_id=actor.tenant_id,
+            workspace_id=workspace_id,
+            user_id=invited.user_id,
+            role=role,
+            status=MembershipStatus.active,
+            invited_email=normalized_email,
+        )
+        return _to_member_schema(membership)
+    except IntegrityError:
+        existing = await repository.get_membership_for_workspace_by_user_id(
+            session,
+            workspace_id=workspace_id,
+            user_id=invited.user_id,
+        )
+        if existing is None:
+            existing = await repository.get_membership_for_workspace_by_invited_email(
+                session,
+                workspace_id=workspace_id,
+                invited_email=normalized_email,
+            )
+
+        if existing is not None:
+            if existing.status == MembershipStatus.active:
+                return _to_member_schema(existing)
+            raise Conflict(
+                error_code="membership_conflict",
+                message="Membership already exists but is inactive.",
+            )
+        raise
 
 
 async def update_member(
     *,
-    session,
+    session: AsyncSession,
     actor: ResolvedTenancy,
     workspace_id: UUID,
     membership_id: UUID,
@@ -143,33 +168,15 @@ async def update_member(
 ) -> MemberSchema:
     require_admin(actor)
 
-    membership = await repository.get_membership_for_workspace_by_id(
+    membership = await repository.update_membership(
         session,
         workspace_id=workspace_id,
         membership_id=membership_id,
+        role=role,
+        status=status,
     )
     if membership is None:
         raise NotFound(error_code="not_found", message="Member not found.")
-
-    if role is not None:
-        membership = await repository.set_membership_role(
-            session,
-            workspace_id=workspace_id,
-            membership_id=membership_id,
-            role=role,
-        )
-        if membership is None:
-            raise NotFound(error_code="not_found", message="Member not found.")
-
-    if status is not None:
-        membership = await repository.set_membership_status(
-            session,
-            workspace_id=workspace_id,
-            membership_id=membership_id,
-            status=status,
-        )
-        if membership is None:
-            raise NotFound(error_code="not_found", message="Member not found.")
 
     return _to_member_schema(membership)
 

@@ -20,6 +20,18 @@ class SeededWorkspace:
     other_membership_id: uuid.UUID | None = None
 
 
+class FakeSupabaseAdmin:
+    """Shared test double for Supabase invites (no network)."""
+
+    def __init__(self, invited_user_id: uuid.UUID) -> None:
+        self._user_id = invited_user_id
+
+    async def invite_user(self, *, email: str):
+        from app.admin.supabase_admin import InvitedUser
+
+        return InvitedUser(user_id=self._user_id, email=email)
+
+
 async def seed_workspace_with_actor(
     *,
     actor_role: MembershipRole,
@@ -65,6 +77,8 @@ async def seed_workspace_with_actor(
                 other_membership_id=other_membership_id,
             )
     finally:
+        # Tests use `asyncio.run(...)` for seeding; dispose engine and clear caches
+        # so pooled connections bound to the closed event loop are not reused.
         await get_engine().dispose()
         get_async_session_maker.cache_clear()
         get_engine.cache_clear()

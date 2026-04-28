@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from typing import Annotated
+from typing import Annotated, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,7 +22,7 @@ from app.auth_context.dependencies import get_verified_supabase_user
 from app.common.enums import MembershipStatus
 from app.db.deps import get_db
 from app.tenancy import repository
-from app.tenancy.resolver import resolve_membership_for_workspace
+from app.tenancy.resolver import ResolvedTenancy, resolve_membership_for_workspace
 
 router = APIRouter(tags=["admin"])
 
@@ -31,7 +31,7 @@ def get_supabase_admin_provider() -> Callable[[], SupabaseAdmin]:
     return get_supabase_admin
 
 
-def _forbidden(*, error_code: str, message: str) -> None:
+def _forbidden(*, error_code: str, message: str) -> NoReturn:
     raise HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
         detail={"error_code": error_code, "message": message},
@@ -43,7 +43,7 @@ async def _require_active_membership(
     session: AsyncSession,
     user_id: UUID,
     workspace_id: UUID,
-):
+) -> ResolvedTenancy:
     resolved = await resolve_membership_for_workspace(
         session,
         user_id=user_id,

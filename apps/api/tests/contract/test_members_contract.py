@@ -7,20 +7,14 @@ import uuid
 
 import pytest
 from app.admin.routes import get_supabase_admin_provider
-from app.admin.supabase_admin import InvitedUser
 from app.main import app
 from app.models.auth_tenancy import MembershipRole
 from fastapi.testclient import TestClient
 
-from tests.member_management_fixtures import seed_workspace_with_actor
-
-
-class _FakeSupabaseAdmin:
-    def __init__(self, invited_user_id: uuid.UUID) -> None:
-        self._user_id = invited_user_id
-
-    async def invite_user(self, *, email: str) -> InvitedUser:
-        return InvitedUser(user_id=self._user_id, email=email)
+from tests.member_management_fixtures import (
+    FakeSupabaseAdmin,
+    seed_workspace_with_actor,
+)
 
 
 def test_members_get_200_admin_lists_members(
@@ -73,7 +67,7 @@ def test_members_post_201_admin_invite_idempotent_on_duplicate_email(
     seeded = asyncio.run(seed_workspace_with_actor(actor_role=MembershipRole.admin))
     invited_user_id = uuid.uuid4()
     app.dependency_overrides[get_supabase_admin_provider] = (
-        lambda: lambda: _FakeSupabaseAdmin(invited_user_id)
+        lambda: lambda: FakeSupabaseAdmin(invited_user_id)
     )
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",

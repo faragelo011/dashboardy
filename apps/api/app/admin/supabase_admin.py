@@ -11,6 +11,7 @@ from typing import Protocol
 from uuid import UUID
 
 import httpx
+from httpx import HTTPStatusError
 
 from app.config import get_settings
 
@@ -45,7 +46,28 @@ class HttpSupabaseAdmin:
         payload = {"email": email}
         async with httpx.AsyncClient(timeout=10) as client:
             res = await client.post(url, headers=headers, json=payload)
-        res.raise_for_status()
+        try:
+            res.raise_for_status()
+        except HTTPStatusError as exc:
+            body_text = res.text
+            status_code = res.status_code
+            retry_after = res.headers.get("retry-after")
+            if status_code == 429:
+                msg = "Supabase invite rate limited"
+                if retry_after:
+                    msg = f"{msg} (retry-after={retry_after}s)"
+                raise RuntimeError(msg) from exc
+            if status_code == 400:
+                raise RuntimeError(
+                    f"Supabase invite rejected (400): {body_text}"
+                ) from exc
+            if status_code in (401, 403):
+                raise RuntimeError(
+                    "Supabase invite unauthorized (check SUPABASE_SERVICE_ROLE_KEY)"
+                ) from exc
+            raise RuntimeError(
+                f"Supabase invite failed ({status_code}): {body_text}"
+            ) from exc
         data = res.json()
 
         raw_id = data.get("id") or data.get("user", {}).get("id")

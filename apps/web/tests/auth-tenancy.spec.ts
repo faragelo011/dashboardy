@@ -32,11 +32,16 @@ function meResponse(role: "admin" | "viewer") {
 
 async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
   const server = createServer((req, res) => {
-    if (req.url === "/me") {
+    if (req.url === "/me" && req.method === "GET") {
       json(res, meResponse(role));
       return;
     }
     if (req.url === `/workspaces/${workspaceId}/members`) {
+      if (req.method !== "GET") {
+        res.writeHead(405);
+        res.end();
+        return;
+      }
       if (role !== "admin") {
         res.writeHead(403, { "Content-Type": "application/json" });
         res.end(

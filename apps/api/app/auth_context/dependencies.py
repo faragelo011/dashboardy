@@ -31,7 +31,7 @@ def get_bearer_token(
         or credentials.scheme.lower() != "bearer"
         or not credentials.credentials.strip()
     ):
-        logger.info(
+        logger.debug(
             "Authorization header missing/invalid (scheme=%s, has_credentials=%s)",
             getattr(credentials, "scheme", None),
             bool(getattr(credentials, "credentials", "") or ""),
@@ -50,7 +50,7 @@ def get_current_user_id(token: Annotated[str, Depends(get_bearer_token)]) -> UUI
         return verify_supabase_jwt(token)
     except InvalidJwtError as exc:
         # Never log tokens. Only log the failure reason to aid local debugging.
-        logger.info("Supabase JWT rejected: %s", str(exc))
+        logger.debug("Supabase JWT rejected: %s", str(exc))
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"error_code": "auth_required", "message": "Sign in is required."},
@@ -65,7 +65,7 @@ def get_verified_supabase_user(
     try:
         payload = decode_supabase_jwt(token)
     except InvalidJwtError as exc:
-        logger.info("Supabase JWT rejected while decoding payload: %s", str(exc))
+        logger.debug("Supabase JWT rejected while decoding payload: %s", str(exc))
         _raise_auth_required()
 
     sub = payload.get("sub")

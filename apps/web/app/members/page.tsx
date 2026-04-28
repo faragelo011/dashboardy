@@ -21,12 +21,22 @@ export default async function MembersPage() {
     data: { session },
   } = await supabase.auth.getSession();
   const token = session?.access_token;
-  if (!token) {
-    redirect("/sign-in");
-  }
+  const tokenAvailable = Boolean(token);
 
   const workspaceId = me.current_workspace.workspace_id;
-  const { members } = await listWorkspaceMembers(token, workspaceId);
+  let members: Awaited<ReturnType<typeof listWorkspaceMembers>>["members"] = [];
+  let loadError: string | null = null;
+  if (!tokenAvailable) {
+    loadError = "Unable to load session token. Please refresh and try again.";
+  } else {
+    try {
+      const resp = await listWorkspaceMembers(token as string, workspaceId);
+      members = resp.members;
+    } catch (err) {
+      console.error("listWorkspaceMembers failed", { workspaceId, err });
+      loadError = "Failed to load members. Please try again.";
+    }
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
@@ -36,6 +46,12 @@ export default async function MembersPage() {
           Admin-only. Invite, change roles, or deactivate access.
         </p>
       </div>
+
+      {loadError ? (
+        <div className="rounded border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+          {loadError}
+        </div>
+      ) : null}
 
       <form action={inviteMemberAction} className="rounded border p-4 space-y-3">
         <input type="hidden" name="workspace_id" value={workspaceId} />
@@ -98,7 +114,10 @@ export default async function MembersPage() {
                   <option value="viewer">viewer</option>
                   <option value="external_client">external_client</option>
                 </select>
-                <button className="rounded border px-2 py-1 text-sm">
+                <button
+                  className="rounded border px-2 py-1 text-sm"
+                  disabled={m.status !== "active"}
+                >
                   Save
                 </button>
               </form>

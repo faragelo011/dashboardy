@@ -1,4 +1,4 @@
-type Member = {
+export type Member = {
   id: string;
   user_id: string;
   email: string;
@@ -9,6 +9,18 @@ type Member = {
 };
 
 export type MemberListResponse = { members: Member[] };
+
+export class ApiError extends Error {
+  public readonly status: number;
+  public readonly errorCode?: string;
+
+  constructor(status: number, message: string, errorCode?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.errorCode = errorCode;
+  }
+}
 
 const apiBase = () => {
   const base = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_PUBLIC_URL;
@@ -56,8 +68,17 @@ export async function inviteWorkspaceMember(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`POST members failed: ${res.status} ${body}`);
+    const text = await res.text().catch(() => "");
+    try {
+      const parsed = JSON.parse(text) as { error_code?: string; message?: string };
+      const msg =
+        typeof parsed.message === "string" && parsed.message.trim()
+          ? parsed.message
+          : text;
+      throw new ApiError(res.status, msg, parsed.error_code);
+    } catch {
+      throw new ApiError(res.status, text || "Invite failed");
+    }
   }
   return (await res.json()) as Member;
 }
