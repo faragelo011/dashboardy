@@ -16,6 +16,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@dashboardy/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@supabase/ssr':
         specifier: ^0.10.2
         version: 0.10.2(@supabase/supabase-js@2.104.1)
