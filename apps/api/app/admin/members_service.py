@@ -135,6 +135,7 @@ async def invite_member(
         )
         return _to_member_schema(membership)
     except IntegrityError:
+        await session.rollback()
         existing = await repository.get_membership_for_workspace_by_user_id(
             session,
             workspace_id=workspace_id,

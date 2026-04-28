@@ -1,9 +1,11 @@
+import type { MembershipRole, MembershipStatus } from "@dashboardy/types";
+
 export type Member = {
   id: string;
   user_id: string;
   email: string;
-  role: "admin" | "analyst" | "viewer" | "external_client";
-  status: "active" | "inactive";
+  role: MembershipRole;
+  status: MembershipStatus;
   created_at: string;
   deactivated_at?: string | null;
 };
@@ -16,6 +18,7 @@ export class ApiError extends Error {
 
   constructor(status: number, message: string, errorCode?: string) {
     super(message);
+    Object.setPrototypeOf(this, new.target.prototype);
     this.name = "ApiError";
     this.status = status;
     this.errorCode = errorCode;
@@ -50,7 +53,8 @@ export async function listWorkspaceMembers(
   accessToken: string,
   workspaceId: string,
 ): Promise<MemberListResponse> {
-  const res = await apiFetch(`/workspaces/${workspaceId}/members`, accessToken);
+  const ws = encodeURIComponent(workspaceId);
+  const res = await apiFetch(`/workspaces/${ws}/members`, accessToken);
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new Error(`GET members failed: ${res.status} ${body}`);
@@ -63,7 +67,8 @@ export async function inviteWorkspaceMember(
   workspaceId: string,
   payload: { email: string; role: Member["role"] },
 ): Promise<Member> {
-  const res = await apiFetch(`/workspaces/${workspaceId}/members`, accessToken, {
+  const ws = encodeURIComponent(workspaceId);
+  const res = await apiFetch(`/workspaces/${ws}/members`, accessToken, {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -89,8 +94,10 @@ export async function updateWorkspaceMember(
   membershipId: string,
   payload: { role?: Member["role"]; status?: Member["status"] },
 ): Promise<Member> {
+  const ws = encodeURIComponent(workspaceId);
+  const mid = encodeURIComponent(membershipId);
   const res = await apiFetch(
-    `/workspaces/${workspaceId}/members/${membershipId}`,
+    `/workspaces/${ws}/members/${mid}`,
     accessToken,
     {
       method: "PATCH",

@@ -34,7 +34,8 @@ class HttpSupabaseAdmin:
         self._service_role_key = service_role_key
 
     async def invite_user(self, *, email: str) -> InvitedUser:
-        if not email.strip():
+        trimmed_email = email.strip()
+        if not trimmed_email:
             raise ValueError("email must be non-empty")
 
         url = f"{self._base}/auth/v1/invite"
@@ -43,9 +44,13 @@ class HttpSupabaseAdmin:
             "apikey": self._service_role_key,
             "Content-Type": "application/json",
         }
-        payload = {"email": email}
-        async with httpx.AsyncClient(timeout=10) as client:
-            res = await client.post(url, headers=headers, json=payload)
+        payload = {"email": trimmed_email}
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                res = await client.post(url, headers=headers, json=payload)
+        except (httpx.TimeoutException, httpx.RequestError) as exc:
+            raise RuntimeError("Supabase invite request failed") from exc
+
         try:
             res.raise_for_status()
         except HTTPStatusError as exc:
@@ -68,12 +73,19 @@ class HttpSupabaseAdmin:
             raise RuntimeError(
                 f"Supabase invite failed ({status_code}): {body_text}"
             ) from exc
-        data = res.json()
+        try:
+            data = res.json()
+        except ValueError as exc:
+            raise RuntimeError("Supabase invite returned invalid JSON") from exc
 
         raw_id = data.get("id") or data.get("user", {}).get("id")
         if not isinstance(raw_id, str):
             raise RuntimeError("Supabase invite response missing user id")
-        return InvitedUser(user_id=UUID(raw_id), email=email)
+        try:
+            user_id = UUID(raw_id)
+        except ValueError as exc:
+            raise RuntimeError("Supabase invite response has invalid user id") from exc
+        return InvitedUser(user_id=user_id, email=trimmed_email)
 
 
 def get_supabase_admin() -> SupabaseAdmin:
