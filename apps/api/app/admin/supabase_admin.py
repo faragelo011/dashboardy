@@ -12,8 +12,11 @@ from uuid import UUID
 
 import httpx
 from httpx import HTTPStatusError
+import logging
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,24 +81,30 @@ class HttpSupabaseAdmin:
                     status_code=429, error_code="rate_limited", message=msg
                 ) from exc
             if status_code in (400, 422):
+                logger.debug(
+                    "Supabase invite rejected (status=%s): %s", status_code, body_text
+                )
                 raise SupabaseAdminError(
                     status_code=400,
                     error_code="invite_rejected",
-                    message=f"Supabase invite rejected ({status_code}): {body_text}",
+                    message="Supabase invite rejected",
                 ) from exc
             if status_code in (401, 403):
+                logger.debug(
+                    "Supabase invite unauthorized (status=%s): %s",
+                    status_code,
+                    body_text,
+                )
                 raise SupabaseAdminError(
                     status_code=503,
                     error_code="dependency_unavailable",
-                    message=(
-                        "Supabase invite unauthorized "
-                        "(check SUPABASE_SERVICE_ROLE_KEY)"
-                    ),
+                    message="Supabase invite unauthorized",
                 ) from exc
+            logger.debug("Supabase invite failed (status=%s): %s", status_code, body_text)
             raise SupabaseAdminError(
                 status_code=503,
                 error_code="dependency_unavailable",
-                message=f"Supabase invite failed ({status_code}): {body_text}",
+                message="Supabase invite failed",
             ) from exc
         try:
             data = res.json()
@@ -105,6 +114,13 @@ class HttpSupabaseAdmin:
                 error_code="dependency_unavailable",
                 message="Supabase invite returned invalid JSON",
             ) from exc
+
+        if not isinstance(data, dict):
+            raise SupabaseAdminError(
+                status_code=503,
+                error_code="dependency_unavailable",
+                message="Supabase invite returned non-object JSON",
+            )
 
         raw_id = data.get("id") or data.get("user", {}).get("id")
         if not isinstance(raw_id, str):

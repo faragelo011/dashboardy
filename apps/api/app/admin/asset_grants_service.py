@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.admin.schemas import AssetGrant as AssetGrantSchema
@@ -100,17 +101,30 @@ async def create_or_update_grant(
         asset_id=asset_id,
     )
     if existing is None:
-        created = await repository.create_asset_grant(
-            session,
-            tenant_id=actor.tenant_id,
-            workspace_id=workspace_id,
-            user_id=user_id,
-            asset_type=model_asset_type,
-            asset_id=asset_id,
-            can_export=bool(can_export),
-            created_by_membership_id=actor.membership_id,
-        )
-        return _to_schema(created)
+        try:
+            created = await repository.create_asset_grant(
+                session,
+                tenant_id=actor.tenant_id,
+                workspace_id=workspace_id,
+                user_id=user_id,
+                asset_type=model_asset_type,
+                asset_id=asset_id,
+                can_export=bool(can_export),
+                created_by_membership_id=actor.membership_id,
+            )
+            return _to_schema(created)
+        except IntegrityError:
+            await session.rollback()
+            raced = await repository.get_asset_grant_for_workspace_by_unique(
+                session,
+                workspace_id=workspace_id,
+                user_id=user_id,
+                asset_type=model_asset_type,
+                asset_id=asset_id,
+            )
+            if raced is None:
+                raise
+            return _to_schema(raced)
 
     updated = await repository.set_asset_grant_can_export(
         session,

@@ -6,6 +6,8 @@ from app.models.auth_tenancy import AssetGrant, AssetType, MembershipRole
 from app.tenancy.permissions import (
     PermissionReason,
     can_access_asset_via_explicit_grant,
+    can_access_dashboard_via_grant,
+    can_access_question_via_grant,
     can_use_collection_grant_path,
 )
 
@@ -104,6 +106,176 @@ def test_external_client_denies_mismatched_asset_grants():
         asset_type=AssetType.question,
         asset_id=asset_id,
         grants=mismatched_grants,
+    )
+    assert denied.allowed is False
+    assert denied.reason == PermissionReason.grant_required
+
+
+def test_external_client_question_grant_wrapper_allows_only_matching_question():
+    actor_user_id = uuid.uuid4()
+    actor_workspace_id = uuid.uuid4()
+    question_id = uuid.uuid4()
+
+    assert (
+        can_access_question_via_grant(
+            actor_role=MembershipRole.external_client,
+            actor_user_id=actor_user_id,
+            actor_workspace_id=actor_workspace_id,
+            question_id=question_id,
+            grants=[],
+        ).reason
+        == PermissionReason.grant_required
+    )
+
+    matching = AssetGrant(
+        tenant_id=uuid.uuid4(),
+        workspace_id=actor_workspace_id,
+        user_id=actor_user_id,
+        asset_type=AssetType.question,
+        asset_id=question_id,
+        can_export=False,
+        created_by_membership_id=uuid.uuid4(),
+    )
+    assert (
+        can_access_question_via_grant(
+            actor_role=MembershipRole.external_client,
+            actor_user_id=actor_user_id,
+            actor_workspace_id=actor_workspace_id,
+            question_id=question_id,
+            grants=[matching],
+        ).allowed
+        is True
+    )
+
+    mismatched = [
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=actor_workspace_id,
+            user_id=actor_user_id,
+            asset_type=AssetType.dashboard,
+            asset_id=question_id,
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=actor_workspace_id,
+            user_id=actor_user_id,
+            asset_type=AssetType.question,
+            asset_id=uuid.uuid4(),
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=actor_workspace_id,
+            user_id=uuid.uuid4(),
+            asset_type=AssetType.question,
+            asset_id=question_id,
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=uuid.uuid4(),
+            user_id=actor_user_id,
+            asset_type=AssetType.question,
+            asset_id=question_id,
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+    ]
+    denied = can_access_question_via_grant(
+        actor_role=MembershipRole.external_client,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+        question_id=question_id,
+        grants=mismatched,
+    )
+    assert denied.allowed is False
+    assert denied.reason == PermissionReason.grant_required
+
+
+def test_external_client_dashboard_grant_wrapper_allows_only_matching_dashboard():
+    actor_user_id = uuid.uuid4()
+    actor_workspace_id = uuid.uuid4()
+    dashboard_id = uuid.uuid4()
+
+    assert (
+        can_access_dashboard_via_grant(
+            actor_role=MembershipRole.external_client,
+            actor_user_id=actor_user_id,
+            actor_workspace_id=actor_workspace_id,
+            dashboard_id=dashboard_id,
+            grants=[],
+        ).reason
+        == PermissionReason.grant_required
+    )
+
+    matching = AssetGrant(
+        tenant_id=uuid.uuid4(),
+        workspace_id=actor_workspace_id,
+        user_id=actor_user_id,
+        asset_type=AssetType.dashboard,
+        asset_id=dashboard_id,
+        can_export=False,
+        created_by_membership_id=uuid.uuid4(),
+    )
+    assert (
+        can_access_dashboard_via_grant(
+            actor_role=MembershipRole.external_client,
+            actor_user_id=actor_user_id,
+            actor_workspace_id=actor_workspace_id,
+            dashboard_id=dashboard_id,
+            grants=[matching],
+        ).allowed
+        is True
+    )
+
+    mismatched = [
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=actor_workspace_id,
+            user_id=actor_user_id,
+            asset_type=AssetType.question,
+            asset_id=dashboard_id,
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=actor_workspace_id,
+            user_id=actor_user_id,
+            asset_type=AssetType.dashboard,
+            asset_id=uuid.uuid4(),
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=actor_workspace_id,
+            user_id=uuid.uuid4(),
+            asset_type=AssetType.dashboard,
+            asset_id=dashboard_id,
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+        AssetGrant(
+            tenant_id=uuid.uuid4(),
+            workspace_id=uuid.uuid4(),
+            user_id=actor_user_id,
+            asset_type=AssetType.dashboard,
+            asset_id=dashboard_id,
+            can_export=False,
+            created_by_membership_id=uuid.uuid4(),
+        ),
+    ]
+    denied = can_access_dashboard_via_grant(
+        actor_role=MembershipRole.external_client,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+        dashboard_id=dashboard_id,
+        grants=mismatched,
     )
     assert denied.allowed is False
     assert denied.reason == PermissionReason.grant_required

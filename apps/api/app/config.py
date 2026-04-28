@@ -43,7 +43,7 @@ class Settings(BaseSettings):
         if (not self.SUPABASE_URL or not self.SUPABASE_URL.strip()) and (
             self.NEXT_PUBLIC_SUPABASE_URL and self.NEXT_PUBLIC_SUPABASE_URL.strip()
         ):
-            self.SUPABASE_URL = self.NEXT_PUBLIC_SUPABASE_URL
+            self.SUPABASE_URL = self.NEXT_PUBLIC_SUPABASE_URL.strip()
         return self
 
 

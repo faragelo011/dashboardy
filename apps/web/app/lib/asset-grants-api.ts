@@ -65,7 +65,10 @@ export async function listExternalAssetGrants(
   );
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`GET asset grants failed: ${res.status} ${body}`);
+    throw new ApiError(
+      res.status,
+      `GET asset grants failed: ${res.status} ${body}`,
+    );
   }
   return (await res.json()) as AssetGrantListResponse;
 }
@@ -93,8 +96,15 @@ export async function createExternalAssetGrant(
         typeof parsed.message === "string" && parsed.message.trim()
           ? parsed.message
           : text;
-      throw new ApiError(res.status, msg, parsed.error_code);
-    } catch {
+      const errorCode =
+        typeof parsed.error_code === "string" && parsed.error_code.trim()
+          ? parsed.error_code
+          : undefined;
+      throw new ApiError(res.status, msg, errorCode);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        throw err;
+      }
       throw new ApiError(res.status, text || "Create asset grant failed");
     }
   }
@@ -113,7 +123,10 @@ export async function deleteExternalAssetGrant(
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`DELETE asset grant failed: ${res.status} ${body}`);
+    throw new ApiError(
+      res.status,
+      `DELETE asset grant failed: ${res.status} ${body}`,
+    );
   }
 }
 
