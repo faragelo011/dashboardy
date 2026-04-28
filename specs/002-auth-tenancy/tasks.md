@@ -124,22 +124,22 @@
 
 ### Tests for User Story 3
 
-- [ ] T054 [P] [US3] Add contract tests for `GET/POST /workspaces/{workspace_id}/asset-grants` in `apps/api/tests/contract/test_asset_grants_contract.py`.
-- [ ] T055 [P] [US3] Add contract tests for `DELETE /workspaces/{workspace_id}/asset-grants/{grant_id}` in `apps/api/tests/contract/test_asset_grant_delete_contract.py`.
-- [ ] T056 [P] [US3] Add integration tests for create grant, list grants, delete grant, default `can_export=false`, non-admin denial, and duplicate grant behavior in `apps/api/tests/integration/test_asset_grants.py`.
-- [ ] T057 [P] [US3] Add permission tests proving external clients cannot use collection grants and can use only explicit asset grants in `apps/api/tests/unit/test_external_client_permissions.py`.
+- [X] T054 [P] [US3] Add contract tests for `GET/POST /workspaces/{workspace_id}/asset-grants` in `apps/api/tests/contract/test_asset_grants_contract.py`.
+- [X] T055 [P] [US3] Add contract tests for `DELETE /workspaces/{workspace_id}/asset-grants/{grant_id}` in `apps/api/tests/contract/test_asset_grant_delete_contract.py`.
+- [X] T056 [P] [US3] Add integration tests for create grant, list grants, delete grant, default `can_export=false`, non-admin denial, and duplicate grant behavior in `apps/api/tests/integration/test_asset_grants.py`.
+- [X] T057 [P] [US3] Add permission tests proving external clients cannot use collection grants and can use only explicit asset grants in `apps/api/tests/unit/test_external_client_permissions.py`.
 
 ### Implementation for User Story 3
 
-- [ ] T058 [P] [US3] Implement asset grant repository methods for create/update, list, lookup, and delete in `apps/api/app/tenancy/repository.py`.
-- [ ] T059 [US3] Implement asset grant service enforcing admin-only management, external-client membership validation, and default `can_export=false` in `apps/api/app/admin/asset_grants_service.py`.
-- [ ] T060 [US3] Implement `GET /workspaces/{workspace_id}/asset-grants` route in `apps/api/app/admin/routes.py`.
-- [ ] T061 [US3] Implement `POST /workspaces/{workspace_id}/asset-grants` route in `apps/api/app/admin/routes.py`.
-- [ ] T062 [US3] Implement `DELETE /workspaces/{workspace_id}/asset-grants/{grant_id}` route in `apps/api/app/admin/routes.py`.
-- [ ] T063 [US3] Update permission service asset-grant checks for `question` and `dashboard` resources in `apps/api/app/tenancy/permissions.py`.
-- [ ] T064 [US3] Ensure all external-client grant response schemas exclude SQL text, connection metadata, and authoring controls in `apps/api/app/admin/schemas.py`.
-- [ ] T065 [P] [US3] Add web API helpers for asset grant list/create/delete in `apps/web/app/lib/asset-grants-api.ts`.
-- [ ] T066 [US3] Add minimal admin UI for external-client asset grants in `apps/web/app/members/page.tsx`.
+- [X] T058 [P] [US3] Implement asset grant repository methods for create/update, list, lookup, and delete in `apps/api/app/tenancy/repository.py`.
+- [X] T059 [US3] Implement asset grant service enforcing admin-only management, external-client membership validation, and default `can_export=false` in `apps/api/app/admin/asset_grants_service.py`.
+- [X] T060 [US3] Implement `GET /workspaces/{workspace_id}/asset-grants` route in `apps/api/app/admin/routes.py`.
+- [X] T061 [US3] Implement `POST /workspaces/{workspace_id}/asset-grants` route in `apps/api/app/admin/routes.py`.
+- [X] T062 [US3] Implement `DELETE /workspaces/{workspace_id}/asset-grants/{grant_id}` route in `apps/api/app/admin/routes.py`.
+- [X] T063 [US3] Update permission service asset-grant checks for `question` and `dashboard` resources in `apps/api/app/tenancy/permissions.py`.
+- [X] T064 [US3] Ensure all external-client grant response schemas exclude SQL text, connection metadata, and authoring controls in `apps/api/app/admin/schemas.py`.
+- [X] T065 [P] [US3] Add web API helpers for asset grant list/create/delete in `apps/web/app/lib/asset-grants-api.ts`.
+- [X] T066 [US3] Add minimal admin UI for external-client asset grants in `apps/web/app/members/page.tsx`.
 
 **Checkpoint**: User Story 3 is complete when external clients can be granted only specific assets and cannot gain access through internal collection grants.
 

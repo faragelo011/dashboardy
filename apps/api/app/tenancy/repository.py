@@ -5,11 +5,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.auth_tenancy import (
     AssetGrant,
+    AssetType,
     CollectionGrant,
     Membership,
     MembershipRole,
@@ -238,3 +239,106 @@ async def list_asset_grants_for_user_workspace(
     )
     result = await session.execute(stmt)
     return list(result.scalars().all())
+
+
+async def list_asset_grants_for_workspace(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    user_id: UUID | None = None,
+    asset_type: AssetType | None = None,
+    limit: int = 200,
+) -> list[AssetGrant]:
+    stmt = select(AssetGrant).where(AssetGrant.workspace_id == workspace_id)
+    if user_id is not None:
+        stmt = stmt.where(AssetGrant.user_id == user_id)
+    if asset_type is not None:
+        stmt = stmt.where(AssetGrant.asset_type == asset_type)
+    stmt = stmt.order_by(AssetGrant.created_at.asc(), AssetGrant.id.asc()).limit(limit)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def get_asset_grant_for_workspace_by_id(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    grant_id: UUID,
+) -> AssetGrant | None:
+    stmt = select(AssetGrant).where(
+        AssetGrant.workspace_id == workspace_id,
+        AssetGrant.id == grant_id,
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def get_asset_grant_for_workspace_by_unique(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    user_id: UUID,
+    asset_type: AssetType,
+    asset_id: UUID,
+) -> AssetGrant | None:
+    stmt = select(AssetGrant).where(
+        AssetGrant.workspace_id == workspace_id,
+        AssetGrant.user_id == user_id,
+        AssetGrant.asset_type == asset_type,
+        AssetGrant.asset_id == asset_id,
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def create_asset_grant(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    workspace_id: UUID,
+    user_id: UUID,
+    asset_type: AssetType,
+    asset_id: UUID,
+    can_export: bool,
+    created_by_membership_id: UUID,
+) -> AssetGrant:
+    g = AssetGrant(
+        tenant_id=tenant_id,
+        workspace_id=workspace_id,
+        user_id=user_id,
+        asset_type=asset_type,
+        asset_id=asset_id,
+        can_export=can_export,
+        created_by_membership_id=created_by_membership_id,
+    )
+    session.add(g)
+    await session.flush()
+    return g
+
+
+async def set_asset_grant_can_export(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    grant_id: UUID,
+    can_export: bool,
+) -> AssetGrant | None:
+    stmt = (
+        update(AssetGrant)
+        .where(AssetGrant.workspace_id == workspace_id, AssetGrant.id == grant_id)
+        .values(can_export=can_export)
+        .returning(AssetGrant)
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
+async def delete_asset_grant(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+    grant_id: UUID,
+) -> bool:
+    stmt = delete(AssetGrant).where(
+        AssetGrant.workspace_id == workspace_id,
+        AssetGrant.id == grant_id,
+    )
+    result = await session.execute(stmt)
+    return bool(result.rowcount)

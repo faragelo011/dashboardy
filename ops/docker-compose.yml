@@ -45,7 +45,7 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:?Set NEXT_PUBLIC_SUPABASE_ANON_KEY (e.g. via `--env-file ../.env` or ops/.env)}
         NEXT_PUBLIC_API_PUBLIC_URL: ${NEXT_PUBLIC_API_PUBLIC_URL:-http://localhost:8000}
     ports:
-      - "3001:3000"
+      - "3000:3000"
     # Load repo-root .env into the running container (runtime env).
     env_file:
       - ../.env

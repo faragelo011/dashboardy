@@ -26,6 +26,19 @@ class SupabaseAdmin(Protocol):
     async def invite_user(self, *, email: str) -> InvitedUser: ...
 
 
+class SupabaseAdminError(RuntimeError):
+    """Error raised when the Supabase Admin API call fails.
+
+    Carries an HTTP status code so the API layer can map it correctly.
+    """
+
+    def __init__(self, *, status_code: int, error_code: str, message: str) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.error_code = error_code
+        self.message = message
+
+
 class HttpSupabaseAdmin:
     """Default Supabase Admin implementation using service-role credentials."""
 
@@ -61,30 +74,53 @@ class HttpSupabaseAdmin:
                 msg = "Supabase invite rate limited"
                 if retry_after:
                     msg = f"{msg} (retry-after={retry_after}s)"
-                raise RuntimeError(msg) from exc
-            if status_code == 400:
-                raise RuntimeError(
-                    f"Supabase invite rejected (400): {body_text}"
+                raise SupabaseAdminError(
+                    status_code=429, error_code="rate_limited", message=msg
+                ) from exc
+            if status_code in (400, 422):
+                raise SupabaseAdminError(
+                    status_code=400,
+                    error_code="invite_rejected",
+                    message=f"Supabase invite rejected ({status_code}): {body_text}",
                 ) from exc
             if status_code in (401, 403):
-                raise RuntimeError(
-                    "Supabase invite unauthorized (check SUPABASE_SERVICE_ROLE_KEY)"
+                raise SupabaseAdminError(
+                    status_code=503,
+                    error_code="dependency_unavailable",
+                    message=(
+                        "Supabase invite unauthorized "
+                        "(check SUPABASE_SERVICE_ROLE_KEY)"
+                    ),
                 ) from exc
-            raise RuntimeError(
-                f"Supabase invite failed ({status_code}): {body_text}"
+            raise SupabaseAdminError(
+                status_code=503,
+                error_code="dependency_unavailable",
+                message=f"Supabase invite failed ({status_code}): {body_text}",
             ) from exc
         try:
             data = res.json()
         except ValueError as exc:
-            raise RuntimeError("Supabase invite returned invalid JSON") from exc
+            raise SupabaseAdminError(
+                status_code=503,
+                error_code="dependency_unavailable",
+                message="Supabase invite returned invalid JSON",
+            ) from exc
 
         raw_id = data.get("id") or data.get("user", {}).get("id")
         if not isinstance(raw_id, str):
-            raise RuntimeError("Supabase invite response missing user id")
+            raise SupabaseAdminError(
+                status_code=503,
+                error_code="dependency_unavailable",
+                message="Supabase invite response missing user id",
+            )
         try:
             user_id = UUID(raw_id)
         except ValueError as exc:
-            raise RuntimeError("Supabase invite response has invalid user id") from exc
+            raise SupabaseAdminError(
+                status_code=503,
+                error_code="dependency_unavailable",
+                message="Supabase invite response has invalid user id",
+            ) from exc
         return InvitedUser(user_id=user_id, email=trimmed_email)
 
 

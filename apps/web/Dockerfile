@@ -21,7 +21,9 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 COPY --from=deps /repo ./
 COPY apps/web ./apps/web
-RUN pnpm --filter @dashboardy/web build
+# Build the web app *and* its workspace dependencies (e.g. @dashboardy/types),
+# since Next typechecking expects the dependency's `dist/*.d.ts` to exist.
+RUN pnpm --filter @dashboardy/web... build
 
 FROM node:20-alpine AS runner
 WORKDIR /repo
