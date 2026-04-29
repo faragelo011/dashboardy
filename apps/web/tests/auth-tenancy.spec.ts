@@ -67,6 +67,25 @@ async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
       });
       return;
     }
+    if (req.url === `/workspaces/${workspaceId}/asset-grants`) {
+      if (req.method !== "GET") {
+        res.writeHead(405);
+        res.end();
+        return;
+      }
+      if (role !== "admin") {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error_code: "authz_denied",
+            message: "You do not have permission to perform this action.",
+          }),
+        );
+        return;
+      }
+      json(res, { grants: [] });
+      return;
+    }
     res.writeHead(404);
     res.end();
   });
@@ -129,6 +148,7 @@ test("admin can access members page", async ({ context, page }) => {
     await page.goto("/members");
     await expect(page.getByRole("heading", { name: "Workspace members" })).toBeVisible();
     await expect(page.getByText("admin@example.com")).toBeVisible();
+    await expect(page.getByRole("button", { name: /switch workspace/i })).toHaveCount(0);
   } finally {
     await stopMockApi(server);
   }
@@ -142,6 +162,20 @@ test("non-admin is redirected away from members page", async ({ context, page })
     await expect(page).toHaveURL("http://localhost:3000/");
     await expect(page.getByText("Role:")).toBeVisible();
     await expect(page.getByText("viewer", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");
+    await expect(page.getByRole("button", { name: /switch workspace/i })).toHaveCount(0);
+  } finally {
+    await stopMockApi(server);
+  }
+});
+
+test("workspace name is visible and switcher is hidden", async ({ context, page }) => {
+  const server = await startMockApi("viewer");
+  try {
+    await setSupabaseSessionCookie(context, "viewer");
+    await page.goto("/");
+    await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");
+    await expect(page.getByRole("button", { name: /switch workspace/i })).toHaveCount(0);
   } finally {
     await stopMockApi(server);
   }
