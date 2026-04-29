@@ -34,22 +34,22 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T008 Create Feature 3 Alembic migration for `data_connections`, `connection_test_results`, and `connection_management_audit_records` in `apps/api/app/db/migrations/versions/0003_data_connections.py`.
-- [ ] T009 Create SQLAlchemy models and enums for data connections, connection test results, and connection management audit records in `apps/api/app/models/data_connections.py`.
-- [ ] T010 Update model exports so Alembic discovers Feature 3 models in `apps/api/app/models/__init__.py`.
-- [ ] T011 [P] Add Pydantic request/response schemas matching `contracts/data-connections.openapi.yaml` in `apps/api/app/connections/schemas.py`.
-- [ ] T012 [P] Add connection lifecycle enums and constants for statuses, audit actions, outcomes, and failure categories in `apps/api/app/connections/enums.py`.
-- [ ] T013 Add repository helpers for get-by-tenant, upsert metadata, write tests, write audits, promote pending secret, and clear pending secret in `apps/api/app/connections/repository.py`.
-- [ ] T014 [P] Add service error classes for not found, not authorized, validation, dependency unavailable, and conflict cases in `apps/api/app/connections/errors.py`.
-- [ ] T015 [P] Add redaction helpers that remove passwords, private keys, tokens, raw Vault IDs, and Snowflake connection strings from strings/dicts in `apps/api/app/connections/redaction.py`.
-- [ ] T016 [P] Add Supabase Vault adapter protocol and concrete HTTP-backed adapter boundary in `apps/api/app/connections/vault.py`.
-- [ ] T017 [P] Add Snowflake connectivity tester protocol and concrete adapter boundary in `apps/api/app/connections/snowflake.py`.
-- [ ] T018 Add admin membership resolver helper that reuses Feature 2 tenancy context and denies non-admins with `authz_denied` in `apps/api/app/connections/authz.py`.
-- [ ] T019 Add connection service skeleton with constructor-injected repository, Vault adapter, Snowflake tester, and clock in `apps/api/app/connections/service.py`.
-- [ ] T020 [P] Add Feature 3 test fixture factories for tenant connection, pending secret, test result, and audit records in `apps/api/tests/factories/data_connections.py`.
-- [ ] T021 [P] Add migration tests for Feature 3 tables, enum/check constraints, unique `tenant_id`, FKs, and indexes in `apps/api/tests/test_data_connections_migration.py`.
-- [ ] T022 [P] Add unit tests for redaction helpers covering passwords, private keys, Vault IDs, exceptions, and nested dictionaries in `apps/api/tests/unit/test_connection_redaction.py`.
-- [ ] T023 [P] Add unit tests for status transition rules including pending-to-active, pending-to-failed, failed-rotation-preserves-effective, and no delete/disable in `apps/api/tests/unit/test_connection_status_transitions.py`.
+- [x] T008 Create Feature 3 Alembic migration for `data_connections`, `connection_test_results`, and `connection_management_audit_records` in `apps/api/app/db/migrations/versions/0003_data_connections.py`.
+- [x] T009 Create SQLAlchemy models and enums for data connections, connection test results, and connection management audit records in `apps/api/app/models/data_connections.py`.
+- [x] T010 Update model exports so Alembic discovers Feature 3 models in `apps/api/app/models/__init__.py`.
+- [x] T011 [P] Add Pydantic request/response schemas matching `contracts/data-connections.openapi.yaml` in `apps/api/app/connections/schemas.py`.
+- [x] T012 [P] Add connection lifecycle enums and constants for statuses, audit actions, outcomes, and failure categories in `apps/api/app/connections/enums.py`.
+- [x] T013 Add repository helpers for get-by-tenant, upsert metadata, write tests, write audits, promote pending secret, and clear pending secret in `apps/api/app/connections/repository.py`.
+- [x] T014 [P] Add service error classes for not found, not authorized, validation, dependency unavailable, and conflict cases in `apps/api/app/connections/errors.py`.
+- [x] T015 [P] Add redaction helpers that remove passwords, private keys, tokens, raw Vault IDs, and Snowflake connection strings from strings/dicts in `apps/api/app/connections/redaction.py`.
+- [x] T016 [P] Add Supabase Vault adapter protocol and concrete HTTP-backed adapter boundary in `apps/api/app/connections/vault.py`.
+- [x] T017 [P] Add Snowflake connectivity tester protocol and concrete adapter boundary in `apps/api/app/connections/snowflake.py`.
+- [x] T018 Add admin membership resolver helper that reuses Feature 2 tenancy context and denies non-admins with `authz_denied` in `apps/api/app/connections/authz.py`.
+- [x] T019 Add connection service skeleton with constructor-injected repository, Vault adapter, Snowflake tester, and clock in `apps/api/app/connections/service.py`.
+- [x] T020 [P] Add Feature 3 test fixture factories for tenant connection, pending secret, test result, and audit records in `apps/api/tests/factories/data_connections.py`.
+- [x] T021 [P] Add migration tests for Feature 3 tables, enum/check constraints, unique `tenant_id`, FKs, and indexes in `apps/api/tests/test_data_connections_migration.py`.
+- [x] T022 [P] Add unit tests for redaction helpers covering passwords, private keys, Vault IDs, exceptions, and nested dictionaries in `apps/api/tests/unit/test_connection_redaction.py`.
+- [x] T023 [P] Add unit tests for status transition rules including pending-to-active, pending-to-failed, failed-rotation-preserves-effective, and no delete/disable in `apps/api/tests/unit/test_connection_status_transitions.py`.
 
 **Checkpoint**: Foundation ready. Schema, models, schemas, adapters, redaction, repository, service shell, and reusable fixtures exist.
 

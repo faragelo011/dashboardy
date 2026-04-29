@@ -94,6 +94,11 @@ class Membership(Base):
         ),
         UniqueConstraint(
             "tenant_id",
+            "id",
+            name="uq_memberships_tenant_id_id",
+        ),
+        UniqueConstraint(
+            "tenant_id",
             "workspace_id",
             "id",
             name="uq_memberships_tenant_workspace_id",
