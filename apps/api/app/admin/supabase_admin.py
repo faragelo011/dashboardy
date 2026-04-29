@@ -65,7 +65,11 @@ class HttpSupabaseAdmin:
             async with httpx.AsyncClient(timeout=10) as client:
                 res = await client.post(url, headers=headers, json=payload)
         except (httpx.TimeoutException, httpx.RequestError) as exc:
-            raise RuntimeError("Supabase invite request failed") from exc
+            raise SupabaseAdminError(
+                status_code=503,
+                error_code="dependency_unavailable",
+                message="Supabase invite request failed",
+            ) from exc
 
         try:
             res.raise_for_status()

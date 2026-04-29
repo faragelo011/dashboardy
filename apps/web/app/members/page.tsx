@@ -31,6 +31,7 @@ export default async function MembersPage() {
   let grants: Awaited<
     ReturnType<typeof listExternalAssetGrants>
   >["grants"] = [];
+  let grantsLoadSuccess = false;
   let loadError: string | null = null;
   if (!tokenAvailable) {
     loadError = "Unable to load session token. Please refresh and try again.";
@@ -40,6 +41,7 @@ export default async function MembersPage() {
       members = resp.members;
       const grantsResp = await listExternalAssetGrants(token as string, workspaceId);
       grants = grantsResp.grants;
+      grantsLoadSuccess = true;
     } catch (err) {
       console.error("failed to load members or grants", { workspaceId, err });
       loadError = "Failed to load members or grants. Please try again.";
@@ -242,7 +244,7 @@ export default async function MembersPage() {
               </div>
             </div>
           ))}
-          {grants.length === 0 ? (
+          {grantsLoadSuccess && grants.length === 0 ? (
             <div className="px-4 py-6 text-sm text-gray-600">No grants yet.</div>
           ) : null}
         </div>
