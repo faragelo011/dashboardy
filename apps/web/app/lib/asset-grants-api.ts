@@ -48,6 +48,28 @@ async function apiFetch(
   });
 }
 
+function safeApiError(status: number, text: string): ApiError {
+  try {
+    const parsed = JSON.parse(text) as { error_code?: unknown; message?: unknown };
+    if (parsed && typeof parsed === "object") {
+      const maybeMessage = (parsed as { message?: unknown }).message;
+      const maybeErrorCode = (parsed as { error_code?: unknown }).error_code;
+      const message =
+        typeof maybeMessage === "string" && maybeMessage.trim()
+          ? maybeMessage
+          : "Request failed";
+      const errorCode =
+        typeof maybeErrorCode === "string" && maybeErrorCode.trim()
+          ? maybeErrorCode
+          : undefined;
+      return new ApiError(status, message, errorCode);
+    }
+  } catch {
+    // fall through
+  }
+  return new ApiError(status, "Request failed");
+}
+
 export async function listExternalAssetGrants(
   accessToken: string,
   workspaceId: string,
@@ -65,10 +87,7 @@ export async function listExternalAssetGrants(
   );
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new ApiError(
-      res.status,
-      `GET asset grants failed: ${res.status} ${body}`,
-    );
+    throw safeApiError(res.status, body);
   }
   return (await res.json()) as AssetGrantListResponse;
 }
@@ -123,10 +142,7 @@ export async function deleteExternalAssetGrant(
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new ApiError(
-      res.status,
-      `DELETE asset grant failed: ${res.status} ${body}`,
-    );
+    throw safeApiError(res.status, body);
   }
 }
 

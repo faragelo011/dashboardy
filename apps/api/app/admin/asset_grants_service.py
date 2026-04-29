@@ -36,6 +36,14 @@ def _to_asset_type(value: AssetTypeSchema) -> AssetType:
     return AssetType(value.value)
 
 
+def _require_actor_workspace(actor: ResolvedTenancy, workspace_id: UUID) -> None:
+    if workspace_id != actor.workspace_id:
+        raise members_service.NotAuthorized(
+            error_code="authz_denied",
+            message="You do not have permission to perform this action.",
+        )
+
+
 def _to_schema(row: AssetGrant) -> AssetGrantSchema:
     return AssetGrantSchema(
         id=row.id,
@@ -56,6 +64,7 @@ async def list_grants(
     asset_type: AssetTypeSchema | None = None,
 ) -> list[AssetGrantSchema]:
     members_service.require_admin(actor)
+    _require_actor_workspace(actor, workspace_id)
     rows = await repository.list_asset_grants_for_workspace(
         session,
         workspace_id=workspace_id,
@@ -76,6 +85,7 @@ async def create_or_update_grant(
     can_export: bool = False,
 ) -> AssetGrantSchema:
     members_service.require_admin(actor)
+    _require_actor_workspace(actor, workspace_id)
 
     target = await repository.get_membership_for_workspace_by_user_id(
         session,
@@ -124,6 +134,17 @@ async def create_or_update_grant(
             )
             if raced is None:
                 raise
+            requested_can_export = bool(can_export)
+            if bool(raced.can_export) != requested_can_export:
+                updated = await repository.set_asset_grant_can_export(
+                    session,
+                    workspace_id=workspace_id,
+                    grant_id=raced.id,
+                    can_export=requested_can_export,
+                )
+                if updated is None:
+                    raise NotFound(error_code="not_found", message="Grant not found.")
+                return _to_schema(updated)
             return _to_schema(raced)
 
     updated = await repository.set_asset_grant_can_export(
@@ -145,6 +166,7 @@ async def delete_grant(
     grant_id: UUID,
 ) -> None:
     members_service.require_admin(actor)
+    _require_actor_workspace(actor, workspace_id)
     deleted = await repository.delete_asset_grant(
         session,
         workspace_id=workspace_id,

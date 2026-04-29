@@ -160,15 +160,24 @@ export default async function MembersPage() {
           <input type="hidden" name="workspace_id" value={workspaceId} />
           <div className="grid gap-3 sm:grid-cols-4">
             <label className="sm:col-span-2">
-              <div className="text-sm font-medium">External user id (UUID)</div>
-              <input
+              <div className="text-sm font-medium">External client</div>
+              <select
                 name="user_id"
                 required
-                pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-                title="Enter UUID in format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
                 className="mt-1 w-full rounded border px-3 py-2"
-                placeholder="00000000-0000-0000-0000-000000000000"
-              />
+                defaultValue=""
+              >
+                <option value="" disabled>
+                  Select an external client…
+                </option>
+                {members
+                  .filter((m) => m.role === "external_client" && m.status === "active")
+                  .map((m) => (
+                    <option key={m.id} value={m.user_id}>
+                      {m.email} ({m.role})
+                    </option>
+                  ))}
+              </select>
             </label>
             <label>
               <div className="text-sm font-medium">Asset type</div>

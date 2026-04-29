@@ -6,13 +6,13 @@ fake implementation without any network calls.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Protocol
 from uuid import UUID
 
 import httpx
 from httpx import HTTPStatusError
-import logging
 
 from app.config import get_settings
 
@@ -100,7 +100,9 @@ class HttpSupabaseAdmin:
                     error_code="dependency_unavailable",
                     message="Supabase invite unauthorized",
                 ) from exc
-            logger.debug("Supabase invite failed (status=%s): %s", status_code, body_text)
+            logger.debug(
+                "Supabase invite failed (status=%s): %s", status_code, body_text
+            )
             raise SupabaseAdminError(
                 status_code=503,
                 error_code="dependency_unavailable",
@@ -122,7 +124,9 @@ class HttpSupabaseAdmin:
                 message="Supabase invite returned non-object JSON",
             )
 
-        raw_id = data.get("id") or data.get("user", {}).get("id")
+        user = data.get("user")
+        user_id_from_nested = user.get("id") if isinstance(user, dict) else None
+        raw_id = data.get("id") or user_id_from_nested
         if not isinstance(raw_id, str):
             raise SupabaseAdminError(
                 status_code=503,
