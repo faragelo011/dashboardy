@@ -12,6 +12,16 @@ from app.models.auth_tenancy import (
     Workspace,
 )
 from app.models.base import Base
+from app.models.data_connections import (
+    ConnectionManagementAuditRecord,
+    ConnectionTestResult,
+    DataConnection,
+    DbAuditAction,
+    DbAuditOutcome,
+    DbConnectionStatus,
+    DbConnectionTestStatus,
+    DbFailureCategory,
+)
 
 __all__ = [
     "AssetGrant",
@@ -19,6 +29,14 @@ __all__ = [
     "Base",
     "CollectionGrant",
     "CollectionPermission",
+    "ConnectionManagementAuditRecord",
+    "ConnectionTestResult",
+    "DataConnection",
+    "DbAuditAction",
+    "DbAuditOutcome",
+    "DbConnectionStatus",
+    "DbConnectionTestStatus",
+    "DbFailureCategory",
     "Membership",
     "MembershipRole",
     "MembershipStatus",

@@ -14,3 +14,20 @@ class FailureCategory(StrEnum):
     permission = "permission"
     timeout = "timeout"
     unknown = "unknown"
+
+
+class ConnectionTestStatus(StrEnum):
+    success = "success"
+    failure = "failure"
+
+
+class ConnectionAuditAction(StrEnum):
+    create = "create"
+    metadata_update = "metadata_update"
+    test = "test"
+    rotate = "rotate"
+
+
+class ConnectionAuditOutcome(StrEnum):
+    success = "success"
+    failure = "failure"

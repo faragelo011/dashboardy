@@ -1,3 +1,10 @@
+"""Connection service errors carry stable `error_code` values for API mapping.
+
+Codes: connection_service_error, connection_not_found, connection_conflict,
+connection_validation_error, authz_denied, dependency_unavailable.
+"""
+
+
 class ConnectionServiceError(Exception):
     """Base error for data connection service operations."""
 
