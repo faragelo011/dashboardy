@@ -122,7 +122,8 @@ async function setSupabaseSessionCookie(
     {
       name: "sb-example-auth-token",
       value,
-      url: "http://localhost:3000",
+      domain: "localhost",
+      path: "/",
       sameSite: "Lax",
     },
   ]);
@@ -159,7 +160,7 @@ test("non-admin is redirected away from members page", async ({ context, page })
   try {
     await setSupabaseSessionCookie(context, "viewer");
     await page.goto("/members");
-    await expect(page).toHaveURL("http://localhost:3000/");
+    expect(new URL(page.url()).pathname).toBe("/");
     await expect(page.getByText("Role:")).toBeVisible();
     await expect(page.getByText("viewer", { exact: true })).toBeVisible();
     await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");
@@ -176,6 +177,22 @@ test("workspace name is visible and switcher is hidden", async ({ context, page 
     await page.goto("/");
     await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");
     await expect(page.getByRole("button", { name: /switch workspace/i })).toHaveCount(0);
+  } finally {
+    await stopMockApi(server);
+  }
+});
+
+test("set-password requires an authenticated session", async ({ page }) => {
+  await page.goto("/set-password");
+  await expect(page).toHaveURL(/\/sign-in/);
+});
+
+test("set-password page is shown to invited session", async ({ context, page }) => {
+  const server = await startMockApi("viewer");
+  try {
+    await setSupabaseSessionCookie(context, "viewer");
+    await page.goto("/set-password");
+    await expect(page.getByRole("heading", { name: "Set your password" })).toBeVisible();
   } finally {
     await stopMockApi(server);
   }

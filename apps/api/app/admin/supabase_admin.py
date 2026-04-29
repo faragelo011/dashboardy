@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from typing import Protocol
+from urllib.parse import quote
 from uuid import UUID
 
 import httpx
@@ -45,9 +46,16 @@ class SupabaseAdminError(RuntimeError):
 class HttpSupabaseAdmin:
     """Default Supabase Admin implementation using service-role credentials."""
 
-    def __init__(self, *, supabase_url: str, service_role_key: str) -> None:
+    def __init__(
+        self,
+        *,
+        supabase_url: str,
+        service_role_key: str,
+        invite_redirect_url: str,
+    ) -> None:
         self._base = supabase_url.rstrip("/")
         self._service_role_key = service_role_key
+        self._invite_redirect_url = invite_redirect_url
 
     async def invite_user(self, *, email: str) -> InvitedUser:
         trimmed_email = email.strip()
@@ -60,7 +68,7 @@ class HttpSupabaseAdmin:
             "apikey": self._service_role_key,
             "Content-Type": "application/json",
         }
-        payload = {"email": trimmed_email}
+        payload = {"email": trimmed_email, "redirect_to": self._invite_redirect_url}
         try:
             async with httpx.AsyncClient(timeout=10) as client:
                 res = await client.post(url, headers=headers, json=payload)
@@ -163,5 +171,22 @@ def get_supabase_admin() -> SupabaseAdmin:
         raise RuntimeError(
             "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set to invite members"
         )
-    return HttpSupabaseAdmin(supabase_url=supabase_url, service_role_key=service_key)
+
+    web_public_url = getattr(settings, "WEB_PUBLIC_URL", None)
+    if not web_public_url or not web_public_url.strip():
+        if settings.ENVIRONMENT == "local":
+            web_public_url = "http://localhost:3000"
+        else:
+            raise RuntimeError("WEB_PUBLIC_URL must be set to invite members")
+
+    web_public_url = web_public_url.strip()
+    base = web_public_url.rstrip("/")
+    next_path = quote("/set-password", safe="/")
+    invite_redirect_url = f"{base}/auth/callback?next={next_path}"
+
+    return HttpSupabaseAdmin(
+        supabase_url=supabase_url,
+        service_role_key=service_key,
+        invite_redirect_url=invite_redirect_url,
+    )
 
