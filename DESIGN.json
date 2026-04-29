@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-04-29T15:29:00.000Z",
+  "title": "Design System: Dashboardy",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Heritage Gold",
+        "canonical": "oklch(46% 0.11 78)",
+        "tonalRamp": [
+          "oklch(15% 0.04 78)",
+          "oklch(25% 0.06 78)",
+          "oklch(35% 0.085 78)",
+          "oklch(46% 0.11 78)",
+          "oklch(58% 0.10 78)",
+          "oklch(72% 0.07 78)",
+          "oklch(86% 0.035 78)",
+          "oklch(96% 0.015 78)"
+        ]
+      },
+      "surface-app": {
+        "role": "neutral",
+        "displayName": "Workshop Paper",
+        "canonical": "oklch(98.5% 0.006 255)",
+        "tonalRamp": [
+          "oklch(15% 0.01 255)",
+          "oklch(25% 0.01 255)",
+          "oklch(35% 0.01 255)",
+          "oklch(50% 0.01 255)",
+          "oklch(65% 0.008 255)",
+          "oklch(80% 0.007 255)",
+          "oklch(92% 0.006 255)",
+          "oklch(98.5% 0.006 255)"
+        ]
+      },
+      "danger-ink": {
+        "role": "secondary",
+        "displayName": "Measured Crimson",
+        "canonical": "oklch(42% 0.08 28)",
+        "tonalRamp": [
+          "oklch(15% 0.03 28)",
+          "oklch(25% 0.05 28)",
+          "oklch(35% 0.07 28)",
+          "oklch(42% 0.08 28)",
+          "oklch(55% 0.07 28)",
+          "oklch(70% 0.05 28)",
+          "oklch(85% 0.03 28)",
+          "oklch(96% 0.01 28)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page titles only." },
+      "headline": { "displayName": "Headline", "purpose": "Section headings." },
+      "title": { "displayName": "Title", "purpose": "Dense subsections and panels." },
+      "body": { "displayName": "Body", "purpose": "Most UI copy and helper text." },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Structural markers (kickers, table headings)."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-state",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default easing for hover/focus transitions."
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Decisive primary action in Heritage Gold, used sparingly.",
+      "html": "<button class=\"ds-btn-primary\">Send invite</button>",
+      "css": ".ds-btn-primary{appearance:none;border:0;border-radius:12px;padding:8px 20px;min-height:44px;background:oklch(46% 0.11 78);color:oklch(98% 0.006 255);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:600;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),transform 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-primary:hover{background:oklch(41% 0.115 78);}.ds-btn-primary:active{background:oklch(36% 0.11 78);transform:translateY(0.5px);}.ds-btn-primary:focus-visible{outline:2px solid oklch(58% 0.12 78);outline-offset:2px;}"
+    },
+    {
+      "name": "Field (Text / Select)",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Paper field with precise border and calm focus ring.",
+      "html": "<input class=\"ds-field\" placeholder=\"alex@company.com\" />",
+      "css": ".ds-field{width:100%;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid oklch(82% 0.018 255);background:oklch(99.5% 0.004 255);color:oklch(23% 0.018 255);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;line-height:1.25;outline:none;transition:border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-field:focus-visible{border-color:oklch(58% 0.11 78);box-shadow:0 0 0 2px oklch(72% 0.07 78);}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Secondary action, structure-first, not attention-seeking.",
+      "html": "<button class=\"ds-btn-quiet\">Save role</button>",
+      "css": ".ds-btn-quiet{appearance:none;border-radius:12px;padding:8px 12px;min-height:40px;border:1px solid oklch(82% 0.018 255);background:transparent;color:oklch(23% 0.018 255);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:500;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-quiet:hover{background:oklch(96% 0.012 255);}.ds-btn-quiet:focus-visible{outline:2px solid oklch(58% 0.12 78);outline-offset:2px;}"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action, quiet but unmistakable.",
+      "html": "<button class=\"ds-btn-danger\">Deactivate</button>",
+      "css": ".ds-btn-danger{appearance:none;border-radius:12px;padding:8px 12px;min-height:40px;border:1px solid oklch(84% 0.04 28);background:transparent;color:oklch(42% 0.08 28);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:500;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-danger:hover{background:oklch(97% 0.02 28);}.ds-btn-danger:focus-visible{outline:2px solid oklch(58% 0.12 78);outline-offset:2px;}"
+    },
+    {
+      "name": "Status Pill (Active)",
+      "kind": "chip",
+      "refersTo": "success-soft",
+      "description": "Active state, soft success tone.",
+      "html": "<span class=\"ds-pill-active\">Active</span>",
+      "css": ".ds-pill-active{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;background:oklch(94% 0.04 150);color:oklch(38% 0.08 150);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:12px;font-weight:500;line-height:1.25;}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Atelier",
+    "overview": "Dashboardy's product UI is a workshop for careful decisions: clean surfaces, quiet structure, and deliberate emphasis. It should feel premium through restraint, not ornament, and remain readable under pressure without turning into a 'starter kit' dashboard.\n\nThis system explicitly rejects generic SaaS template aesthetics, neon-on-black 'crypto dashboard' styling, and spreadsheet-dense intimidation. It reduces cognitive load before adding features, and makes scope, access, and freshness easy to trust.",
+    "keyCharacteristics": [
+      "Tonal depth, not shadow theatrics.",
+      "Few colors with sharp intent.",
+      "Rounded geometry that reads modern, not playful.",
+      "Clear states (hover, focus, disabled) that stay calm.",
+      "Heritage Gold accent — warm, confident, and deliberately scarce."
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "The Heritage Gold accent exists to signal decisive action and focus states. If a screen feels 'gold-heavy', the rule is being broken. Use it sparingly — restraint is luxury.",
+        "section": "colors"
+      },
+      {
+        "name": "The Quiet Kicker Rule",
+        "body": "Uppercased labels should set context, not compete with the title. Keep them small and muted.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "If you need a shadow to make the UI understandable, the spacing and surface steps are wrong.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use surface steps before borders to create hierarchy (surfaces first, lines second).",
+      "Do keep the Heritage Gold accent rare, and spend it on primary actions and focus states.",
+      "Do show destructive actions as quiet but unmistakable (danger ink + border, no theatrics).",
+      "Do keep copy short and operational, optimizing for repeat use and fast scanning.",
+      "Do let the warm gold accent pop against the cool neutral surfaces for a premium feel."
+    ],
+    "donts": [
+      "Don't drift into generic SaaS template aesthetics and 'dashboard starter kit' sameness.",
+      "Don't use neon-on-black, high-chroma 'crypto dashboard' styling.",
+      "Don't ship spreadsheet-dense, intimidating screens that force cognition before context.",
+      "Don't overuse the gold — it earns its impact through scarcity."
+    ]
+  }
+}

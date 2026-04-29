@@ -4,6 +4,7 @@ node_modules/
 # Next.js
 .next/
 out/
+**/.next/
 
 # Build outputs
 dist/
@@ -46,6 +47,7 @@ Thumbs.db
 
 # IDE
 .idea/
+.cursor/
 
 # VS Code — ignore local editor noise; keep shared settings if added
 .vscode/*
@@ -63,3 +65,6 @@ playwright-report/
 *.tmp
 *.swp
 *.swo
+
+# Impeccable live session metadata (local-only)
+.impeccable-live.json

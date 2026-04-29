@@ -129,8 +129,8 @@ Expected success:
 
 Expected failure with bad credentials:
 
-- HTTP 200 or 400, depending on final API error convention.
-- Response status is `test_failed`.
+- HTTP 200.
+- Response field `test_status` is `failure`.
 - `last_error` is sanitized and categorized.
 - No plaintext credential appears in response, logs, or audit records.
 
@@ -140,7 +140,7 @@ Repeat the create request for a tenant that already has a connection.
 
 Expected:
 
-- The API updates the existing tenant connection metadata rather than creating a second active connection, or returns a conflict if the request attempts duplicate creation through a create-only path.
+- The `upsert` request updates the existing tenant connection metadata rather than creating a second connection record.
 - The database still has one `data_connections` row for the tenant.
 
 ## 7. Validate credential rotation

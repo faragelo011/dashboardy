@@ -160,7 +160,7 @@ test("non-admin is redirected away from members page", async ({ context, page })
   try {
     await setSupabaseSessionCookie(context, "viewer");
     await page.goto("/members");
-    expect(new URL(page.url()).pathname).toBe("/");
+    await expect(page).toHaveURL("**/");
     await expect(page.getByText("Role:")).toBeVisible();
     await expect(page.getByText("viewer", { exact: true })).toBeVisible();
     await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");

@@ -22,11 +22,11 @@ An admin configures the tenant's single analytics data connection so analysts an
 
 **Why this priority**: Without a tenant data connection, later query, saved question, and dashboard workflows cannot run.
 
-**Independent Test**: Can be fully tested by signing in as an admin, submitting valid connection details, and confirming the tenant has exactly one active connection record with no credentials visible afterward.
+**Independent Test**: Can be fully tested by signing in as an admin, submitting valid connection details, and confirming the tenant has exactly one connection record with no credentials visible afterward.
 
 **Acceptance Scenarios**:
 
-1. **Given** an admin in a tenant with no configured data connection, **When** they submit valid connection metadata and credentials, **Then** the system stores the connection for that tenant and confirms it is available for use.
+1. **Given** an admin in a tenant with no configured data connection, **When** they submit valid connection metadata and credentials, **Then** the system stores the connection for that tenant and confirms the credentials are pending and will not be available for use until a successful connection test completes.
 2. **Given** a tenant already has a data connection, **When** an admin attempts to create another connection for the same tenant, **Then** the system prevents the duplicate and explains that only one connection is allowed per tenant.
 3. **Given** a non-admin user, **When** they attempt to create or edit a connection, **Then** the system denies the action.
 
@@ -80,7 +80,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ### Functional Requirements
 
 - **FR-001**: The system MUST allow only admins to create, update, test, and rotate tenant data connections.
-- **FR-002**: The system MUST enforce a maximum of one active data connection per tenant.
+- **FR-002**: The system MUST enforce exactly one data connection per tenant.
 - **FR-003**: The system MUST associate every data connection with exactly one tenant.
 - **FR-004**: The system MUST collect the connection details needed to reach the tenant's approved analytics warehouse, including a human-readable name and non-secret warehouse location metadata.
 - **FR-005**: The system MUST store credential material only in a dedicated secret store and retain only an opaque credential reference with the connection record.
@@ -115,7 +115,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ### Measurable Outcomes
 
 - **SC-001**: 100% of non-admin attempts to create, update, test, or rotate a connection are denied.
-- **SC-002**: 100% of tenants are prevented from having more than one active data connection.
+- **SC-002**: 100% of tenants are prevented from having more than one data connection record.
 - **SC-003**: 0 plaintext credential values appear in user-facing connection responses, stored connection metadata, test errors, or operational logs during validation.
 - **SC-004**: Admins can complete initial connection setup and run the first connection test in under 5 minutes when they have valid credential information.
 - **SC-005**: Successful credential rotations are reflected in subsequent data access within 60 seconds after the passing test.
@@ -125,7 +125,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ## Assumptions
 
 - Feature 2 auth and tenancy are already available, including tenant resolution, workspace membership, and admin role checks.
-- The MVP allows one active analytics warehouse connection per tenant; multi-connection routing and shared connections are out of scope.
+- The MVP allows exactly one analytics warehouse connection record per tenant; multi-connection routing and shared connections are out of scope.
 - Deleting or disabling a tenant connection is out of scope for MVP; connection changes happen through metadata updates and credential rotation.
 - Credential values are accepted only during create or rotate actions and are not retrievable afterward.
 - Connection metadata may include warehouse, database, and schema labels because they help admins recognize the configured target and are not treated as secrets by default.
