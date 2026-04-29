@@ -179,6 +179,7 @@ def get_supabase_admin() -> SupabaseAdmin:
         else:
             raise RuntimeError("WEB_PUBLIC_URL must be set to invite members")
 
+    web_public_url = web_public_url.strip()
     base = web_public_url.rstrip("/")
     next_path = quote("/set-password", safe="/")
     invite_redirect_url = f"{base}/auth/callback?next={next_path}"

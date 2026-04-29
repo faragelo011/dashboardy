@@ -16,12 +16,17 @@ export function SetPasswordForm() {
     e.preventDefault();
     setError(null);
 
-    const trimmed = password.trim();
-    if (!trimmed) {
+    const trimmedPassword = password.trim();
+    const trimmedConfirm = confirm.trim();
+    if (!trimmedPassword) {
       setError("Password is required.");
       return;
     }
-    if (trimmed !== confirm.trim()) {
+    if (!trimmedConfirm) {
+      setError("Confirm password is required.");
+      return;
+    }
+    if (password !== confirm) {
       setError("Passwords do not match.");
       return;
     }
@@ -29,7 +34,7 @@ export function SetPasswordForm() {
     setLoading(true);
     try {
       const supabase = createBrowserSupabase();
-      const { error: err } = await supabase.auth.updateUser({ password: trimmed });
+      const { error: err } = await supabase.auth.updateUser({ password });
       if (err) {
         setError(err.message);
         return;
