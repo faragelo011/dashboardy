@@ -155,12 +155,17 @@ test("admin can access members page", async ({ context, page }) => {
   }
 });
 
-test("non-admin is redirected away from members page", async ({ context, page }) => {
+test("non-admin is redirected away from members page", async ({
+  context,
+  page,
+  baseURL,
+}) => {
   const server = await startMockApi("viewer");
   try {
     await setSupabaseSessionCookie(context, "viewer");
     await page.goto("/members");
-    await expect(page).toHaveURL("**/");
+    const home = new URL("/", baseURL ?? "http://localhost:3005").href;
+    await expect(page).toHaveURL(home);
     await expect(page.getByText("Role:")).toBeVisible();
     await expect(page.getByText("viewer", { exact: true })).toBeVisible();
     await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");

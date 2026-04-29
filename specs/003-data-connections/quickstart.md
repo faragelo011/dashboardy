@@ -19,7 +19,7 @@ Required local services and configuration:
 
 - Supabase project or local equivalent with Auth, Postgres, and Vault enabled.
 - Supabase Postgres connection string available to the API as `DATABASE_URL`.
-- Supabase service credentials available only to the API for Vault operations.
+- Only the API may use Supabase service credentials for Vault operations (never expose service keys to the browser or commit them).
 - Snowflake test account or mocked Snowflake connector for local contract/integration tests.
 - Operator-created tenant, workspace, and active admin membership fixture from Feature 2.
 
