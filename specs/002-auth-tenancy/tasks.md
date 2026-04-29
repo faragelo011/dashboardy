@@ -173,14 +173,14 @@
 
 **Purpose**: Final validation, documentation, generated artifacts, and cleanup across all completed stories.
 
-- [ ] T075 [P] Update Feature 2 quickstart validation notes after implementation in `specs/002-auth-tenancy/quickstart.md`.
-- [ ] T076 [P] Add OpenAPI contract usage notes for implementers in `specs/002-auth-tenancy/contracts/README.md`.
-- [ ] T077 [P] Add normalized auth/tenancy error-code documentation in `apps/api/README.md`.
-- [ ] T078 Regenerate or manually align shared TypeScript API types from `specs/002-auth-tenancy/contracts/auth-tenancy.openapi.yaml` into `packages/types/src/auth-tenancy.ts`.
-- [ ] T079 Run API validation commands for `apps/api`: `uv run --directory apps/api pytest` and `uv run --directory apps/api ruff check .`.
-- [ ] T080 Run web validation commands for `apps/web`: `pnpm --filter @dashboardy/web lint` and `pnpm --filter @dashboardy/web test`.
-- [ ] T081 Run monorepo validation commands from `package.json`: `pnpm lint` and `pnpm test`.
-- [ ] T082 Verify quickstart acceptance checklist manually and record any follow-up notes in `specs/002-auth-tenancy/quickstart.md`.
+- [X] T075 [P] Update Feature 2 quickstart validation notes after implementation in `specs/002-auth-tenancy/quickstart.md`.
+- [X] T076 [P] Add OpenAPI contract usage notes for implementers in `specs/002-auth-tenancy/contracts/README.md`.
+- [X] T077 [P] Add normalized auth/tenancy error-code documentation in `apps/api/README.md`.
+- [X] T078 Regenerate or manually align shared TypeScript API types from `specs/002-auth-tenancy/contracts/auth-tenancy.openapi.yaml` into `packages/types/src/auth-tenancy.ts`.
+- [X] T079 Run API validation commands for `apps/api`: `uv run --directory apps/api pytest` and `uv run --directory apps/api ruff check .`.
+- [X] T080 Run web validation commands for `apps/web`: `pnpm --filter @dashboardy/web lint` and `pnpm --filter @dashboardy/web test`.
+- [X] T081 Run monorepo validation commands from `package.json`: `pnpm lint` and `pnpm test`.
+- [X] T082 Verify quickstart acceptance checklist manually and record any follow-up notes in `specs/002-auth-tenancy/quickstart.md`.
 
 ---
 

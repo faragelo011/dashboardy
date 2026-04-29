@@ -23,6 +23,10 @@ export interface MeResponse {
   workspaces: WorkspaceContext[];
 }
 
+export interface SwitchWorkspaceRequest {
+  workspace_id: string;
+}
+
 export interface Member {
   id: string;
   user_id: string;

@@ -104,7 +104,8 @@ Expected:
 
 - HTTP 201.
 - Membership has role `analyst` and status `active`.
-- Repeating the same invite returns **HTTP 409 Conflict** (per `inviteWorkspaceMember`); no duplicate membership is created.
+- Repeating the same invite for an active member returns HTTP 201 with the existing membership; no duplicate membership is created.
+- Repeating the invite after that membership is inactive returns **HTTP 409 Conflict** with `membership_conflict`.
 
 As non-admin:
 
@@ -227,3 +228,11 @@ pnpm test
 - [ ] External clients only access explicit asset grants.
 - [ ] External-client export permission defaults to false.
 - [ ] Workspace name appears in the protected UI and switching is hidden or disabled for one workspace.
+
+---
+
+## Phase 7 Notes (Implementation Polish)
+
+- The protected layout renders a workspace badge with the current workspace name.
+- Workspace switching is intentionally hidden/disabled in the web UI for the one-workspace MVP.
+- External-client asset grants are managed via admin endpoints and a minimal admin UI surface.
