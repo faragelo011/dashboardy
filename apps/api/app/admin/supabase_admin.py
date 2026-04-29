@@ -74,19 +74,22 @@ class HttpSupabaseAdmin:
         try:
             res.raise_for_status()
         except HTTPStatusError as exc:
-            body_text = res.text
             status_code = res.status_code
             retry_after = res.headers.get("retry-after")
             if status_code == 429:
                 msg = "Supabase invite rate limited"
                 if retry_after:
-                    msg = f"{msg} (retry-after={retry_after}s)"
+                    if retry_after.isdigit():
+                        msg = f"{msg} (retry-after={retry_after}s)"
+                    else:
+                        msg = f"{msg} (retry-after={retry_after})"
                 raise SupabaseAdminError(
                     status_code=429, error_code="rate_limited", message=msg
                 ) from exc
             if status_code in (400, 422):
                 logger.debug(
-                    "Supabase invite rejected (status=%s): %s", status_code, body_text
+                    "Supabase invite rejected (status=%s): response body omitted",
+                    status_code,
                 )
                 raise SupabaseAdminError(
                     status_code=400,
@@ -95,9 +98,8 @@ class HttpSupabaseAdmin:
                 ) from exc
             if status_code in (401, 403):
                 logger.debug(
-                    "Supabase invite unauthorized (status=%s): %s",
+                    "Supabase invite unauthorized (status=%s): response body omitted",
                     status_code,
-                    body_text,
                 )
                 raise SupabaseAdminError(
                     status_code=503,
@@ -105,7 +107,7 @@ class HttpSupabaseAdmin:
                     message="Supabase invite unauthorized",
                 ) from exc
             logger.debug(
-                "Supabase invite failed (status=%s): %s", status_code, body_text
+                "Supabase invite failed (status=%s): response body omitted", status_code
             )
             raise SupabaseAdminError(
                 status_code=503,
