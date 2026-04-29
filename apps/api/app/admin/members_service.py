@@ -169,6 +169,34 @@ async def update_member(
 ) -> MemberSchema:
     require_admin(actor)
 
+    existing = await repository.get_membership_for_workspace_by_id(
+        session,
+        workspace_id=workspace_id,
+        membership_id=membership_id,
+    )
+    if existing is None:
+        raise NotFound(error_code="not_found", message="Member not found.")
+
+    # Atomic invariant: the workspace must never end up with zero active admins.
+    # We lock the active-admin set for this workspace before applying updates.
+    admin_ids = await repository.list_active_admin_membership_ids_for_update(
+        session,
+        workspace_id=workspace_id,
+    )
+    would_remove_admin = (
+        existing.status == MembershipStatus.active
+        and existing.role == MembershipRole.admin
+        and (
+            (role is not None and role != MembershipRole.admin)
+            or (status is not None and status != MembershipStatus.active)
+        )
+    )
+    if would_remove_admin and len(admin_ids) <= 1 and admin_ids[0] == membership_id:
+        raise Conflict(
+            error_code="last_active_admin",
+            message="This workspace must have at least one active admin.",
+        )
+
     membership = await repository.update_membership(
         session,
         workspace_id=workspace_id,

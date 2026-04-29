@@ -108,7 +108,7 @@ curl -s -X PUT http://localhost:8000/workspaces/<workspace_id>/connection \
 
 Expected:
 
-- HTTP 200 or 201.
+- HTTP 201 Created on first-time connection creation; HTTP 200 OK on subsequent updates (upserts).
 - Response status is `pending_test` until validation succeeds.
 - Response includes metadata only: name, warehouse, database, schema, status, timestamps, and sanitized error fields.
 - Response does not include `credentials.password`, other plaintext credential values, or a raw Vault secret ID.

@@ -112,12 +112,19 @@ export async function updateMemberRoleAction(formData: FormData) {
       "This workspace must have at least one active admin. Add another admin before changing this role.",
     );
   }
-  if (target.user_id === userId && role !== "admin") {
+  if (target.user_id === userId && target.role === "admin" && role !== "admin") {
     throw new Error("You cannot remove your own admin role.");
   }
 
-  await updateWorkspaceMember(token, workspaceId, membershipId, { role });
-  revalidatePath("/members");
+  try {
+    await updateWorkspaceMember(token, workspaceId, membershipId, { role });
+    revalidatePath("/members");
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.message);
+    }
+    throw err;
+  }
 }
 
 export async function deactivateMemberAction(formData: FormData) {
@@ -147,10 +154,17 @@ export async function deactivateMemberAction(formData: FormData) {
     );
   }
 
-  await updateWorkspaceMember(token, workspaceId, membershipId, {
-    status: "inactive",
-  });
-  revalidatePath("/members");
+  try {
+    await updateWorkspaceMember(token, workspaceId, membershipId, {
+      status: "inactive",
+    });
+    revalidatePath("/members");
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.message);
+    }
+    throw err;
+  }
 }
 
 export async function createAssetGrantAction(formData: FormData) {

@@ -105,8 +105,17 @@ export async function updateWorkspaceMember(
     },
   );
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`PATCH member failed: ${res.status} ${body}`);
+    const text = await res.text().catch(() => "");
+    try {
+      const parsed = JSON.parse(text) as { error_code?: string; message?: string };
+      const msg =
+        typeof parsed.message === "string" && parsed.message.trim()
+          ? parsed.message
+          : text;
+      throw new ApiError(res.status, msg, parsed.error_code);
+    } catch {
+      throw new ApiError(res.status, text || "Update member failed");
+    }
   }
   return (await res.json()) as Member;
 }
