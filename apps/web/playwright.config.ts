@@ -13,7 +13,7 @@ function monorepoRoot(): string {
 export default defineConfig({
   testDir: "./tests",
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://localhost:3005",
     ...devices["Desktop Chrome"],
   },
   projects: [
@@ -25,11 +25,12 @@ export default defineConfig({
   webServer: {
     command: "pnpm --filter @dashboardy/web dev",
     cwd: monorepoRoot(),
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
+    url: "http://localhost:3005",
+    reuseExistingServer: false,
     timeout: 120_000,
     env: {
       ...process.env,
+      PORT: "3005",
       API_PUBLIC_URL: process.env.API_PUBLIC_URL ?? "http://127.0.0.1:4010",
       NEXT_PUBLIC_API_PUBLIC_URL:
         process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? "http://127.0.0.1:4010",
