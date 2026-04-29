@@ -15,6 +15,28 @@ Feature 1 variables still apply:
 - `ENVIRONMENT` (required in deployed environments)
 - `LOG_LEVEL` (optional)
 
+## Data connections (Feature 3) environment variables (names only)
+
+Feature 3 adds admin-only Snowflake connection management. **Credential material is stored only in Supabase Vault** and must never appear in:
+
+- API responses
+- Web payloads
+- logs / traces
+- audit records
+- application database tables (except opaque, non-secret references)
+
+### Supabase Vault (server-only)
+
+- `SUPABASE_URL` (required): Supabase project base URL for Vault calls.
+- `SUPABASE_SERVICE_ROLE_KEY` (required): service role key used by the API to call Vault endpoints.
+
+### Snowflake connector tuning (optional, server-only)
+
+Tenant credentials are submitted by admins and stored in Vault; they are **not** set via env vars. The API may optionally support:
+
+- `SNOWFLAKE_CONNECT_TIMEOUT_SECONDS` (optional)
+- `SNOWFLAKE_LOGIN_TIMEOUT_SECONDS` (optional)
+
 ## Auth + Tenancy (Feature 2) error codes
 
 Feature 2 endpoints return normalized JSON error payloads of the form:

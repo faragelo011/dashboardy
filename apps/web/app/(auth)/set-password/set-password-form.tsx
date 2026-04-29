@@ -26,7 +26,7 @@ export function SetPasswordForm() {
       setError("Confirm password is required.");
       return;
     }
-    if (password !== confirm) {
+    if (trimmedPassword !== trimmedConfirm) {
       setError("Passwords do not match.");
       return;
     }
@@ -34,7 +34,9 @@ export function SetPasswordForm() {
     setLoading(true);
     try {
       const supabase = createBrowserSupabase();
-      const { error: err } = await supabase.auth.updateUser({ password });
+      const { error: err } = await supabase.auth.updateUser({
+        password: trimmedPassword,
+      });
       if (err) {
         setError(err.message);
         return;
@@ -49,7 +51,7 @@ export function SetPasswordForm() {
   return (
     <form className="mt-6 flex flex-col gap-4" onSubmit={onSubmit}>
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-medium text-slate-700">
+        <label htmlFor="password" className="text-sm font-medium text-ink">
           New password
         </label>
         <input
@@ -58,7 +60,7 @@ export function SetPasswordForm() {
           type="password"
           required
           autoComplete="new-password"
-          className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 disabled:cursor-not-allowed disabled:bg-slate-100"
+          className="h-11 w-full rounded-xl border border-border-0 bg-surface-1 px-3 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-faint focus:border-focus focus:ring-4 focus:ring-focus-ring/30 disabled:cursor-not-allowed disabled:bg-surface-5"
           value={password}
           onChange={(ev) => setPassword(ev.target.value)}
           disabled={loading}
@@ -68,7 +70,7 @@ export function SetPasswordForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="confirm" className="text-sm font-medium text-slate-700">
+        <label htmlFor="confirm" className="text-sm font-medium text-ink">
           Confirm password
         </label>
         <input
@@ -77,7 +79,7 @@ export function SetPasswordForm() {
           type="password"
           required
           autoComplete="new-password"
-          className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 disabled:cursor-not-allowed disabled:bg-slate-100"
+          className="h-11 w-full rounded-xl border border-border-0 bg-surface-1 px-3 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-faint focus:border-focus focus:ring-4 focus:ring-focus-ring/30 disabled:cursor-not-allowed disabled:bg-surface-5"
           value={confirm}
           onChange={(ev) => setConfirm(ev.target.value)}
           disabled={loading}
@@ -90,7 +92,7 @@ export function SetPasswordForm() {
           role="alert"
           aria-live="assertive"
           aria-atomic="true"
-          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+          className="rounded-xl border border-danger-border bg-danger-soft-strong px-3 py-2 text-sm text-danger-ink-strong"
         >
           {error}
         </div>
@@ -99,7 +101,7 @@ export function SetPasswordForm() {
       <button
         type="submit"
         disabled={loading}
-        className="mt-1 inline-flex h-11 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-medium text-slate-50 shadow-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-accent px-4 text-sm font-semibold text-surface-3 shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:bg-border-3"
       >
         {loading ? "Saving…" : "Set password"}
       </button>

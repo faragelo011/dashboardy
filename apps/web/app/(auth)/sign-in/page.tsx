@@ -28,22 +28,29 @@ export default function SignInPage() {
       }
       router.push("/");
       router.refresh();
+    } catch (err) {
+      console.error("sign-in failed", err);
+      if (err instanceof Error) {
+        setError(err.message || String(err));
+      } else {
+        setError(String(err));
+      }
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-dvh bg-slate-50 text-slate-900">
+    <main className="min-h-dvh bg-surface-app text-ink">
       <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
         <div className="mb-6">
-          <p className="text-xs font-medium tracking-wide text-slate-600">
-            Dashboardy
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
+            Access control
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink-strong">
             Sign in
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-ink-muted">
             Use your workspace account to continue.
           </p>
         </div>
@@ -56,7 +63,7 @@ export default function SignInPage() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="email"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-medium text-ink"
             >
               Email
             </label>
@@ -67,7 +74,7 @@ export default function SignInPage() {
               required
               autoComplete="email"
               inputMode="email"
-              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="h-11 w-full rounded-xl border border-border-0 bg-surface-1 px-3 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-faint focus:border-focus focus:ring-4 focus:ring-focus-ring/30 disabled:cursor-not-allowed disabled:bg-surface-5"
               placeholder="name@company.com"
               value={email}
               onChange={(ev) => setEmail(ev.target.value)}
@@ -78,7 +85,7 @@ export default function SignInPage() {
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="password"
-              className="text-sm font-medium text-slate-700"
+              className="text-sm font-medium text-ink"
             >
               Password
             </label>
@@ -88,7 +95,7 @@ export default function SignInPage() {
               type="password"
               required
               autoComplete="current-password"
-              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 disabled:cursor-not-allowed disabled:bg-slate-100"
+              className="h-11 w-full rounded-xl border border-border-0 bg-surface-1 px-3 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-faint focus:border-focus focus:ring-4 focus:ring-focus-ring/30 disabled:cursor-not-allowed disabled:bg-surface-5"
               value={password}
               onChange={(ev) => setPassword(ev.target.value)}
               disabled={loading}
@@ -103,7 +110,7 @@ export default function SignInPage() {
               role="alert"
               aria-live="assertive"
               aria-atomic="true"
-              className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+              className="rounded-xl border border-danger-border bg-danger-soft-strong px-3 py-2 text-sm text-danger-ink-strong"
             >
               {error}
             </div>
@@ -112,13 +119,13 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-1 inline-flex h-11 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-medium text-slate-50 shadow-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-400"
+            className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-accent px-4 text-sm font-semibold text-surface-3 shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:bg-border-3"
           >
             {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
 
-        <p className="mt-6 text-xs leading-relaxed text-slate-500">
+        <p className="mt-6 text-xs leading-relaxed text-ink-muted">
           By continuing, you agree to the security policies of your
           organization.
         </p>

@@ -1,0 +1,393 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy API - Data Connections + Credentials
+  version: 0.3.0
+  description: |
+    Feature 3 API contract for admin-only tenant Snowflake connection metadata,
+    Vault-backed credential submission, connection testing, and credential rotation.
+    No response schema exposes plaintext credentials or raw Vault secret values.
+
+servers:
+  - url: https://api.staging.dashboardy.app
+    description: Staging
+  - url: https://api.dashboardy.app
+    description: Production
+
+security:
+  - bearerAuth: []
+
+paths:
+  /workspaces/{workspace_id}/connection:
+    get:
+      operationId: getWorkspaceConnection
+      summary: Get tenant data connection metadata
+      description: |
+        Admin-only. Returns the tenant's connection metadata and safe status
+        fields. A tenant without configured credentials returns a metadata
+        envelope with status `not_configured`.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Safe connection metadata.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataConnection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      operationId: upsertWorkspaceConnection
+      summary: Create or update tenant data connection metadata
+      description: |
+        Admin-only. Creates the tenant's single data connection when absent or
+        updates safe metadata on the existing connection. If credentials are
+        supplied, they are stored in Vault as pending credentials and become
+        effective only after a successful connection test.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpsertConnectionRequest"
+      responses:
+        "200":
+          description: Existing connection updated.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataConnection"
+        "201":
+          description: Connection created.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataConnection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /workspaces/{workspace_id}/connection/test:
+    post:
+      operationId: testWorkspaceConnection
+      summary: Test submitted or configured connection credentials
+      description: |
+        Admin-only. Runs a bounded connectivity validation. Successful tests
+        activate pending credentials. Failed tests preserve the previous
+        effective credential when one exists and return only sanitized failure
+        details.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Test completed and connection metadata updated.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConnectionTestResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspace_id}/connection/rotate:
+    post:
+      operationId: rotateWorkspaceConnectionCredentials
+      summary: Submit replacement connection credentials
+      description: |
+        Admin-only. Stores replacement credentials as pending secret material.
+        The replacement becomes effective only after a successful connection
+        test. The response never echoes credential values.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RotateConnectionRequest"
+      responses:
+        "200":
+          description: Rotation submitted and pending test.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DataConnection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  headers:
+    CorrelationId:
+      description: Request correlation ID for logs and support.
+      schema:
+        type: string
+
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  responses:
+    BadRequest:
+      description: Request failed validation.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Missing or invalid authentication token.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Caller is authenticated but not authorized for this action.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Connection or workspace not found in caller scope.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Request conflicts with one-connection-per-tenant invariant.
+      headers:
+        X-Correlation-ID:
+          $ref: "#/components/headers/CorrelationId"
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ConnectionStatus:
+      type: string
+      enum:
+        - not_configured
+        - pending_test
+        - active
+        - test_failed
+
+    FailureCategory:
+      type: string
+      enum:
+        - credential
+        - network
+        - permission
+        - timeout
+        - unknown
+
+    DataConnection:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - has_credentials
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant owning the connection.
+        name:
+          type: string
+          minLength: 1
+        warehouse:
+          type: string
+          minLength: 1
+        database:
+          type: string
+          minLength: 1
+        schema:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ConnectionStatus"
+        has_credentials:
+          type: boolean
+          description: Indicates whether credential material exists without exposing it.
+        secret_version:
+          type: integer
+          minimum: 0
+          description: Non-secret version marker for rotation/invalidation.
+        last_tested_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_successful_test_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_error:
+          type: string
+          nullable: true
+          description: Sanitized admin-facing error summary.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SnowflakeCredentials:
+      type: object
+      additionalProperties: false
+      required:
+        - account
+        - username
+        - password
+        - role
+      properties:
+        account:
+          type: string
+          minLength: 1
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+          writeOnly: true
+        role:
+          type: string
+          minLength: 1
+
+    UpsertConnectionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - name
+        - warehouse
+        - database
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        warehouse:
+          type: string
+          minLength: 1
+          maxLength: 255
+        database:
+          type: string
+          minLength: 1
+          maxLength: 255
+        schema:
+          type: string
+          maxLength: 255
+          nullable: true
+        credentials:
+          $ref: "#/components/schemas/SnowflakeCredentials"
+
+    RotateConnectionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - credentials
+      properties:
+        credentials:
+          $ref: "#/components/schemas/SnowflakeCredentials"
+
+    ConnectionTestResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - connection
+        - test_status
+      properties:
+        connection:
+          $ref: "#/components/schemas/DataConnection"
+        test_status:
+          type: string
+          enum:
+            - success
+            - failure
+        failure_category:
+          $ref: "#/components/schemas/FailureCategory"
+        sanitized_error:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - error_code
+        - message
+      properties:
+        error_code:
+          type: string
+          examples:
+            - auth_required
+            - authz_denied
+            - connection_not_found
+            - connection_conflict
+            - validation_error
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true

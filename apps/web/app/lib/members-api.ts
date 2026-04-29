@@ -49,6 +49,29 @@ async function apiFetch(
   });
 }
 
+/** Parse JSON error bodies from the API (`{ error_code, message }`) without swallowing ApiError. */
+function parseApiErrorBody(
+  rawText: string,
+  fallbackMessage: string,
+): { message: string; error_code?: string; rawText: string } {
+  let parsed: { error_code?: string; message?: string } | null = null;
+  try {
+    parsed = JSON.parse(rawText) as { error_code?: string; message?: string };
+  } catch {
+    parsed = null;
+  }
+  const fromJson =
+    parsed && typeof parsed.message === "string" && parsed.message.trim()
+      ? parsed.message.trim()
+      : "";
+  const message = (fromJson || rawText || fallbackMessage).trim() || fallbackMessage;
+  const error_code =
+    parsed && typeof parsed.error_code === "string" && parsed.error_code.trim()
+      ? parsed.error_code.trim()
+      : undefined;
+  return { message, error_code, rawText: rawText };
+}
+
 export async function listWorkspaceMembers(
   accessToken: string,
   workspaceId: string,
@@ -74,16 +97,8 @@ export async function inviteWorkspaceMember(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    try {
-      const parsed = JSON.parse(text) as { error_code?: string; message?: string };
-      const msg =
-        typeof parsed.message === "string" && parsed.message.trim()
-          ? parsed.message
-          : text;
-      throw new ApiError(res.status, msg, parsed.error_code);
-    } catch {
-      throw new ApiError(res.status, text || "Invite failed");
-    }
+    const parsed = parseApiErrorBody(text, "Invite failed");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as Member;
 }
@@ -105,8 +120,9 @@ export async function updateWorkspaceMember(
     },
   );
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`PATCH member failed: ${res.status} ${body}`);
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Update member failed");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as Member;
 }

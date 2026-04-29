@@ -165,21 +165,29 @@ def get_supabase_admin() -> SupabaseAdmin:
     """
 
     settings = get_settings()
+
+    def _strip_or_none(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+        trimmed = value.strip()
+        return trimmed if trimmed else None
+
     supabase_url = getattr(settings, "SUPABASE_URL", None)  # may be absent
     service_key = getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", None)
+    supabase_url = _strip_or_none(supabase_url)
+    service_key = _strip_or_none(service_key)
     if not supabase_url or not service_key:
         raise RuntimeError(
             "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set to invite members"
         )
 
     web_public_url = getattr(settings, "WEB_PUBLIC_URL", None)
-    if not web_public_url or not web_public_url.strip():
+    web_public_url = _strip_or_none(web_public_url)
+    if not web_public_url:
         if settings.ENVIRONMENT == "local":
             web_public_url = "http://localhost:3000"
         else:
             raise RuntimeError("WEB_PUBLIC_URL must be set to invite members")
-
-    web_public_url = web_public_url.strip()
     base = web_public_url.rstrip("/")
     next_path = quote("/set-password", safe="/")
     invite_redirect_url = f"{base}/auth/callback?next={next_path}"

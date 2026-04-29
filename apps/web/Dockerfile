@@ -5,6 +5,7 @@ WORKDIR /repo
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY DESIGN.md DESIGN.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages ./packages
 RUN pnpm install --frozen-lockfile

@@ -3,11 +3,15 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "predev": "pnpm tokens:sync",
     "dev": "node scripts/next-cli.cjs dev",
+    "prebuild": "pnpm tokens:sync",
     "build": "node scripts/next-cli.cjs build",
+    "prestart": "pnpm tokens:sync",
     "start": "node scripts/next-cli.cjs start",
     "lint": "node scripts/next-cli.cjs lint",
-    "test": "playwright test --project=ci"
+    "test": "playwright test --project=ci",
+    "tokens:sync": "node scripts/sync-design-tokens.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
