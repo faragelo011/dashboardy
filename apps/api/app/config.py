@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "local"
     LOG_LEVEL: str = "info"
 
+    # Public URL of the web app (used for auth redirects, invite acceptance flows, etc).
+    WEB_PUBLIC_URL: str | None = None
+
     # Supabase project details used by admin-only operations (invites).
     SUPABASE_URL: str | None = None
     SUPABASE_SERVICE_ROLE_KEY: str | None = None
