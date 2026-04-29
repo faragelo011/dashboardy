@@ -123,7 +123,7 @@ curl -s -X POST http://localhost:8000/workspaces/<workspace_id>/connection/test 
 Expected success:
 
 - HTTP 200.
-- Response status is `active`.
+- Response field `test_status` is `success` and connection status is `active`.
 - `last_tested_at` and `last_successful_test_at` are populated.
 - An audit record exists for create and test attempts.
 

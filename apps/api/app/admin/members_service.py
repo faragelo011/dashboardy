@@ -191,6 +191,11 @@ async def update_member(
             or (status is not None and status != MembershipStatus.active)
         )
     )
+    if would_remove_admin and not admin_ids:
+        raise Conflict(
+            error_code="last_active_admin",
+            message="This workspace must have at least one active admin.",
+        )
     if would_remove_admin and len(admin_ids) <= 1 and admin_ids[0] == membership_id:
         raise Conflict(
             error_code="last_active_admin",

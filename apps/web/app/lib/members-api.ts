@@ -74,16 +74,17 @@ export async function inviteWorkspaceMember(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    let parsed: { error_code?: string; message?: string } | null = null;
     try {
-      const parsed = JSON.parse(text) as { error_code?: string; message?: string };
-      const msg =
-        typeof parsed.message === "string" && parsed.message.trim()
-          ? parsed.message
-          : text;
-      throw new ApiError(res.status, msg, parsed.error_code);
+      parsed = JSON.parse(text) as { error_code?: string; message?: string };
     } catch {
-      throw new ApiError(res.status, text || "Invite failed");
+      parsed = null;
     }
+    const msg =
+      parsed && typeof parsed.message === "string" && parsed.message.trim()
+        ? parsed.message
+        : text;
+    throw new ApiError(res.status, msg || "Invite failed", parsed?.error_code);
   }
   return (await res.json()) as Member;
 }
@@ -106,16 +107,21 @@ export async function updateWorkspaceMember(
   );
   if (!res.ok) {
     const text = await res.text().catch(() => "");
+    let parsed: { error_code?: string; message?: string } | null = null;
     try {
-      const parsed = JSON.parse(text) as { error_code?: string; message?: string };
-      const msg =
-        typeof parsed.message === "string" && parsed.message.trim()
-          ? parsed.message
-          : text;
-      throw new ApiError(res.status, msg, parsed.error_code);
+      parsed = JSON.parse(text) as { error_code?: string; message?: string };
     } catch {
-      throw new ApiError(res.status, text || "Update member failed");
+      parsed = null;
     }
+    const msg =
+      parsed && typeof parsed.message === "string" && parsed.message.trim()
+        ? parsed.message
+        : text;
+    throw new ApiError(
+      res.status,
+      msg || "Update member failed",
+      parsed?.error_code,
+    );
   }
   return (await res.json()) as Member;
 }
