@@ -12,19 +12,36 @@ import {
 import {
   ApiError,
   inviteWorkspaceMember,
+  listWorkspaceMembers,
   updateWorkspaceMember,
 } from "@/app/lib/members-api";
 
-async function requireAccessToken(): Promise<string> {
+type SessionContext = { token: string; userId: string };
+
+async function requireSessionContext(): Promise<SessionContext> {
   const supabase = await createServerSupabase();
   const {
     data: { session },
   } = await supabase.auth.getSession();
   const token = session?.access_token;
-  if (!token) {
+  const userId = session?.user?.id;
+  if (!token || !userId) {
     redirect("/sign-in");
   }
-  return token;
+  return { token, userId };
+}
+
+async function loadMembersContext(
+  token: string,
+  workspaceId: string,
+  membershipId: string,
+) {
+  const { members } = await listWorkspaceMembers(token, workspaceId);
+  const target = members.find((member) => member.id === membershipId) ?? null;
+  const activeAdmins = members.filter(
+    (member) => member.status === "active" && member.role === "admin",
+  );
+  return { members, target, activeAdminCount: activeAdmins.length };
 }
 
 export async function inviteMemberAction(formData: FormData) {
@@ -55,7 +72,7 @@ export async function inviteMemberAction(formData: FormData) {
       : "viewer";
 
   try {
-    const token = await requireAccessToken();
+    const { token } = await requireSessionContext();
     await inviteWorkspaceMember(token, workspaceId, { email, role });
     revalidatePath("/members");
   } catch (err) {
@@ -75,7 +92,30 @@ export async function updateMemberRoleAction(formData: FormData) {
     | "external_client";
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
 
-  const token = await requireAccessToken();
+  const { token, userId } = await requireSessionContext();
+
+  const { target, activeAdminCount } = await loadMembersContext(
+    token,
+    workspaceId,
+    membershipId,
+  );
+  if (!target) {
+    throw new Error("Member not found.");
+  }
+  if (
+    target.status === "active" &&
+    target.role === "admin" &&
+    role !== "admin" &&
+    activeAdminCount <= 1
+  ) {
+    throw new Error(
+      "This workspace must have at least one active admin. Add another admin before changing this role.",
+    );
+  }
+  if (target.user_id === userId && role !== "admin") {
+    throw new Error("You cannot remove your own admin role.");
+  }
+
   await updateWorkspaceMember(token, workspaceId, membershipId, { role });
   revalidatePath("/members");
 }
@@ -84,7 +124,29 @@ export async function deactivateMemberAction(formData: FormData) {
   const membershipId = String(formData.get("membership_id") ?? "").trim();
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
 
-  const token = await requireAccessToken();
+  const { token, userId } = await requireSessionContext();
+
+  const { target, activeAdminCount } = await loadMembersContext(
+    token,
+    workspaceId,
+    membershipId,
+  );
+  if (!target) {
+    throw new Error("Member not found.");
+  }
+  if (target.user_id === userId) {
+    throw new Error("You cannot deactivate your own membership.");
+  }
+  if (
+    target.status === "active" &&
+    target.role === "admin" &&
+    activeAdminCount <= 1
+  ) {
+    throw new Error(
+      "This workspace must have at least one active admin. Add another admin before deactivating this member.",
+    );
+  }
+
   await updateWorkspaceMember(token, workspaceId, membershipId, {
     status: "inactive",
   });
@@ -113,7 +175,7 @@ export async function createAssetGrantAction(formData: FormData) {
   }
 
   try {
-    const token = await requireAccessToken();
+    const { token } = await requireSessionContext();
     await createExternalAssetGrant(token, workspaceId, {
       user_id: userId,
       asset_type: assetType,
@@ -144,7 +206,7 @@ export async function deleteAssetGrantAction(formData: FormData) {
   if (!isUuid(grantId)) throw new Error("Invalid grant id.");
 
   try {
-    const token = await requireAccessToken();
+    const { token } = await requireSessionContext();
     await deleteExternalAssetGrant(token, workspaceId, grantId);
     revalidatePath("/members");
   } catch (err) {

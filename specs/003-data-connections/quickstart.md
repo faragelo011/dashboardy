@@ -131,6 +131,7 @@ Expected failure with bad credentials:
 
 - HTTP 200.
 - Response field `test_status` is `failure`.
+- Response includes `failure_category`, and its value is one of: `credential`, `network`, `permission`, `timeout`, `unknown`.
 - `last_error` is sanitized and categorized.
 - No plaintext credential appears in response, logs, or audit records.
 

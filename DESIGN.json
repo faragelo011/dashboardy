@@ -81,7 +81,7 @@
       "refersTo": "button-primary",
       "description": "Decisive primary action in Heritage Gold, used sparingly.",
       "html": "<button class=\"ds-btn-primary\">Send invite</button>",
-      "css": ".ds-btn-primary{appearance:none;border:0;border-radius:12px;padding:8px 20px;min-height:44px;background:oklch(46% 0.11 78);color:oklch(98% 0.006 255);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:600;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),transform 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-primary:hover{background:oklch(41% 0.115 78);}.ds-btn-primary:active{background:oklch(36% 0.11 78);transform:translateY(0.5px);}.ds-btn-primary:focus-visible{outline:2px solid oklch(58% 0.12 78);outline-offset:2px;}"
+      "css": ".ds-btn-primary{appearance:none;border:0;border-radius:12px;padding:8px 20px;min-height:44px;background:oklch(var(--accent));color:oklch(var(--surface-3));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:600;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1),transform 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-primary:hover{background:oklch(var(--accent-hover));}.ds-btn-primary:active{background:oklch(var(--accent-active));transform:translateY(0.5px);}.ds-btn-primary:focus-visible{outline:2px solid oklch(var(--focus));outline-offset:2px;}"
     },
     {
       "name": "Field (Text / Select)",
@@ -89,7 +89,7 @@
       "refersTo": "field",
       "description": "Paper field with precise border and calm focus ring.",
       "html": "<input class=\"ds-field\" placeholder=\"alex@company.com\" />",
-      "css": ".ds-field{width:100%;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid oklch(82% 0.018 255);background:oklch(99.5% 0.004 255);color:oklch(23% 0.018 255);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;line-height:1.25;outline:none;transition:border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-field:focus-visible{border-color:oklch(58% 0.11 78);box-shadow:0 0 0 2px oklch(72% 0.07 78);}"
+      "css": ".ds-field{width:100%;min-height:44px;padding:8px 12px;border-radius:12px;border:1px solid oklch(var(--border-4));background:oklch(var(--surface-1));color:oklch(var(--ink));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;line-height:1.25;outline:none;transition:border-color 220ms cubic-bezier(0.16, 1, 0.3, 1),box-shadow 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-field:focus-visible{border-color:oklch(var(--focus));box-shadow:0 0 0 2px oklch(var(--focus-ring));}"
     },
     {
       "name": "Quiet Button",
@@ -97,7 +97,7 @@
       "refersTo": "button-quiet",
       "description": "Secondary action, structure-first, not attention-seeking.",
       "html": "<button class=\"ds-btn-quiet\">Save role</button>",
-      "css": ".ds-btn-quiet{appearance:none;border-radius:12px;padding:8px 12px;min-height:40px;border:1px solid oklch(82% 0.018 255);background:transparent;color:oklch(23% 0.018 255);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:500;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-quiet:hover{background:oklch(96% 0.012 255);}.ds-btn-quiet:focus-visible{outline:2px solid oklch(58% 0.12 78);outline-offset:2px;}"
+      "css": ".ds-btn-quiet{appearance:none;border-radius:12px;padding:8px 12px;min-height:40px;border:1px solid oklch(var(--border-4));background:transparent;color:oklch(var(--ink));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:500;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-quiet:hover{background:oklch(var(--surface-5));}.ds-btn-quiet:focus-visible{outline:2px solid oklch(var(--focus));outline-offset:2px;}"
     },
     {
       "name": "Danger Button",
@@ -105,7 +105,7 @@
       "refersTo": "button-danger",
       "description": "Destructive action, quiet but unmistakable.",
       "html": "<button class=\"ds-btn-danger\">Deactivate</button>",
-      "css": ".ds-btn-danger{appearance:none;border-radius:12px;padding:8px 12px;min-height:40px;border:1px solid oklch(84% 0.04 28);background:transparent;color:oklch(42% 0.08 28);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:500;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-danger:hover{background:oklch(97% 0.02 28);}.ds-btn-danger:focus-visible{outline:2px solid oklch(58% 0.12 78);outline-offset:2px;}"
+      "css": ".ds-btn-danger{appearance:none;border-radius:12px;padding:8px 12px;min-height:40px;border:1px solid oklch(var(--danger-border));background:transparent;color:oklch(var(--danger-ink));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:14px;font-weight:500;line-height:1.25;transition:background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);}.ds-btn-danger:hover{background:oklch(var(--danger-soft));}.ds-btn-danger:focus-visible{outline:2px solid oklch(var(--focus));outline-offset:2px;}"
     },
     {
       "name": "Status Pill (Active)",
@@ -113,7 +113,7 @@
       "refersTo": "success-soft",
       "description": "Active state, soft success tone.",
       "html": "<span class=\"ds-pill-active\">Active</span>",
-      "css": ".ds-pill-active{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;background:oklch(94% 0.04 150);color:oklch(38% 0.08 150);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:12px;font-weight:500;line-height:1.25;}"
+      "css": ".ds-pill-active{display:inline-flex;align-items:center;border-radius:9999px;padding:4px 10px;background:oklch(var(--success-soft));color:oklch(var(--success-soft-ink));font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;font-size:12px;font-weight:500;line-height:1.25;}"
     }
   ],
   "narrative": {

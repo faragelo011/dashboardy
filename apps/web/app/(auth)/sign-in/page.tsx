@@ -28,6 +28,13 @@ export default function SignInPage() {
       }
       router.push("/");
       router.refresh();
+    } catch (err) {
+      console.error("sign-in failed", err);
+      if (err instanceof Error) {
+        setError(err.message || String(err));
+      } else {
+        setError(String(err));
+      }
     } finally {
       setLoading(false);
     }

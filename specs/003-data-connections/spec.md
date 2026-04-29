@@ -99,7 +99,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 - **FR-018**: Connection management audit records MUST NOT contain plaintext credential values.
 - **FR-019**: Updating non-secret connection metadata MUST not expose, echo, or require existing credential values.
 - **FR-020**: Unauthorized connection management attempts MUST be denied with a stable authorization-denied outcome.
-- **FR-021**: Connection records MUST retain timestamps for creation, update, and last successful or failed test.
+- **FR-021**: Connection records MUST retain timestamps for creation and update, and MUST persist both `last_tested_at` (timestamp of the most recent test attempt, including failures) and `last_successful_test_at` (timestamp of the most recent successful test). On failed tests, `last_tested_at` updates while `last_successful_test_at` remains unchanged.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -115,7 +115,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ### Measurable Outcomes
 
 - **SC-001**: 100% of non-admin attempts to create, update, test, or rotate a connection are denied.
-- **SC-002**: 100% of tenants are prevented from having more than one data connection record.
+- **SC-002**: 100% of tenants have exactly one data connection record, and duplicate creation attempts are prevented so no additional records can exist.
 - **SC-003**: 0 plaintext credential values appear in user-facing connection responses, stored connection metadata, test errors, or operational logs during validation.
 - **SC-004**: Admins can complete initial connection setup and run the first connection test in under 5 minutes when they have valid credential information.
 - **SC-005**: Successful credential rotations are reflected in subsequent data access within 60 seconds after the passing test.

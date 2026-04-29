@@ -166,11 +166,11 @@ def get_supabase_admin() -> SupabaseAdmin:
 
     settings = get_settings()
 
-    def _strip_or_none(value: object) -> object:
-        if isinstance(value, str):
-            trimmed = value.strip()
-            return trimmed if trimmed else None
-        return value
+    def _strip_or_none(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+        trimmed = value.strip()
+        return trimmed if trimmed else None
 
     supabase_url = getattr(settings, "SUPABASE_URL", None)  # may be absent
     service_key = getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", None)
