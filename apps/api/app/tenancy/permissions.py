@@ -90,3 +90,39 @@ def can_access_asset_via_explicit_grant(
             return PermissionDecision(True, PermissionReason.allowed)
 
     return PermissionDecision(False, PermissionReason.grant_required)
+
+
+def can_access_question_via_grant(
+    *,
+    actor_role: MembershipRole,
+    actor_user_id: UUID | None = None,
+    actor_workspace_id: UUID | None = None,
+    question_id: UUID,
+    grants: list[AssetGrant],
+) -> PermissionDecision:
+    return can_access_asset_via_explicit_grant(
+        actor_role=actor_role,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+        asset_type=AssetType.question,
+        asset_id=question_id,
+        grants=grants,
+    )
+
+
+def can_access_dashboard_via_grant(
+    *,
+    actor_role: MembershipRole,
+    actor_user_id: UUID | None = None,
+    actor_workspace_id: UUID | None = None,
+    dashboard_id: UUID,
+    grants: list[AssetGrant],
+) -> PermissionDecision:
+    return can_access_asset_via_explicit_grant(
+        actor_role=actor_role,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+        asset_type=AssetType.dashboard,
+        asset_id=dashboard_id,
+        grants=grants,
+    )

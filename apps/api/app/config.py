@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     SUPABASE_URL: str | None = None
     SUPABASE_SERVICE_ROLE_KEY: str | None = None
 
+    # Web env vars sometimes exist in the same `.env` (especially in local docker).
+    # We allow a fallback so local setups don't need to duplicate the URL.
+    NEXT_PUBLIC_SUPABASE_URL: str | None = None
+
     # Supabase JWT verification:
     # - RS256: set SUPABASE_JWKS_URL (recommended when available)
     # - HS256: set SUPABASE_JWT_SECRET (Project Settings → API → JWT Secret)
@@ -32,6 +36,14 @@ class Settings(BaseSettings):
                 "Set SUPABASE_JWKS_URL (RS256) or SUPABASE_JWT_SECRET (HS256) "
                 "for JWT verification"
             )
+        return self
+
+    @model_validator(mode="after")
+    def _apply_supabase_admin_fallbacks(self) -> "Settings":
+        if (not self.SUPABASE_URL or not self.SUPABASE_URL.strip()) and (
+            self.NEXT_PUBLIC_SUPABASE_URL and self.NEXT_PUBLIC_SUPABASE_URL.strip()
+        ):
+            self.SUPABASE_URL = self.NEXT_PUBLIC_SUPABASE_URL.strip()
         return self
 
 

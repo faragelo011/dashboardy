@@ -34,49 +34,95 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-sm flex-col gap-4 p-8">
-      <h1 className="text-2xl font-semibold">Sign in</h1>
-      <form className="flex flex-col gap-3" onSubmit={onSubmit}>
-        <label className="text-sm font-medium text-gray-700">
-          Email
-          <input
-            type="email"
-            required
-            autoComplete="email"
-            className="mt-1 w-full rounded border px-3 py-2 text-sm"
-            value={email}
-            onChange={(ev) => setEmail(ev.target.value)}
-          />
-        </label>
-        <label className="text-sm font-medium text-gray-700">
-          Password
-          <input
-            type="password"
-            required
-            autoComplete="current-password"
-            className="mt-1 w-full rounded border px-3 py-2 text-sm"
-            value={password}
-            onChange={(ev) => setPassword(ev.target.value)}
-          />
-        </label>
-        {error ? (
-          <p
-            role="alert"
-            aria-live="assertive"
-            aria-atomic="true"
-            className="text-sm text-red-600"
-          >
-            {error}
+    <main className="min-h-dvh bg-slate-50 text-slate-900">
+      <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
+        <div className="mb-6">
+          <p className="text-xs font-medium tracking-wide text-slate-600">
+            Dashboardy
           </p>
-        ) : null}
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded bg-black px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+            Sign in
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Use your workspace account to continue.
+          </p>
+        </div>
+
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={onSubmit}
+          aria-busy={loading}
         >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="email"
+              className="text-sm font-medium text-slate-700"
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 disabled:cursor-not-allowed disabled:bg-slate-100"
+              placeholder="name@company.com"
+              value={email}
+              onChange={(ev) => setEmail(ev.target.value)}
+              disabled={loading}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="password"
+              className="text-sm font-medium text-slate-700"
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 shadow-sm outline-none transition-colors placeholder:text-slate-400 focus:border-slate-400 focus:ring-4 focus:ring-slate-200/70 disabled:cursor-not-allowed disabled:bg-slate-100"
+              value={password}
+              onChange={(ev) => setPassword(ev.target.value)}
+              disabled={loading}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "sign-in-error" : undefined}
+            />
+          </div>
+
+          {error ? (
+            <div
+              id="sign-in-error"
+              role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
+              className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+            >
+              {error}
+            </div>
+          ) : null}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-1 inline-flex h-11 items-center justify-center rounded-lg bg-slate-950 px-4 text-sm font-medium text-slate-50 shadow-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-4 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-400"
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        <p className="mt-6 text-xs leading-relaxed text-slate-500">
+          By continuing, you agree to the security policies of your
+          organization.
+        </p>
+      </div>
     </main>
   );
 }
