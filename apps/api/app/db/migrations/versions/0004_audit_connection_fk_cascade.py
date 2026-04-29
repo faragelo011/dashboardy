@@ -71,5 +71,5 @@ def downgrade() -> None:
         "data_connections",
         ["tenant_id", "connection_id"],
         ["tenant_id", "id"],
-        ondelete="SET NULL",
+        ondelete="CASCADE",
     )

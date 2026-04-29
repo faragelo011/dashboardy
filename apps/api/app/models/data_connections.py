@@ -76,7 +76,7 @@ class DataConnection(Base):
         ForeignKeyConstraint(
             ["tenant_id", "updated_by_membership_id"],
             ["memberships.tenant_id", "memberships.id"],
-            ondelete="SET NULL",
+            ondelete="RESTRICT",
         ),
         Index("ix_data_connections_tenant_id", "tenant_id"),
     )

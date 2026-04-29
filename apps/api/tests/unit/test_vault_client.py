@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 from app.connections.errors import DependencyUnavailableError
@@ -13,7 +15,8 @@ async def test_store_secret_posts_payload_and_returns_secret_id() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         seen["method"] = request.method
         seen["url"] = str(request.url)
-        seen["payload"] = request.read()
+        body = await request.aread()
+        seen["payload"] = json.loads(body.decode())
         assert request.headers["apikey"] == "service-key"
         assert request.headers["Authorization"] == "Bearer service-key"
         return httpx.Response(200, json={"id": "vault-id-123"})
@@ -32,8 +35,10 @@ async def test_store_secret_posts_payload_and_returns_secret_id() -> None:
     assert secret_id == "vault-id-123"
     assert seen["method"] == "POST"
     assert seen["url"] == "https://example.supabase.co/rest/v1/rpc/vault_create_secret"
-    assert b"tenant-connection" in seen["payload"]
-    assert b"super-secret" in seen["payload"]
+    assert seen["payload"] == {
+        "name": "tenant-connection",
+        "secret": {"password": "super-secret"},
+    }
 
 
 @pytest.mark.asyncio

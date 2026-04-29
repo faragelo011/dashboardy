@@ -124,7 +124,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(
             ["tenant_id", "updated_by_membership_id"],
             ["memberships.tenant_id", "memberships.id"],
-            ondelete="SET NULL",
+            ondelete="RESTRICT",
         ),
         sa.UniqueConstraint("tenant_id", name="uq_data_connections_tenant_id"),
         sa.UniqueConstraint("tenant_id", "id", name="uq_data_connections_tenant_id_id"),

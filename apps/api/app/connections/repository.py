@@ -8,6 +8,8 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.connections.errors import ConnectionValidationError
+from app.connections.redaction import redact_string
 from app.models.data_connections import (
     ConnectionManagementAuditRecord,
     ConnectionTestResult,
@@ -130,11 +132,12 @@ async def promote_pending_secret(
         return None
     if row.pending_vault_secret_id is None:
         return row
+    if row.pending_secret_version is None:
+        raise ConnectionValidationError(
+            "pending_secret_version is required when pending_vault_secret_id is set"
+        )
     row.vault_secret_id = row.pending_vault_secret_id
-    if row.pending_secret_version is not None:
-        row.secret_version = row.pending_secret_version
-    else:
-        row.secret_version = row.secret_version + 1
+    row.secret_version = row.pending_secret_version
     row.pending_vault_secret_id = None
     row.pending_secret_version = None
     row.status = DbConnectionStatus.active
@@ -175,6 +178,9 @@ async def write_connection_test_result(
     started_at: datetime,
     completed_at: datetime,
 ) -> ConnectionTestResult:
+    safe_error = (
+        None if sanitized_error is None else redact_string(sanitized_error)
+    )
     row = ConnectionTestResult(
         tenant_id=tenant_id,
         connection_id=connection_id,
@@ -182,7 +188,7 @@ async def write_connection_test_result(
         credential_version=credential_version,
         status=status,
         failure_category=failure_category,
-        sanitized_error=sanitized_error,
+        sanitized_error=safe_error,
         started_at=started_at,
         completed_at=completed_at,
     )
@@ -202,6 +208,9 @@ async def write_management_audit(
     failure_category: DbFailureCategory | None = None,
     sanitized_message: str | None = None,
 ) -> ConnectionManagementAuditRecord:
+    safe_message = (
+        None if sanitized_message is None else redact_string(sanitized_message)
+    )
     row = ConnectionManagementAuditRecord(
         tenant_id=tenant_id,
         connection_id=connection_id,
@@ -209,7 +218,7 @@ async def write_management_audit(
         action=action,
         outcome=outcome,
         failure_category=failure_category,
-        sanitized_message=sanitized_message,
+        sanitized_message=safe_message,
     )
     session.add(row)
     await session.flush()
