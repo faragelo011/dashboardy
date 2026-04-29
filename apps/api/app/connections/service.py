@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from datetime import datetime
-from typing import Any
+
+from app.connections.protocols import ConnectionRepositoryProtocol
+from app.connections.snowflake import SnowflakeTester
+from app.connections.vault import VaultClient
 
 
 class ConnectionService:
@@ -16,9 +19,9 @@ class ConnectionService:
     def __init__(
         self,
         *,
-        repository: Any,
-        vault: Any,
-        snowflake_tester: Any,
+        repository: ConnectionRepositoryProtocol,
+        vault: VaultClient,
+        snowflake_tester: SnowflakeTester,
         clock: Callable[[], datetime],
     ) -> None:
         self._repository = repository
@@ -27,15 +30,15 @@ class ConnectionService:
         self._clock = clock
 
     @property
-    def repository(self) -> Any:
+    def repository(self) -> ConnectionRepositoryProtocol:
         return self._repository
 
     @property
-    def vault(self) -> Any:
+    def vault(self) -> VaultClient:
         return self._vault
 
     @property
-    def snowflake_tester(self) -> Any:
+    def snowflake_tester(self) -> SnowflakeTester:
         return self._snowflake_tester
 
     def now(self) -> datetime:

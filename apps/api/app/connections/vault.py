@@ -35,7 +35,10 @@ class HttpSupabaseVaultClient:
         self._base_url = base_url.rstrip("/")
         self._service_role_key = service_role_key
         self._timeout = timeout_seconds
-        self._store_secret_path = store_secret_path
+        trimmed = store_secret_path.strip().strip("/")
+        self._store_secret_path = (
+            f"/{trimmed}" if trimmed else "/rest/v1/rpc/vault_create_secret"
+        )
         self._transport = transport
 
     async def store_secret(self, *, name: str, secret_payload: dict[str, str]) -> str:

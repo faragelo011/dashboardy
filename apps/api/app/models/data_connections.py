@@ -187,7 +187,7 @@ class ConnectionManagementAuditRecord(Base):
         ForeignKeyConstraint(
             ["tenant_id", "connection_id"],
             ["data_connections.tenant_id", "data_connections.id"],
-            ondelete="SET NULL",
+            ondelete="CASCADE",
         ),
         ForeignKeyConstraint(
             ["tenant_id", "actor_membership_id"],

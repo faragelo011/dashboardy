@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
+from app.connections.errors import DependencyUnavailableError
+
 
 @runtime_checkable
 class SnowflakeTester(Protocol):
@@ -36,4 +38,6 @@ class SnowflakeConnectorTester:
         role: str,
     ) -> None:
         _ = account, user, password, warehouse, database, schema, role
-        raise NotImplementedError("Snowflake connectivity check is implemented in US2")
+        raise DependencyUnavailableError(
+            "Snowflake connector not available until US2 is implemented"
+        )

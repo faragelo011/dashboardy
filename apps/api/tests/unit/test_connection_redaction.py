@@ -35,7 +35,13 @@ def test_redact_string_json_vault_like_fragment() -> None:
     s = '{"pending_vault_secret_id": "secret-value", "message": "failed"}'
     out = redact_string(s)
     assert "secret-value" not in out
-    assert "pending_vault_secret_id=<redacted>" in out
+    assert '"pending_vault_secret_id": "<redacted>"' in out
+
+
+def test_redact_string_preserves_colon_delimiter() -> None:
+    out = redact_string("vault_secret_id: uuid-here trailing")
+    assert "vault_secret_id: <redacted>" in out
+    assert "uuid-here" not in out
 
 
 def test_redact_exception_value() -> None:

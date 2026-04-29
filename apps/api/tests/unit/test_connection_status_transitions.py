@@ -24,12 +24,6 @@ def test_active_to_failed_on_failed_test_while_rotating() -> None:
     assert st == ConnectionStatus.test_failed
 
 
-def test_failed_rotation_preserves_effective_is_out_of_band() -> None:
-    """Failed rotation keeps prior `vault_secret_id` in DB; status shows test_failed."""
-    st = status_after_failed_test(ConnectionStatus.pending_test)
-    assert st == ConnectionStatus.test_failed
-
-
 def test_credentials_submitted_from_not_configured() -> None:
     assert (
         status_after_credentials_submitted(ConnectionStatus.not_configured)

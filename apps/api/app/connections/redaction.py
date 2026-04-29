@@ -18,7 +18,15 @@ _PASSWORD_KEYS = frozenset(
 )
 
 _VAULT_SECRET_ID = re.compile(
-    r"\b(?P<key>vault_secret_id|pending_vault_secret_id)\b[\"']?\s*[:=]\s*[\"']?[^,\s}\"']+",
+    r"(?P<prekey>[\"']?)"
+    r"(?P<key>vault_secret_id|pending_vault_secret_id)\b"
+    r"(?P<postkey>[\"']?)"
+    r"(?P<pre_d>\s*)"
+    r"(?P<delim>[:=])"
+    r"(?P<post_d>\s*)"
+    r"(?P<open_q>[\"']?)"
+    r"(?P<token>[^,\s}\"']+)"
+    r"(?P<close_q>[\"']?)",
     re.IGNORECASE,
 )
 
@@ -27,7 +35,11 @@ _SNOWFLAKE_CONN_HINT = re.compile(r"snowflake://[^\s'\"]+", re.IGNORECASE)
 
 def redact_string(value: str) -> str:
     out = value
-    out = _VAULT_SECRET_ID.sub(r"\g<key>=<redacted>", out)
+    out = _VAULT_SECRET_ID.sub(
+        r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
+        r"\g<open_q><redacted>\g<close_q>",
+        out,
+    )
     out = _SNOWFLAKE_CONN_HINT.sub("snowflake://<redacted>", out)
     return out
 

@@ -20,6 +20,19 @@ from app.models.data_connections import (
 )
 
 
+async def _get_connection_for_tenant(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    connection_id: UUID,
+) -> DataConnection | None:
+    stmt = select(DataConnection).where(
+        DataConnection.id == connection_id,
+        DataConnection.tenant_id == tenant_id,
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
 async def get_connection_for_tenant(
     session: AsyncSession,
     *,
@@ -58,6 +71,7 @@ async def create_connection(
 async def update_connection_metadata(
     session: AsyncSession,
     *,
+    tenant_id: UUID,
     connection_id: UUID,
     name: str,
     warehouse: str,
@@ -65,7 +79,9 @@ async def update_connection_metadata(
     schema: str | None,
     updated_by_membership_id: UUID,
 ) -> DataConnection | None:
-    row = await session.get(DataConnection, connection_id)
+    row = await _get_connection_for_tenant(
+        session, tenant_id=tenant_id, connection_id=connection_id
+    )
     if row is None:
         return None
     row.name = name
@@ -80,13 +96,16 @@ async def update_connection_metadata(
 async def set_pending_secret(
     session: AsyncSession,
     *,
+    tenant_id: UUID,
     connection_id: UUID,
     pending_vault_secret_id: str,
     pending_secret_version: int,
     status: DbConnectionStatus,
     updated_by_membership_id: UUID,
 ) -> DataConnection | None:
-    row = await session.get(DataConnection, connection_id)
+    row = await _get_connection_for_tenant(
+        session, tenant_id=tenant_id, connection_id=connection_id
+    )
     if row is None:
         return None
     row.pending_vault_secret_id = pending_vault_secret_id
@@ -100,16 +119,22 @@ async def set_pending_secret(
 async def promote_pending_secret(
     session: AsyncSession,
     *,
+    tenant_id: UUID,
     connection_id: UUID,
     updated_by_membership_id: UUID,
 ) -> DataConnection | None:
-    row = await session.get(DataConnection, connection_id)
+    row = await _get_connection_for_tenant(
+        session, tenant_id=tenant_id, connection_id=connection_id
+    )
     if row is None:
         return None
     if row.pending_vault_secret_id is None:
         return row
     row.vault_secret_id = row.pending_vault_secret_id
-    row.secret_version = row.secret_version + 1
+    if row.pending_secret_version is not None:
+        row.secret_version = row.pending_secret_version
+    else:
+        row.secret_version = row.secret_version + 1
     row.pending_vault_secret_id = None
     row.pending_secret_version = None
     row.status = DbConnectionStatus.active
@@ -121,10 +146,13 @@ async def promote_pending_secret(
 async def clear_pending_secret(
     session: AsyncSession,
     *,
+    tenant_id: UUID,
     connection_id: UUID,
     updated_by_membership_id: UUID,
 ) -> DataConnection | None:
-    row = await session.get(DataConnection, connection_id)
+    row = await _get_connection_for_tenant(
+        session, tenant_id=tenant_id, connection_id=connection_id
+    )
     if row is None:
         return None
     row.pending_vault_secret_id = None

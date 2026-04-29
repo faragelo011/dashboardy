@@ -15,6 +15,7 @@ async def test_store_secret_posts_payload_and_returns_secret_id() -> None:
         seen["url"] = str(request.url)
         seen["payload"] = request.read()
         assert request.headers["apikey"] == "service-key"
+        assert request.headers["Authorization"] == "Bearer service-key"
         return httpx.Response(200, json={"id": "vault-id-123"})
 
     client = HttpSupabaseVaultClient(
@@ -33,6 +34,27 @@ async def test_store_secret_posts_payload_and_returns_secret_id() -> None:
     assert seen["url"] == "https://example.supabase.co/rest/v1/rpc/vault_create_secret"
     assert b"tenant-connection" in seen["payload"]
     assert b"super-secret" in seen["payload"]
+
+
+@pytest.mark.asyncio
+async def test_store_secret_normalizes_path_without_leading_slash() -> None:
+    seen: dict[str, object] = {}
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen["url"] = str(request.url)
+        return httpx.Response(200, json={"id": "x"})
+
+    client = HttpSupabaseVaultClient(
+        base_url="https://example.supabase.co",
+        service_role_key="k",
+        store_secret_path="rest/v1/rpc/vault_create_secret",
+        transport=httpx.MockTransport(handler),
+    )
+    await client.store_secret(name="n", secret_payload={"password": "p"})
+    assert (
+        seen["url"]
+        == "https://example.supabase.co/rest/v1/rpc/vault_create_secret"
+    )
 
 
 @pytest.mark.asyncio
