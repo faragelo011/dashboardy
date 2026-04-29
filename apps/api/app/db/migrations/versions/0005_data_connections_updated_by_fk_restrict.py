@@ -5,7 +5,8 @@ Revises: 0004
 Create Date: 2026-04-30
 
 SET NULL on (tenant_id, updated_by_membership_id) is invalid when tenant_id
-is NOT NULL. Use RESTRICT to match the corrected 0003 definition.
+is NOT NULL. Use RESTRICT to match the corrected 0003 definition. Downgrade
+recreates the same composite FK with RESTRICT (not SET NULL).
 
 """
 
@@ -70,5 +71,5 @@ def downgrade() -> None:
         "memberships",
         ["tenant_id", "updated_by_membership_id"],
         ["tenant_id", "id"],
-        ondelete="SET NULL",
+        ondelete="RESTRICT",
     )
