@@ -1,10 +1,21 @@
 import { getProtectedMe } from "./data";
+import { WorkspaceBadge } from "./workspace-badge";
 
 export default async function ProtectedLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  await getProtectedMe();
-  return <div className="min-h-screen bg-white">{children}</div>;
+  const me = await getProtectedMe();
+  return (
+    <div className="min-h-screen bg-white">
+      <div className="border-b bg-gray-50">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+          <div className="text-sm font-semibold">Dashboardy</div>
+          <WorkspaceBadge workspace={me.current_workspace} />
+        </div>
+      </div>
+      {children}
+    </div>
+  );
 }

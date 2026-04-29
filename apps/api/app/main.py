@@ -7,7 +7,7 @@ from app.admin.routes import router as admin_router
 from app.config import get_settings
 from app.logging import configure_logging
 from app.middleware import CorrelationIdMiddleware
-from app.routes import me_router
+from app.routes import me_router, workspaces_router
 from app.routes.health import router as health_router
 from app.routes.ready import router as ready_router
 
@@ -49,4 +49,5 @@ async def normalized_http_exception_handler(
 app.include_router(health_router)
 app.include_router(ready_router)
 app.include_router(me_router)
+app.include_router(workspaces_router)
 app.include_router(admin_router)

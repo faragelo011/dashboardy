@@ -153,17 +153,17 @@
 
 ### Tests for User Story 4
 
-- [ ] T067 [P] [US4] Add contract tests for `POST /workspaces/switch` success and denial responses in `apps/api/tests/contract/test_workspace_switch_contract.py`.
-- [ ] T068 [P] [US4] Add integration tests for current-workspace no-op and unavailable-workspace denial in `apps/api/tests/integration/test_workspace_switch.py`.
-- [ ] T069 [P] [US4] Add Playwright smoke test for workspace name display and hidden/disabled switcher in `apps/web/tests/auth-tenancy.spec.ts`.
+- [X] T067 [P] [US4] Add contract tests for `POST /workspaces/switch` success and denial responses in `apps/api/tests/contract/test_workspace_switch_contract.py`.
+- [X] T068 [P] [US4] Add integration tests for current-workspace no-op and unavailable-workspace denial in `apps/api/tests/integration/test_workspace_switch.py`.
+- [X] T069 [P] [US4] Add Playwright smoke test for workspace name display and hidden/disabled switcher in `apps/web/tests/auth-tenancy.spec.ts`.
 
 ### Implementation for User Story 4
 
-- [ ] T070 [US4] Implement `POST /workspaces/switch` no-op/stub route for the current workspace in `apps/api/app/routes/workspaces.py`.
-- [ ] T071 [US4] Ensure `POST /workspaces/switch` denies unavailable workspace IDs with 403 and no tenant data in `apps/api/app/routes/workspaces.py`.
-- [ ] T072 [US4] Wire workspace route import in `apps/api/app/routes/__init__.py`.
-- [ ] T073 [US4] Add workspace display component that shows workspace name and hides/disables switching in `apps/web/app/(protected)/workspace-badge.tsx`.
-- [ ] T074 [US4] Use the workspace display component in the protected layout in `apps/web/app/(protected)/layout.tsx`.
+- [X] T070 [US4] Implement `POST /workspaces/switch` no-op/stub route for the current workspace in `apps/api/app/routes/workspaces.py`.
+- [X] T071 [US4] Ensure `POST /workspaces/switch` denies unavailable workspace IDs with 403 and no tenant data in `apps/api/app/routes/workspaces.py`.
+- [X] T072 [US4] Wire workspace route import in `apps/api/app/routes/__init__.py`.
+- [X] T073 [US4] Add workspace display component that shows workspace name and hides/disables switching in `apps/web/app/(protected)/workspace-badge.tsx`.
+- [X] T074 [US4] Use the workspace display component in the protected layout in `apps/web/app/(protected)/layout.tsx`.
 
 **Checkpoint**: User Story 4 is complete when the one-workspace MVP behavior is visible in the UI and enforced by the API stub.
 
