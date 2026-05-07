@@ -33,28 +33,6 @@ const apiBase = () => {
   return base.replace(/\/$/, "");
 };
 
-/** Parse JSON error bodies from the API (`{ error_code, message }`). */
-function parseApiErrorBody(
-  rawText: string,
-  fallbackMessage: string,
-): { message: string; error_code?: string } {
-  let parsed: { error_code?: string; message?: string } | null = null;
-  try {
-    parsed = JSON.parse(rawText) as { error_code?: string; message?: string };
-  } catch {
-    parsed = null;
-  }
-  const message =
-    parsed && typeof parsed.message === "string" && parsed.message.trim()
-      ? parsed.message.trim()
-      : rawText || fallbackMessage;
-  const error_code =
-    parsed && typeof parsed.error_code === "string" && parsed.error_code.trim()
-      ? parsed.error_code.trim()
-      : undefined;
-  return { message, error_code };
-}
-
 async function apiFetch(
   path: string,
   accessToken: string,
@@ -69,6 +47,29 @@ async function apiFetch(
     },
     cache: "no-store",
   });
+}
+
+/** Parse JSON error bodies from the API (`{ error_code, message }`) without swallowing ApiError. */
+function parseApiErrorBody(
+  rawText: string,
+  fallbackMessage: string,
+): { message: string; error_code?: string; rawText: string } {
+  let parsed: { error_code?: string; message?: string } | null = null;
+  try {
+    parsed = JSON.parse(rawText) as { error_code?: string; message?: string };
+  } catch {
+    parsed = null;
+  }
+  const fromJson =
+    parsed && typeof parsed.message === "string" && parsed.message.trim()
+      ? parsed.message.trim()
+      : "";
+  const message = (fromJson || rawText || fallbackMessage).trim() || fallbackMessage;
+  const error_code =
+    parsed && typeof parsed.error_code === "string" && parsed.error_code.trim()
+      ? parsed.error_code.trim()
+      : undefined;
+  return { message, error_code, rawText: rawText };
 }
 
 export async function listWorkspaceMembers(
@@ -119,8 +120,9 @@ export async function updateWorkspaceMember(
     },
   );
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`PATCH member failed: ${res.status} ${body}`);
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Update member failed");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as Member;
 }

@@ -12,3 +12,14 @@ export type {
   UserContext,
   WorkspaceContext,
 } from "./auth-tenancy";
+
+export type {
+  ConnectionStatus,
+  ConnectionTestResponse,
+  ConnectionTestStatus,
+  DataConnection,
+  FailureCategory,
+  RotateConnectionRequest,
+  SnowflakeCredentials,
+  UpsertConnectionRequest,
+} from "./data-connections";

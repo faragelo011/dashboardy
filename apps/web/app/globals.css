@@ -1,3 +1,45 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  /* DESIGN_TOKENS_START (generated from DESIGN.md) */
+  :root {
+    --ink-strong: 20% 0.02 255;
+    --ink: 23% 0.018 255;
+    --ink-muted: 47% 0.018 255;
+    --ink-faint: 48% 0.018 255;
+    --surface-app: 98.5% 0.006 255;
+    --surface-0: 99.6% 0.004 255;
+    --surface-1: 99.5% 0.004 255;
+    --surface-2: 99.4% 0.004 255;
+    --surface-3: 98% 0.006 255;
+    --surface-4: 97.4% 0.008 255;
+    --surface-5: 96.8% 0.01 255;
+    --border-0: 91% 0.012 255;
+    --border-1: 90% 0.014 255;
+    --border-2: 89% 0.014 255;
+    --border-3: 88% 0.018 255;
+    --border-4: 82% 0.018 255;
+    --accent: 46% 0.11 78;
+    --accent-hover: 41% 0.115 78;
+    --accent-active: 36% 0.11 78;
+    --accent-soft: 94% 0.035 78;
+    --accent-soft-ink: 38% 0.075 78;
+    --focus: 58% 0.12 78;
+    --focus-ring: 72% 0.07 78;
+    --success-soft: 94% 0.04 150;
+    --success-soft-ink: 38% 0.08 150;
+    --danger-border: 84% 0.04 28;
+    --danger-soft: 97% 0.02 28;
+    --danger-soft-strong: 97% 0.025 28;
+    --danger-ink: 42% 0.08 28;
+    --danger-ink-strong: 37% 0.09 28;
+  }
+  /* DESIGN_TOKENS_END */
+
+  body {
+    background: oklch(var(--surface-app));
+    color: oklch(var(--ink));
+  }
+}

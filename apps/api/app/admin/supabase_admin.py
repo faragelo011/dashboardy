@@ -328,8 +328,17 @@ def get_supabase_admin() -> SupabaseAdmin:
     """
 
     settings = get_settings()
+
+    def _strip_or_none(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+        trimmed = value.strip()
+        return trimmed if trimmed else None
+
     supabase_url = getattr(settings, "SUPABASE_URL", None)  # may be absent
     service_key = getattr(settings, "SUPABASE_SERVICE_ROLE_KEY", None)
+    supabase_url = _strip_or_none(supabase_url)
+    service_key = _strip_or_none(service_key)
     if not supabase_url or not service_key:
         raise RuntimeError(
             "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set to invite members"

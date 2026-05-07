@@ -86,6 +86,25 @@ async def list_memberships_for_workspace(
     return list(result.scalars().all())
 
 
+async def list_active_admin_membership_ids_for_update(
+    session: AsyncSession,
+    *,
+    workspace_id: UUID,
+) -> list[UUID]:
+    stmt = (
+        select(Membership.id)
+        .where(
+            Membership.workspace_id == workspace_id,
+            Membership.status == MembershipStatus.active,
+            Membership.role == MembershipRole.admin,
+        )
+        .with_for_update()
+        .order_by(Membership.id.asc())
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
 async def get_membership_for_workspace_by_id(
     session: AsyncSession,
     *,

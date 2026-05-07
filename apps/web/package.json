@@ -3,8 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "predev": "pnpm tokens:sync",
     "dev": "node scripts/next-cli.cjs dev",
+    "prebuild": "pnpm tokens:sync",
     "build": "node scripts/next-cli.cjs build",
+    "prestart": "pnpm tokens:sync",
     "start": "node scripts/next-cli.cjs start",
     "lint": "node scripts/next-cli.cjs lint",
     "test": "pnpm test:unit && playwright test --project=ci",

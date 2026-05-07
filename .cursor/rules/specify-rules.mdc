@@ -6,11 +6,13 @@ alwaysApply: true
 
 # dashboardy Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-27
+Auto-generated from all feature plans. Last updated: 2026-04-29
 
 ## Active Technologies
 - Python 3.12 (API), TypeScript 5.x (web/shared packages) + FastAPI, Pydantic v2, SQLAlchemy 2.x async, asyncpg, Alembic, httpx, structlog/python-json-logger; Next.js 14 App Router, React 18, `@supabase/ssr` for auth session handling, generated/shared TypeScript contracts in `packages/types` (002-auth-tenancy)
 - Supabase Postgres for tenants, workspaces, memberships, collection grants, asset grants; Supabase Auth for user identities; no BI warehouse data stored in app DB (002-auth-tenancy)
+- Python 3.12 (API), TypeScript 5.x (web/shared packages) + FastAPI, Pydantic v2, SQLAlchemy 2.x async, asyncpg, Alembic, Supabase Vault service access, `snowflake-connector-python`, structlog/python-json-logger; Next.js 14 App Router, React 18, generated/shared TypeScript contracts in `packages/types` (003-data-connections)
+- Supabase Postgres for `data_connections` metadata and connection management audit records; Supabase Vault for Snowflake credential material; Snowflake as external analytics warehouse only (003-data-connections)
 
 - TypeScript 5.x (web), Python 3.12 (api) + Next.js 14 (App Router), Tailwind, shadcn/ui, `@supabase/ssr` (auth-only, scaffolded but unused this phase); FastAPI, Pydantic v2, SQLAlchemy 2.x, asyncpg, Alembic, structlog (or stdlib `logging` with JSON formatter) (001-platform-foundation)
 
@@ -31,6 +33,7 @@ cd src && pytest && ruff check .
 TypeScript 5.x (web), Python 3.12 (api): Follow standard conventions
 
 ## Recent Changes
+- 003-data-connections: Added Python 3.12 (API), TypeScript 5.x (web/shared packages) + FastAPI, Pydantic v2, SQLAlchemy 2.x async, asyncpg, Alembic, Supabase Vault service access, `snowflake-connector-python`, structlog/python-json-logger; Next.js 14 App Router, React 18, generated/shared TypeScript contracts in `packages/types`
 - 002-auth-tenancy: Added Python 3.12 (API), TypeScript 5.x (web/shared packages) + FastAPI, Pydantic v2, SQLAlchemy 2.x async, asyncpg, Alembic, httpx, structlog/python-json-logger; Next.js 14 App Router, React 18, `@supabase/ssr` for auth session handling, generated/shared TypeScript contracts in `packages/types`
 
 - 001-platform-foundation: Added TypeScript 5.x (web), Python 3.12 (api) + Next.js 14 (App Router), Tailwind, shadcn/ui, `@supabase/ssr` (auth-only, scaffolded but unused this phase); FastAPI, Pydantic v2, SQLAlchemy 2.x, asyncpg, Alembic, structlog (or stdlib `logging` with JSON formatter)
