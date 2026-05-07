@@ -223,3 +223,32 @@ async def write_management_audit(
     session.add(row)
     await session.flush()
     return row
+
+
+async def update_connection_test_state(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    connection_id: UUID,
+    status: DbConnectionStatus,
+    last_tested_at: datetime,
+    last_successful_test_at: datetime | None,
+    last_error: str | None,
+    updated_by_membership_id: UUID,
+) -> DataConnection | None:
+    row = await _get_connection_for_tenant(
+        session, tenant_id=tenant_id, connection_id=connection_id
+    )
+    if row is None:
+        return None
+    row.status = status
+    row.last_tested_at = last_tested_at
+    if last_successful_test_at is not None and (
+        row.last_successful_test_at is None
+        or last_successful_test_at > row.last_successful_test_at
+    ):
+        row.last_successful_test_at = last_successful_test_at
+    row.last_error = None if last_error is None else redact_string(last_error)
+    row.updated_by_membership_id = updated_by_membership_id
+    await session.flush()
+    return row

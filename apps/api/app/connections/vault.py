@@ -15,6 +15,9 @@ class VaultClient(Protocol):
     async def store_secret(self, *, name: str, secret_payload: dict[str, str]) -> str:
         """Persist secret material in Vault and return an opaque reference."""
 
+    async def read_secret(self, *, secret_id: str) -> dict[str, str]:
+        """Fetch secret material from Vault by opaque id."""
+
 
 class HttpSupabaseVaultClient:
     """HTTP client shell for Supabase-backed Vault operations.
@@ -30,6 +33,7 @@ class HttpSupabaseVaultClient:
         service_role_key: str,
         timeout_seconds: float = 30.0,
         store_secret_path: str = "/rest/v1/rpc/vault_create_secret",
+        read_secret_path: str = "/rest/v1/rpc/vault_decrypt_secret",
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
@@ -38,6 +42,10 @@ class HttpSupabaseVaultClient:
         trimmed = store_secret_path.strip().strip("/")
         self._store_secret_path = (
             f"/{trimmed}" if trimmed else "/rest/v1/rpc/vault_create_secret"
+        )
+        read_trimmed = read_secret_path.strip().strip("/")
+        self._read_secret_path = (
+            f"/{read_trimmed}" if read_trimmed else "/rest/v1/rpc/vault_decrypt_secret"
         )
         self._transport = transport
 
@@ -67,6 +75,47 @@ class HttpSupabaseVaultClient:
                 "Supabase Vault did not return a secret id"
             )
         return secret_id
+
+    async def read_secret(self, *, secret_id: str) -> dict[str, str]:
+        token = self._service_role_key
+        headers = {
+            "apikey": token,
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        url = f"{self._base_url}{self._read_secret_path}"
+        payload = {"secret_id": secret_id}
+        try:
+            async with httpx.AsyncClient(
+                timeout=self._timeout,
+                transport=self._transport,
+            ) as client:
+                resp = await client.post(url, headers=headers, json=payload)
+        except httpx.HTTPError as exc:
+            raise DependencyUnavailableError("Supabase dependency unavailable") from exc
+        if resp.status_code >= 400:
+            raise DependencyUnavailableError("Supabase Vault rejected secret read")
+
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise DependencyUnavailableError(
+                "Supabase Vault returned invalid json"
+            ) from exc
+
+        if (
+            isinstance(data, dict)
+            and "secret" in data
+            and isinstance(data["secret"], dict)
+        ):
+            secret = data["secret"]
+            return {str(k): str(v) for k, v in secret.items()}
+        if isinstance(data, dict):
+            # Some deployments return the decrypted secret shape directly.
+            return {str(k): str(v) for k, v in data.items()}
+        raise DependencyUnavailableError(
+            "Supabase Vault did not return a secret payload"
+        )
 
 
 def _extract_secret_id(resp: httpx.Response) -> str | None:

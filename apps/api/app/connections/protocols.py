@@ -113,3 +113,16 @@ class ConnectionRepositoryProtocol(Protocol):
         failure_category: DbFailureCategory | None,
         sanitized_message: str | None,
     ) -> ConnectionManagementAuditRecord: ...
+
+    @staticmethod
+    async def update_connection_test_state(
+        session: AsyncSession,
+        *,
+        tenant_id: UUID,
+        connection_id: UUID,
+        status: DbConnectionStatus,
+        last_tested_at: datetime,
+        last_successful_test_at: datetime | None,
+        last_error: str | None,
+        updated_by_membership_id: UUID,
+    ) -> DataConnection | None: ...

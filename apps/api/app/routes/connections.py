@@ -20,8 +20,13 @@ from app.connections.errors import (
     ConnectionValidationError,
     DependencyUnavailableError,
 )
-from app.connections.schemas import DataConnectionResponse, UpsertConnectionRequest
+from app.connections.schemas import (
+    ConnectionTestResponse,
+    DataConnectionResponse,
+    UpsertConnectionRequest,
+)
 from app.connections.service import ConnectionService
+from app.connections.snowflake import SnowflakeConnectorTester
 from app.connections.vault import HttpSupabaseVaultClient, VaultClient
 from app.db.deps import get_db
 from app.tenancy import repository as tenancy_repository
@@ -63,13 +68,6 @@ async def _require_active_membership(
     return resolved
 
 
-class _NoopSnowflakeTester:
-    async def test_connection(
-        self, *, credentials: object, timeout_seconds: float
-    ) -> object:
-        raise RuntimeError("Snowflake tester not configured for this endpoint")
-
-
 def _build_vault_client() -> VaultClient:
     settings = get_settings()
     if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_ROLE_KEY:
@@ -86,13 +84,18 @@ class _UnconfiguredVaultClient:
             "Supabase Vault client is not configured for this request"
         )
 
+    async def read_secret(self, *, secret_id: str) -> dict[str, str]:
+        _ = secret_id
+        raise DependencyUnavailableError(
+            "Supabase Vault client is not configured for this request"
+        )
 
-def _build_service(*, vault_required: bool) -> ConnectionService:
-    # Snowflake tester is used in Phase 4; keep a placeholder here.
+
+def get_connection_service(*, vault_required: bool) -> ConnectionService:
     return ConnectionService(
         repository=connections_repository,
         vault=_build_vault_client() if vault_required else _UnconfiguredVaultClient(),  # type: ignore[arg-type]
-        snowflake_tester=_NoopSnowflakeTester(),  # type: ignore[arg-type]
+        snowflake_tester=SnowflakeConnectorTester(),
         clock=lambda: datetime.now(tz=UTC),
     )
 
@@ -112,7 +115,7 @@ async def get_workspace_connection(
         workspace_id=workspace_id,
     )
     try:
-        service = _build_service(vault_required=False)
+        service = get_connection_service(vault_required=False)
         return await service.get_connection_metadata(session=session, actor=actor)
     except AuthzDeniedError as exc:
         _forbidden(error_code=exc.error_code, message=str(exc))
@@ -140,7 +143,7 @@ async def upsert_workspace_connection(
         workspace_id=workspace_id,
     )
     try:
-        service = _build_service(vault_required=payload.credentials is not None)
+        service = get_connection_service(vault_required=payload.credentials is not None)
         result, created = await service.upsert_connection(
             session=session,
             actor=actor,
@@ -177,4 +180,41 @@ async def upsert_workspace_connection(
     await session.commit()
     if created:
         response.status_code = status.HTTP_201_CREATED
+    return result
+
+
+@router.post(
+    "/workspaces/{workspace_id}/connection/test",
+    response_model=ConnectionTestResponse,
+)
+async def test_workspace_connection(
+    workspace_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ConnectionTestResponse:
+    actor = await _require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    try:
+        service = get_connection_service(vault_required=True)
+        result = await service.test_connection(session=session, actor=actor)
+    except AuthzDeniedError as exc:
+        _forbidden(error_code=exc.error_code, message=str(exc))
+    except DependencyUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"error_code": exc.error_code, "message": str(exc)},
+        ) from exc
+    except ConnectionServiceError as exc:
+        status_code = status.HTTP_400_BAD_REQUEST
+        if exc.error_code == "connection_not_found":
+            status_code = status.HTTP_404_NOT_FOUND
+        raise HTTPException(
+            status_code=status_code,
+            detail={"error_code": exc.error_code, "message": str(exc)},
+        ) from exc
+
+    await session.commit()
     return result

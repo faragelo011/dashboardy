@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { UpsertConnectionRequest } from "@dashboardy/types";
 
-import { ApiError, upsertWorkspaceConnection } from "@/app/lib/connections-api";
+import {
+  ApiError,
+  testWorkspaceConnection,
+  upsertWorkspaceConnection,
+} from "@/app/lib/connections-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
 type SessionContext = { token: string; userId: string };
@@ -67,6 +71,24 @@ export async function upsertConnectionAction(formData: FormData) {
   try {
     const { token } = await requireSessionContext();
     await upsertWorkspaceConnection(token, workspaceId, payload);
+    revalidatePath("/connections");
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.message);
+    }
+    throw err;
+  }
+}
+
+export async function testConnectionAction(formData: FormData) {
+  const workspaceId = String(formData.get("workspace_id") ?? "").trim();
+  if (!workspaceId || !isUuid(workspaceId)) {
+    throw new Error("Invalid workspace id.");
+  }
+
+  try {
+    const { token } = await requireSessionContext();
+    await testWorkspaceConnection(token, workspaceId);
     revalidatePath("/connections");
   } catch (err) {
     if (err instanceof ApiError) {

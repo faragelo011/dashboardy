@@ -1,4 +1,8 @@
-import type { DataConnection, UpsertConnectionRequest } from "@dashboardy/types";
+import type {
+  ConnectionTestResponse,
+  DataConnection,
+  UpsertConnectionRequest,
+} from "@dashboardy/types";
 
 export class ApiError extends Error {
   public readonly status: number;
@@ -87,4 +91,20 @@ export async function upsertWorkspaceConnection(
     throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as DataConnection;
+}
+
+export async function testWorkspaceConnection(
+  accessToken: string,
+  workspaceId: string,
+): Promise<ConnectionTestResponse> {
+  const ws = encodeURIComponent(workspaceId);
+  const res = await apiFetch(`/workspaces/${ws}/connection/test`, accessToken, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to test connection");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
+  return (await res.json()) as ConnectionTestResponse;
 }

@@ -31,7 +31,11 @@ function meResponse(role: "admin" | "viewer") {
 }
 
 async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
-  let connectionStatus: "not_configured" | "pending_test" = "not_configured";
+  let connectionStatus: "not_configured" | "pending_test" | "active" =
+    "not_configured";
+  let lastTestedAt: string | null = null;
+  let lastSuccessfulAt: string | null = null;
+  let lastError: string | null = null;
   const server = createServer((req, res) => {
     if (req.url === "/me" && req.method === "GET") {
       json(res, meResponse(role));
@@ -54,6 +58,9 @@ async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
           warehouse: connectionStatus === "not_configured" ? null : "WH",
           database: connectionStatus === "not_configured" ? null : "DB",
           schema: null,
+          last_tested_at: lastTestedAt,
+          last_successful_test_at: lastSuccessfulAt,
+          last_error: lastError,
         });
         return;
       }
@@ -71,6 +78,7 @@ async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
             // ignore
           }
           connectionStatus = "pending_test";
+          lastError = null;
           json(res, {
             status: "pending_test",
             has_credentials: true,
@@ -78,12 +86,50 @@ async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
             warehouse: "WH",
             database: "DB",
             schema: null,
+            last_tested_at: lastTestedAt,
+            last_successful_test_at: lastSuccessfulAt,
+            last_error: lastError,
           });
         });
         return;
       }
       res.writeHead(405);
       res.end();
+      return;
+    }
+    if (req.url === `/workspaces/${workspaceId}/connection/test`) {
+      if (role !== "admin") {
+        json(
+          res,
+          { error_code: "authz_denied", message: "You do not have permission to perform this action." },
+          403,
+        );
+        return;
+      }
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end();
+        return;
+      }
+      const now = new Date().toISOString();
+      lastTestedAt = now;
+      lastSuccessfulAt = now;
+      lastError = null;
+      connectionStatus = "active";
+      json(res, {
+        connection: {
+          status: "active",
+          has_credentials: true,
+          name: "Acme Snowflake",
+          warehouse: "WH",
+          database: "DB",
+          schema: null,
+          last_tested_at: lastTestedAt,
+          last_successful_test_at: lastSuccessfulAt,
+          last_error: lastError,
+        },
+        test_status: "success",
+      });
       return;
     }
     res.writeHead(404);
@@ -159,6 +205,17 @@ test("admin can access connections page and submit credentials", async ({
         .first(),
     ).toBeVisible();
     await expect(page.getByLabel("Password")).toHaveValue("");
+
+    await page.getByRole("button", { name: "Test connection" }).click();
+    await expect(
+      page.getByText("Last tested", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Last successful", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("—", { exact: true }),
+    ).toHaveCount(0);
   } finally {
     await stopMockApi(server);
   }
