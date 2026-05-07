@@ -29,11 +29,12 @@ class Member(BaseModel):
     deactivated_at: datetime | None = None
 
 
-class InviteMemberRequest(BaseModel):
+class ProvisionMemberRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     email: EmailStr
     role: MembershipRole
+    initial_password: str = Field(min_length=8)
 
 
 class UpdateMemberRequest(BaseModel):

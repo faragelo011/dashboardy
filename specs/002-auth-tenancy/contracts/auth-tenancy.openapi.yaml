@@ -108,9 +108,12 @@ paths:
         "403":
           $ref: "#/components/responses/Forbidden"
     post:
-      operationId: inviteWorkspaceMember
-      summary: Invite a workspace member
-      description: Admin-only. Creates or invites an authenticated user and creates an active membership.
+      operationId: provisionWorkspaceMember
+      summary: Provision a workspace member (initial password required)
+      description: |
+        Admin-only. Creates or updates an authenticated user with an initial password,
+        marks the user as requiring a password reset on first login, and creates an
+        active membership.
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
       requestBody:
@@ -118,10 +121,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/InviteMemberRequest"
+              $ref: "#/components/schemas/ProvisionMemberRequest"
       responses:
         "201":
-          description: Invitation accepted for processing and membership created or returned.
+          description: Provisioning accepted for processing and membership created or returned.
           headers:
             X-Correlation-ID:
               $ref: "#/components/headers/CorrelationId"
@@ -449,16 +452,21 @@ components:
           type: [string, "null"]
           format: date-time
 
-    InviteMemberRequest:
+    ProvisionMemberRequest:
       type: object
       additionalProperties: false
-      required: [email, role]
+      required: [email, role, initial_password]
       properties:
         email:
           type: string
           format: email
         role:
           $ref: "#/components/schemas/MembershipRole"
+        initial_password:
+          type: string
+          minLength: 8
+          description: |
+            Temporary initial password. The provisioned user must reset this password on first login.
 
     UpdateMemberRequest:
       type: object

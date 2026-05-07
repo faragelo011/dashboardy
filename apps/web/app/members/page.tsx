@@ -9,9 +9,9 @@ import {
   createAssetGrantAction,
   deactivateMemberAction,
   deleteAssetGrantAction,
-  inviteMemberAction,
   updateMemberRoleAction,
 } from "./actions";
+import { ProvisionMemberForm } from "./provision-member-form";
 
 const roleOptions = [
   ["admin", "Admin", "Manage workspace access and settings."],
@@ -101,7 +101,11 @@ export default async function MembersPage() {
                 Workspace members
               </h1>
               <p className="max-w-[65ch] text-sm leading-6 text-ink-muted">
+<<<<<<< HEAD
+                Add teammates, adjust roles, and review external access for{" "}
+=======
                 Invite teammates, adjust roles, and review external access for{" "}
+>>>>>>> origin/main
                 <span className="font-medium text-ink">
                   {me.current_workspace.workspace_name}
                 </span>
@@ -139,6 +143,225 @@ export default async function MembersPage() {
             </p>
           </section>
         ) : null}
+<<<<<<< HEAD
+
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
+          <ProvisionMemberForm
+            workspaceId={workspaceId}
+            fieldClass={fieldClass}
+            primaryButtonClass={primaryButtonClass}
+            roleOptions={roleOptions}
+          />
+
+          <aside className="rounded-3xl border border-border-3 bg-surface-5 p-5">
+            <h2 className="text-sm font-semibold">Access review</h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-ink-faint">Active members</dt>
+                <dd className="font-semibold tabular-nums">{activeMembers.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-ink-faint">Inactive members</dt>
+                <dd className="font-semibold tabular-nums">{inactiveMembers.length}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-ink-faint">External clients</dt>
+                <dd className="font-semibold tabular-nums">{externalClients.length}</dd>
+              </div>
+            </dl>
+            <p className="mt-5 rounded-2xl bg-surface-2 p-3 text-xs leading-5 text-ink-muted">
+              Keep at least two admins active so workspace access does not depend
+              on one person.
+            </p>
+          </aside>
+        </section>
+
+        <section className="rounded-3xl border border-border-3 bg-surface-1">
+          <div className="flex flex-col gap-2 border-b border-border-1 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+            <div>
+              <h2 className="text-lg font-semibold tracking-[-0.02em]">
+                Member roster
+              </h2>
+              <p className="mt-1 text-sm text-ink-muted">
+                Change roles inline or deactivate access when someone leaves.
+              </p>
+            </div>
+            <span className="text-xs font-medium text-ink-faint">
+              {members.length} total
+            </span>
+          </div>
+
+          <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(150px,0.7fr)_minmax(110px,0.45fr)_minmax(120px,0.5fr)_minmax(170px,0.75fr)] gap-3 border-b border-border-1 bg-surface-4 px-6 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:grid">
+            <div>Email</div>
+            <div>Role</div>
+            <div>Status</div>
+            <div>Joined</div>
+            <div className="text-right">Actions</div>
+          </div>
+
+          <div className="divide-y divide-border-0">
+            {members.map((member) => {
+              const isActive = member.status === "active";
+              return (
+                <div
+                  key={member.id}
+                  className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1.6fr)_minmax(150px,0.7fr)_minmax(110px,0.45fr)_minmax(120px,0.5fr)_minmax(170px,0.75fr)] md:items-center md:gap-3 md:px-6"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{member.email}</div>
+                    <div className="mt-1 truncate font-mono text-xs text-ink-faint">
+                      {member.user_id}
+                    </div>
+                  </div>
+
+                  <form
+                    action={updateMemberRoleAction}
+                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] md:block"
+                  >
+                    <input type="hidden" name="workspace_id" value={workspaceId} />
+                    <input type="hidden" name="membership_id" value={member.id} />
+                    <label className="sr-only" htmlFor={`role-${member.id}`}>
+                      Member role
+                    </label>
+                    <select
+                      id={`role-${member.id}`}
+                      name="role"
+                      defaultValue={member.role}
+                      className={fieldClass}
+                      disabled={!isActive}
+                    >
+                      {roleOptions.map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      className={`${quietButtonClass} md:mt-2 md:w-full`}
+                      disabled={!isActive}
+                    >
+                      Save role
+                    </button>
+                  </form>
+
+                  <div>
+                    <span
+                      className={
+                        isActive
+                          ? "inline-flex rounded-full bg-success-soft px-2.5 py-1 text-xs font-medium text-success-soft-ink"
+                          : "inline-flex rounded-full bg-surface-4 px-2.5 py-1 text-xs font-medium text-ink-faint"
+                      }
+                    >
+                      {isActive ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <div className="text-sm text-ink-muted">
+                    {formatDate(member.created_at)}
+                  </div>
+
+                  <form action={deactivateMemberAction} className="md:text-right">
+                    <input type="hidden" name="workspace_id" value={workspaceId} />
+                    <input type="hidden" name="membership_id" value={member.id} />
+                    <button className={dangerButtonClass} disabled={!isActive}>
+                      Deactivate
+                    </button>
+                  </form>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-border-3 bg-surface-4">
+          <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:p-6">
+            <div className="space-y-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-faint">
+                  External access
+                </p>
+                <h2 className="mt-2 text-lg font-semibold tracking-[-0.02em]">
+                  Asset grants
+                </h2>
+                <p className="mt-2 max-w-[56ch] text-sm leading-6 text-ink-muted">
+                  Grant external clients access to specific dashboards or questions.
+                  Use this after inviting someone as an external client.
+                </p>
+              </div>
+
+              <form
+                action={createAssetGrantAction}
+                className="space-y-4 rounded-2xl border border-border-2 bg-surface-2 p-4"
+              >
+                <input type="hidden" name="workspace_id" value={workspaceId} />
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">External client</span>
+                  <select
+                    name="user_id"
+                    required
+                    className={fieldClass}
+                    defaultValue=""
+                    disabled={externalClients.length === 0}
+                  >
+                    <option value="" disabled>
+                      {externalClients.length === 0
+                        ? "Invite an external client first"
+                        : "Select an external client"}
+                    </option>
+                    {externalClients.map((member) => (
+                      <option key={member.id} value={member.user_id}>
+                        {member.email} ({roleLabel(member.role)})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">Asset type</span>
+                    <select
+                      name="asset_type"
+                      className={fieldClass}
+                      defaultValue="dashboard"
+                    >
+                      <option value="dashboard">Dashboard</option>
+                      <option value="question">Question</option>
+                    </select>
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-medium">Export access</span>
+                    <span className="flex min-h-11 items-center gap-3 rounded-xl border border-border-4 bg-surface-1 px-3 py-2">
+                      <input
+                        name="can_export"
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-border-4 accent-accent"
+                      />
+                      <span className="text-sm text-ink-muted">Allow exports</span>
+                    </span>
+                  </label>
+                </div>
+
+                <label className="block space-y-2">
+                  <span className="text-sm font-medium">Asset ID</span>
+                  <input
+                    name="asset_id"
+                    required
+                    pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                    title="Enter a UUID like 00000000-0000-4000-8000-000000000000"
+                    className={`${fieldClass} font-mono`}
+                    placeholder="00000000-0000-4000-8000-000000000000"
+                  />
+                </label>
+
+                <button
+                  className={primaryButtonClass}
+                  disabled={externalClients.length === 0}
+                >
+                  Create grant
+                </button>
+              </form>
+            </div>
+=======
 
         <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
           <form
@@ -433,6 +656,7 @@ export default async function MembersPage() {
                 </button>
               </form>
             </div>
+>>>>>>> origin/main
 
             <div className="overflow-hidden rounded-2xl border border-border-2 bg-surface-2">
               <div className="hidden grid-cols-[minmax(0,1fr)_110px_90px_auto] gap-3 border-b border-border-1 bg-surface-3 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:grid">

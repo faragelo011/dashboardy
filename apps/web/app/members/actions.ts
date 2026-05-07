@@ -11,7 +11,7 @@ import {
 } from "@/app/lib/asset-grants-api";
 import {
   ApiError,
-  inviteWorkspaceMember,
+  provisionWorkspaceMember,
   listWorkspaceMembers,
   updateWorkspaceMember,
 } from "@/app/lib/members-api";
@@ -44,10 +44,11 @@ async function loadMembersContext(
   return { members, target, activeAdminCount: activeAdmins.length };
 }
 
-export async function inviteMemberAction(formData: FormData) {
+export async function provisionMemberAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
   const rawRole = String(formData.get("role") ?? "viewer").trim();
+  const initialPassword = String(formData.get("initial_password") ?? "").trim();
 
   if (!email) {
     throw new Error("Email is required.");
@@ -62,6 +63,9 @@ export async function inviteMemberAction(formData: FormData) {
   ) {
     throw new Error("Invalid workspace id.");
   }
+  if (initialPassword.length < 8) {
+    throw new Error("Initial password must be at least 8 characters.");
+  }
 
   const role =
     rawRole === "admin" ||
@@ -72,8 +76,12 @@ export async function inviteMemberAction(formData: FormData) {
       : "viewer";
 
   try {
-    const { token } = await requireSessionContext();
-    await inviteWorkspaceMember(token, workspaceId, { email, role });
+    const token = await requireAccessToken();
+    await provisionWorkspaceMember(token, workspaceId, {
+      email,
+      role,
+      initial_password: initialPassword,
+    });
     revalidatePath("/members");
   } catch (err) {
     if (err instanceof ApiError) {

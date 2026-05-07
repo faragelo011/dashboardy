@@ -31,7 +31,30 @@ export const getProtectedMe = cache(async (): Promise<MeResponse> => {
     redirect("/sign-in");
   }
   const res = await fetchMe(session.access_token);
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
+    redirect("/sign-in");
+  }
+  if (res.status === 403) {
+    const bodyText = await res.text().catch(() => "");
+    try {
+      const parsed = JSON.parse(bodyText) as {
+        error_code?: unknown;
+        detail?: { error_code?: unknown } | unknown;
+      };
+      const detailCode =
+        parsed.detail && typeof parsed.detail === "object"
+          ? "error_code" in parsed.detail
+            ? (parsed.detail as { error_code?: unknown }).error_code
+            : undefined
+          : undefined;
+      const code =
+        parsed.error_code ?? detailCode;
+      if (code === "password_reset_required") {
+        redirect("/set-password");
+      }
+    } catch {
+      // ignore parse failures; fall through to sign-in redirect
+    }
     redirect("/sign-in");
   }
   if (!res.ok) {

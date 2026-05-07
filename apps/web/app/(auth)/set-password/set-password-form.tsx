@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { completePasswordReset } from "@/app/lib/api";
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
 export function SetPasswordForm() {
@@ -41,6 +42,22 @@ export function SetPasswordForm() {
         setError(err.message);
         return;
       }
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) {
+        setError("Session expired. Please sign in again.");
+        return;
+      }
+      const completeRes = await completePasswordReset(token);
+      if (!completeRes.ok) {
+        const body = await completeRes.text().catch(() => "");
+        setError(body || "Unable to complete password reset.");
+        return;
+      }
+
       router.push("/");
       router.refresh();
     } finally {

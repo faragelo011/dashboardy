@@ -19,9 +19,14 @@ class _FakeSupabaseAdmin:
     def __init__(self) -> None:
         self._by_email: dict[str, uuid.UUID] = {}
 
-    async def invite_user(self, *, email: str) -> InvitedUser:
+    async def provision_user(self, *, email: str, initial_password: str) -> InvitedUser:
+        _ = initial_password
         uid = self._by_email.setdefault(email, uuid.uuid4())
         return InvitedUser(user_id=uid, email=email)
+
+    async def clear_must_reset_password(self, *, user_id: uuid.UUID) -> None:
+        _ = user_id
+        return None
 
 
 def test_admin_can_invite_update_and_deactivate(
@@ -40,7 +45,11 @@ def test_admin_can_invite_update_and_deactivate(
         with TestClient(app) as client:
             invite = client.post(
                 f"/workspaces/{seeded.workspace_id}/members",
-                json={"email": "invitee@example.com", "role": "viewer"},
+                json={
+                    "email": "invitee@example.com",
+                    "role": "viewer",
+                    "initial_password": "TempPassw0rd!",
+                },
                 headers={"Authorization": "Bearer t"},
             )
             assert invite.status_code == 201
@@ -49,7 +58,11 @@ def test_admin_can_invite_update_and_deactivate(
 
             dupe = client.post(
                 f"/workspaces/{seeded.workspace_id}/members",
-                json={"email": "invitee@example.com", "role": "viewer"},
+                json={
+                    "email": "invitee@example.com",
+                    "role": "viewer",
+                    "initial_password": "TempPassw0rd!",
+                },
                 headers={"Authorization": "Bearer t"},
             )
             assert dupe.status_code == 201
@@ -74,7 +87,11 @@ def test_admin_can_invite_update_and_deactivate(
 
             reinvite = client.post(
                 f"/workspaces/{seeded.workspace_id}/members",
-                json={"email": "invitee@example.com", "role": "viewer"},
+                json={
+                    "email": "invitee@example.com",
+                    "role": "viewer",
+                    "initial_password": "TempPassw0rd!",
+                },
                 headers={"Authorization": "Bearer t"},
             )
             assert reinvite.status_code == 409
@@ -110,7 +127,11 @@ def test_non_admin_invite_denied_before_supabase_admin_config_is_required(
     with TestClient(app) as client:
         r = client.post(
             f"/workspaces/{seeded.workspace_id}/members",
-            json={"email": "invitee@example.com", "role": "viewer"},
+            json={
+                "email": "invitee@example.com",
+                "role": "viewer",
+                "initial_password": "TempPassw0rd!",
+            },
             headers={"Authorization": "Bearer t"},
         )
     assert r.status_code == 403

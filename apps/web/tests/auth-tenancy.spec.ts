@@ -36,6 +36,16 @@ async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
       json(res, meResponse(role));
       return;
     }
+    if (req.url === "/auth/password-reset-complete") {
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end();
+        return;
+      }
+      res.writeHead(204);
+      res.end();
+      return;
+    }
     if (req.url === `/workspaces/${workspaceId}/members`) {
       if (req.method !== "GET") {
         res.writeHead(405);

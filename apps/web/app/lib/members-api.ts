@@ -85,10 +85,10 @@ export async function listWorkspaceMembers(
   return (await res.json()) as MemberListResponse;
 }
 
-export async function inviteWorkspaceMember(
+export async function provisionWorkspaceMember(
   accessToken: string,
   workspaceId: string,
-  payload: { email: string; role: Member["role"] },
+  payload: { email: string; role: Member["role"]; initial_password: string },
 ): Promise<Member> {
   const ws = encodeURIComponent(workspaceId);
   const res = await apiFetch(`/workspaces/${ws}/members`, accessToken, {
@@ -97,7 +97,7 @@ export async function inviteWorkspaceMember(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    const parsed = parseApiErrorBody(text, "Invite failed");
+    const parsed = parseApiErrorBody(text, "Provision member failed");
     throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as Member;

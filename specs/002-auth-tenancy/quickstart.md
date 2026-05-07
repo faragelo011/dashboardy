@@ -62,6 +62,12 @@ curl -s http://localhost:8000/health
 curl -s http://localhost:8000/ready
 ```
 
+### Supabase Auth configuration (provisioned members with forced reset)
+
+This feature provisions workspace members with a temporary initial password and enforces a forced password reset on first login.
+
+The web app uses `/set-password` to collect the new password. The API and web both enforce a `must_reset_password` flag so provisioned users cannot access protected tenant-scoped content until they complete the reset.
+
 ## 4. Validate protected context
 
 Sign in as the pre-provisioned admin and call:
@@ -97,15 +103,15 @@ As admin:
 curl -s -X POST http://localhost:8000/workspaces/<workspace_id>/members \
   -H "Authorization: Bearer <admin-jwt>" \
   -H "Content-Type: application/json" \
-  -d '{"email":"analyst@example.com","role":"analyst"}'
+  -d '{"email":"analyst@example.com","role":"analyst","initial_password":"TempPassw0rd!"}'
 ```
 
 Expected:
 
 - HTTP 201.
 - Membership has role `analyst` and status `active`.
-- Repeating the same invite for an active member returns HTTP 201 with the existing membership; no duplicate membership is created.
-- Repeating the invite after that membership is inactive returns **HTTP 409 Conflict** with `membership_conflict`.
+- Repeating the same provision request for an active member returns HTTP 201 with the existing membership; no duplicate membership is created.
+- Repeating the provision request after that membership is inactive returns **HTTP 409 Conflict** with `membership_conflict`.
 
 As non-admin:
 
@@ -113,7 +119,7 @@ As non-admin:
 curl -i -X POST http://localhost:8000/workspaces/<workspace_id>/members \
   -H "Authorization: Bearer <viewer-jwt>" \
   -H "Content-Type: application/json" \
-  -d '{"email":"new@example.com","role":"viewer"}'
+  -d '{"email":"new@example.com","role":"viewer","initial_password":"TempPassw0rd!"}'
 ```
 
 Expected: HTTP 403 with `authz_denied`.
@@ -148,13 +154,13 @@ Expected:
 
 ## 7. Validate external-client grants
 
-As admin, invite an external client:
+As admin, provision an external client:
 
 ```bash
 curl -s -X POST http://localhost:8000/workspaces/<workspace_id>/members \
   -H "Authorization: Bearer <admin-jwt>" \
   -H "Content-Type: application/json" \
-  -d '{"email":"client@example.com","role":"external_client"}'
+  -d '{"email":"client@example.com","role":"external_client","initial_password":"TempPassw0rd!"}'
 ```
 
 **Prerequisite:** the `user_id` in the payload below must be the Supabase Auth user id of someone who is already an **active** workspace member with role **`external_client`** (use the same user you invited above, or substitute your real id for `<external_user_id>`). Asset grant creation fails if that user is not an active external-client member of this workspace.
@@ -207,6 +213,8 @@ Run web checks:
 pnpm --filter @dashboardy/web lint
 pnpm --filter @dashboardy/web test
 ```
+
+(`test` runs Vitest unit checks first, then Playwright.)
 
 Run monorepo checks:
 
