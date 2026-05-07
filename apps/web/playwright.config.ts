@@ -12,6 +12,9 @@ function monorepoRoot(): string {
 
 export default defineConfig({
   testDir: "./tests",
+  // Tests spin up a shared local mock API on a fixed port (4010).
+  // Keep workers at 1 to prevent port collisions across spec files.
+  workers: 1,
   use: {
     baseURL: "http://localhost:3005",
     ...devices["Desktop Chrome"],
