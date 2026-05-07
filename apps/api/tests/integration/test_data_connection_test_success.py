@@ -8,6 +8,7 @@ import uuid
 import pytest
 from app.main import app
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from tests.factories import auth_tenancy as factories
 
@@ -55,7 +56,7 @@ def test_connection_test_success_promotes_pending_and_updates_timestamps(
     use_live_postgres: None, monkeypatch: pytest.MonkeyPatch
 ):
     uid = uuid.uuid4()
-    _tenant_id, workspace_id, _membership_id, _conn_id = asyncio.run(
+    tenant_id, workspace_id, _membership_id, conn_id = asyncio.run(
         _seed_admin_and_connection(user_id=uid)
     )
     monkeypatch.setattr(
@@ -111,3 +112,27 @@ def test_connection_test_success_promotes_pending_and_updates_timestamps(
     assert body["connection"]["status"] == "active"
     assert body["connection"]["last_tested_at"] is not None
     assert body["connection"]["last_successful_test_at"] is not None
+
+    async def load_connection_state() -> tuple[str | None, str | None]:
+        from app.db.session import get_async_session_maker, get_engine
+        from app.models.data_connections import DataConnection
+
+        get_async_session_maker.cache_clear()
+        get_engine.cache_clear()
+        maker = get_async_session_maker()
+        try:
+            async with maker() as session:
+                stmt = select(DataConnection).where(
+                    DataConnection.tenant_id == tenant_id,
+                    DataConnection.id == conn_id,
+                )
+                row = (await session.execute(stmt)).scalar_one()
+                return row.vault_secret_id, row.pending_vault_secret_id
+        finally:
+            await get_engine().dispose()
+            get_async_session_maker.cache_clear()
+            get_engine.cache_clear()
+
+    vault_secret_id, pending_secret_id = asyncio.run(load_connection_state())
+    assert vault_secret_id == "pending-secret"
+    assert pending_secret_id is None

@@ -243,7 +243,11 @@ async def update_connection_test_state(
         return None
     row.status = status
     row.last_tested_at = last_tested_at
-    row.last_successful_test_at = last_successful_test_at
+    if last_successful_test_at is not None and (
+        row.last_successful_test_at is None
+        or last_successful_test_at > row.last_successful_test_at
+    ):
+        row.last_successful_test_at = last_successful_test_at
     row.last_error = None if last_error is None else redact_string(last_error)
     row.updated_by_membership_id = updated_by_membership_id
     await session.flush()

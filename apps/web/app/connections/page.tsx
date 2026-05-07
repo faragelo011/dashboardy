@@ -7,6 +7,19 @@ import { createServerSupabase } from "@/app/lib/supabase-server";
 import { ConnectionsForm } from "./connections-form";
 import { testConnectionAction } from "./actions";
 
+const formatUtcDateTime = (value: string) =>
+  new Intl.DateTimeFormat("en", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZoneName: "short",
+  }).format(new Date(value));
+
 const statusPill = (status: string) => {
   switch (status) {
     case "active":
@@ -127,7 +140,9 @@ export default async function ConnectionsPage() {
                     Last tested
                   </dt>
                   <dd className="mt-1 text-sm text-ink">
-                    {connection?.last_tested_at ? new Date(connection.last_tested_at).toLocaleString() : "—"}
+                    {connection?.last_tested_at
+                      ? formatUtcDateTime(connection.last_tested_at)
+                      : "—"}
                   </dd>
                 </div>
                 <div>
@@ -136,7 +151,7 @@ export default async function ConnectionsPage() {
                   </dt>
                   <dd className="mt-1 text-sm text-ink">
                     {connection?.last_successful_test_at
-                      ? new Date(connection.last_successful_test_at).toLocaleString()
+                      ? formatUtcDateTime(connection.last_successful_test_at)
                       : "—"}
                   </dd>
                 </div>

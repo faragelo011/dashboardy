@@ -114,3 +114,6 @@ def test_connection_test_failure_sets_test_failed_and_returns_sanitized_error(
     assert body["sanitized_error"]
     assert "vault_secret_id" not in r.text.lower()
     assert "pending_vault_secret_id" not in r.text.lower()
+    # Ensure concrete secret values never appear in the response body.
+    assert "pending-secret" not in r.text.lower()
+    assert '"password":"secret"' not in r.text.lower()

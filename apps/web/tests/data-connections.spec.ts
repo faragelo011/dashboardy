@@ -31,7 +31,8 @@ function meResponse(role: "admin" | "viewer") {
 }
 
 async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
-  let connectionStatus: "not_configured" | "pending_test" = "not_configured";
+  let connectionStatus: "not_configured" | "pending_test" | "active" =
+    "not_configured";
   let lastTestedAt: string | null = null;
   let lastSuccessfulAt: string | null = null;
   let lastError: string | null = null;

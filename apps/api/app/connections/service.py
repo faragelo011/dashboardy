@@ -283,7 +283,7 @@ class ConnectionService:
                 connection_id=row.id,
                 status=DbConnectionStatus.test_failed,
                 last_tested_at=completed_at,
-                last_successful_test_at=row.last_successful_test_at,
+                last_successful_test_at=None,
                 last_error=safe_error,
                 updated_by_membership_id=actor.membership_id,
             )
@@ -347,7 +347,7 @@ class ConnectionService:
                 connection_id=row.id,
                 status=DbConnectionStatus.test_failed,
                 last_tested_at=completed_at,
-                last_successful_test_at=row.last_successful_test_at,
+                last_successful_test_at=None,
                 last_error=safe_error,
                 updated_by_membership_id=actor.membership_id,
             )
