@@ -63,24 +63,24 @@
 
 ### Tests for User Story 1
 
-- [ ] T024 [P] [US1] Add contract tests for `GET /workspaces/{workspace_id}/connection` 200/401/403 responses in `apps/api/tests/contract/test_data_connection_get_contract.py`.
-- [ ] T025 [P] [US1] Add contract tests for `PUT /workspaces/{workspace_id}/connection` 200/201/400/401/403/409 responses in `apps/api/tests/contract/test_data_connection_upsert_contract.py`.
-- [ ] T026 [P] [US1] Add integration tests for empty `not_configured` state, admin create, metadata update, one-connection-per-tenant, and non-admin denial in `apps/api/tests/integration/test_data_connection_create.py`.
-- [ ] T027 [P] [US1] Add integration tests proving create/update responses and connection rows never contain plaintext credential values outside Vault in `apps/api/tests/integration/test_data_connection_secret_safety.py`.
-- [ ] T028 [P] [US1] Add Playwright smoke test for admin setup form, password clearing after submit, and non-admin denial in `apps/web/tests/data-connections.spec.ts`.
+- [x] T024 [P] [US1] Add contract tests for `GET /workspaces/{workspace_id}/connection` 200/401/403 responses in `apps/api/tests/contract/test_data_connection_get_contract.py`.
+- [x] T025 [P] [US1] Add contract tests for `PUT /workspaces/{workspace_id}/connection` 200/201/400/401/403/409 responses in `apps/api/tests/contract/test_data_connection_upsert_contract.py`.
+- [x] T026 [P] [US1] Add integration tests for empty `not_configured` state, admin create, metadata update, one-connection-per-tenant, and non-admin denial in `apps/api/tests/integration/test_data_connection_create.py`.
+- [x] T027 [P] [US1] Add integration tests proving create/update responses and connection rows never contain plaintext credential values outside Vault in `apps/api/tests/integration/test_data_connection_secret_safety.py`.
+- [x] T028 [P] [US1] Add Playwright smoke test for admin setup form, password clearing after submit, and non-admin denial in `apps/web/tests/data-connections.spec.ts`.
 
 ### Implementation for User Story 1
 
-- [ ] T029 [US1] Implement `get_connection_metadata` service behavior for empty and existing tenant state in `apps/api/app/connections/service.py`.
-- [ ] T030 [US1] Implement `upsert_connection` service behavior that validates admin role, trims metadata, stores submitted credentials as `pending_vault_secret_id`, sets `pending_test`, and writes a create or metadata_update audit in `apps/api/app/connections/service.py`.
-- [ ] T031 [US1] Implement Vault `store_secret` call shape for Snowflake credentials with tenant/connection metadata and no logging of secret payloads in `apps/api/app/connections/vault.py`.
-- [ ] T032 [US1] Implement repository methods used by create/update: `get_connection_for_tenant`, `create_connection`, `update_connection_metadata`, `set_pending_secret`, and `write_management_audit` in `apps/api/app/connections/repository.py`.
-- [ ] T033 [US1] Implement FastAPI `GET /workspaces/{workspace_id}/connection` and `PUT /workspaces/{workspace_id}/connection` routes with normalized errors in `apps/api/app/routes/connections.py`.
-- [ ] T034 [US1] Register the connections router in `apps/api/app/main.py`.
-- [ ] T035 [P] [US1] Add web API helpers for get/upsert connection metadata in `apps/web/app/lib/connections-api.ts`.
-- [ ] T036 [US1] Add server actions for upserting connection metadata and credentials with UUID validation and form error propagation in `apps/web/app/connections/actions.ts`.
-- [ ] T037 [US1] Create admin Connections page with empty state, metadata form, credential fields, submit handling, and secret-safe status copy in `apps/web/app/connections/page.tsx`.
-- [ ] T038 [US1] Ensure the Connections page denies or redirects non-admin roles using protected `/me` context in `apps/web/app/connections/page.tsx`.
+- [x] T029 [US1] Implement `get_connection_metadata` service behavior for empty and existing tenant state in `apps/api/app/connections/service.py`.
+- [x] T030 [US1] Implement `upsert_connection` service behavior that validates admin role, trims metadata, stores submitted credentials as `pending_vault_secret_id`, sets `pending_test`, and writes a create or metadata_update audit in `apps/api/app/connections/service.py`.
+- [x] T031 [US1] Implement Vault `store_secret` call shape for Snowflake credentials with tenant/connection metadata and no logging of secret payloads in `apps/api/app/connections/vault.py`.
+- [x] T032 [US1] Implement repository methods used by create/update: `get_connection_for_tenant`, `create_connection`, `update_connection_metadata`, `set_pending_secret`, and `write_management_audit` in `apps/api/app/connections/repository.py`.
+- [x] T033 [US1] Implement FastAPI `GET /workspaces/{workspace_id}/connection` and `PUT /workspaces/{workspace_id}/connection` routes with normalized errors in `apps/api/app/routes/connections.py`.
+- [x] T034 [US1] Register the connections router in `apps/api/app/main.py`.
+- [x] T035 [P] [US1] Add web API helpers for get/upsert connection metadata in `apps/web/app/lib/connections-api.ts`.
+- [x] T036 [US1] Add server actions for upserting connection metadata and credentials with UUID validation and form error propagation in `apps/web/app/connections/actions.ts`.
+- [x] T037 [US1] Create admin Connections page with empty state, metadata form, credential fields, submit handling, and secret-safe status copy in `apps/web/app/connections/page.tsx`.
+- [x] T038 [US1] Ensure the Connections page denies or redirects non-admin roles using protected `/me` context in `apps/web/app/connections/page.tsx`.
 
 **Checkpoint**: User Story 1 is complete when admins can create/update one tenant connection, non-admins are denied, status is `pending_test` after credential submission, and no secret values appear outside Vault.
 
