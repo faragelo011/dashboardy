@@ -61,6 +61,26 @@ def test_me_403_inactive_membership(
     assert r.json()["error_code"] == "inactive_membership"
 
 
+def test_me_403_password_reset_required(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    uid = uuid.uuid4()
+    asyncio.run(seed_active_member(uid))
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {
+            "sub": str(uid),
+            "email": "member@example.com",
+            "app_metadata": {"must_reset_password": True},
+        },
+    )
+    with TestClient(app) as client:
+        r = client.get("/me", headers={"Authorization": "Bearer fake"})
+    assert r.status_code == 403
+    assert r.json()["error_code"] == "password_reset_required"
+
+
 def test_me_200_active_member(use_live_postgres: None, monkeypatch: pytest.MonkeyPatch):
     uid = uuid.uuid4()
     asyncio.run(seed_active_member(uid))

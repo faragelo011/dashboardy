@@ -7,11 +7,14 @@
     "build": "node scripts/next-cli.cjs build",
     "start": "node scripts/next-cli.cjs start",
     "lint": "node scripts/next-cli.cjs lint",
-    "test": "playwright test --project=ci"
+    "test": "pnpm test:unit && playwright test --project=ci",
+    "test:unit": "vitest run",
+    "tokens:sync": "node scripts/sync-design-tokens.mjs"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.10.2",
     "@dashboardy/types": "workspace:*",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.49.1",
     "next": "^14.2.18",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
@@ -26,6 +29,7 @@
     "eslint-config-next": "^14.2.18",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
   }
 }

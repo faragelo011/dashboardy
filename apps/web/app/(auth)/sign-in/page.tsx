@@ -26,6 +26,46 @@ export default function SignInPage() {
         setError(signErr.message);
         return;
       }
+
+      // After provisioning, `/me` returns 403 password_reset_required until the user resets.
+      // This client-side check avoids relying on server-side redirects that may be opaque during debugging.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const apiBase =
+        process.env.NEXT_PUBLIC_API_PUBLIC_URL ?? process.env.API_PUBLIC_URL ?? "";
+      if (token && apiBase) {
+        const meRes = await fetch(`${apiBase.replace(/\/$/, "")}/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }).catch(() => null);
+        if (meRes?.status === 403) {
+          const bodyText = await meRes.text().catch(() => "");
+          try {
+            const parsed = JSON.parse(bodyText) as {
+              error_code?: unknown;
+              detail?: { error_code?: unknown } | unknown;
+            };
+            const detailCode =
+              parsed.detail && typeof parsed.detail === "object"
+                ? "error_code" in parsed.detail
+                  ? (parsed.detail as { error_code?: unknown }).error_code
+                  : undefined
+                : undefined;
+            const code =
+              parsed.error_code ?? detailCode;
+            if (code === "password_reset_required") {
+              router.push("/set-password");
+              router.refresh();
+              return;
+            }
+          } catch {
+            // ignore parse failures
+          }
+        }
+      }
+
       router.push("/");
       router.refresh();
     } finally {

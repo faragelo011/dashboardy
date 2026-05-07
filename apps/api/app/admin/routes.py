@@ -15,9 +15,9 @@ from app.admin.schemas import (
     AssetGrantListResponse,
     AssetType,
     CreateAssetGrantRequest,
-    InviteMemberRequest,
     Member,
     MemberListResponse,
+    ProvisionMemberRequest,
     UpdateMemberRequest,
 )
 from app.admin.supabase_admin import (
@@ -102,9 +102,9 @@ async def list_workspace_members(
     status_code=status.HTTP_201_CREATED,
     response_model=Member,
 )
-async def invite_workspace_member(
+async def provision_workspace_member(
     workspace_id: UUID,
-    payload: InviteMemberRequest,
+    payload: ProvisionMemberRequest,
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
     supabase_admin_provider: Annotated[
@@ -120,11 +120,12 @@ async def invite_workspace_member(
     try:
         members_service.require_admin(actor)
         supabase_admin = supabase_admin_provider()
-        member = await members_service.invite_member(
+        member = await members_service.provision_member(
             session=session,
             actor=actor,
             workspace_id=workspace_id,
             email=str(payload.email),
+            initial_password=payload.initial_password,
             role=payload.role,
             supabase_admin=supabase_admin,
         )

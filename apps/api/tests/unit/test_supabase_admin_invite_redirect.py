@@ -37,10 +37,11 @@ class _FakeAsyncClient:
 
 
 @pytest.mark.asyncio
-async def test_invite_includes_redirect_to(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_provision_sets_app_metadata_and_password(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
     monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-role-key")
-    monkeypatch.setenv("WEB_PUBLIC_URL", "http://localhost:3000")
 
     fake_client = _FakeAsyncClient(timeout=10)
     monkeypatch.setattr(
@@ -49,10 +50,15 @@ async def test_invite_includes_redirect_to(monkeypatch: pytest.MonkeyPatch) -> N
     )
 
     admin = get_supabase_admin()
-    await admin.invite_user(email="invitee@example.com")
+    await admin.provision_user(
+        email="invitee@example.com",
+        initial_password="TempPassw0rd!",
+    )
 
     assert fake_client.captured is not None
     payload = fake_client.captured["json"]
     assert payload["email"] == "invitee@example.com"
-    assert payload["redirect_to"] == "http://localhost:3000/auth/callback?next=/set-password"
+    assert payload["password"] == "TempPassw0rd!"
+    assert payload["email_confirm"] is True
+    assert payload["app_metadata"] == {"must_reset_password": True}
 

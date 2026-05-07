@@ -21,15 +21,20 @@ class SeededWorkspace:
 
 
 class FakeSupabaseAdmin:
-    """Shared test double for Supabase invites (no network)."""
+    """Shared test double for Supabase provisioning (no network)."""
 
     def __init__(self, invited_user_id: uuid.UUID) -> None:
         self._user_id = invited_user_id
 
-    async def invite_user(self, *, email: str):
+    async def provision_user(self, *, email: str, initial_password: str):
         from app.admin.supabase_admin import InvitedUser
 
+        _ = initial_password
         return InvitedUser(user_id=self._user_id, email=email)
+
+    async def clear_must_reset_password(self, *, user_id: uuid.UUID) -> None:
+        _ = user_id
+        return None
 
 
 async def seed_workspace_with_actor(

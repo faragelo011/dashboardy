@@ -11,7 +11,7 @@ import {
 } from "@/app/lib/asset-grants-api";
 import {
   ApiError,
-  inviteWorkspaceMember,
+  provisionWorkspaceMember,
   updateWorkspaceMember,
 } from "@/app/lib/members-api";
 
@@ -27,10 +27,11 @@ async function requireAccessToken(): Promise<string> {
   return token;
 }
 
-export async function inviteMemberAction(formData: FormData) {
+export async function provisionMemberAction(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
   const rawRole = String(formData.get("role") ?? "viewer").trim();
+  const initialPassword = String(formData.get("initial_password") ?? "").trim();
 
   if (!email) {
     throw new Error("Email is required.");
@@ -45,6 +46,9 @@ export async function inviteMemberAction(formData: FormData) {
   ) {
     throw new Error("Invalid workspace id.");
   }
+  if (initialPassword.length < 8) {
+    throw new Error("Initial password must be at least 8 characters.");
+  }
 
   const role =
     rawRole === "admin" ||
@@ -56,7 +60,11 @@ export async function inviteMemberAction(formData: FormData) {
 
   try {
     const token = await requireAccessToken();
-    await inviteWorkspaceMember(token, workspaceId, { email, role });
+    await provisionWorkspaceMember(token, workspaceId, {
+      email,
+      role,
+      initial_password: initialPassword,
+    });
     revalidatePath("/members");
   } catch (err) {
     if (err instanceof ApiError) {

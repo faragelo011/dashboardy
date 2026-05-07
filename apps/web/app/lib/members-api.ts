@@ -33,6 +33,28 @@ const apiBase = () => {
   return base.replace(/\/$/, "");
 };
 
+/** Parse JSON error bodies from the API (`{ error_code, message }`). */
+function parseApiErrorBody(
+  rawText: string,
+  fallbackMessage: string,
+): { message: string; error_code?: string } {
+  let parsed: { error_code?: string; message?: string } | null = null;
+  try {
+    parsed = JSON.parse(rawText) as { error_code?: string; message?: string };
+  } catch {
+    parsed = null;
+  }
+  const message =
+    parsed && typeof parsed.message === "string" && parsed.message.trim()
+      ? parsed.message.trim()
+      : rawText || fallbackMessage;
+  const error_code =
+    parsed && typeof parsed.error_code === "string" && parsed.error_code.trim()
+      ? parsed.error_code.trim()
+      : undefined;
+  return { message, error_code };
+}
+
 async function apiFetch(
   path: string,
   accessToken: string,
@@ -62,10 +84,10 @@ export async function listWorkspaceMembers(
   return (await res.json()) as MemberListResponse;
 }
 
-export async function inviteWorkspaceMember(
+export async function provisionWorkspaceMember(
   accessToken: string,
   workspaceId: string,
-  payload: { email: string; role: Member["role"] },
+  payload: { email: string; role: Member["role"]; initial_password: string },
 ): Promise<Member> {
   const ws = encodeURIComponent(workspaceId);
   const res = await apiFetch(`/workspaces/${ws}/members`, accessToken, {
@@ -74,16 +96,8 @@ export async function inviteWorkspaceMember(
   });
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    try {
-      const parsed = JSON.parse(text) as { error_code?: string; message?: string };
-      const msg =
-        typeof parsed.message === "string" && parsed.message.trim()
-          ? parsed.message
-          : text;
-      throw new ApiError(res.status, msg, parsed.error_code);
-    } catch {
-      throw new ApiError(res.status, text || "Invite failed");
-    }
+    const parsed = parseApiErrorBody(text, "Provision member failed");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as Member;
 }

@@ -3,10 +3,18 @@ import { NextResponse } from "next/server";
 
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
+function requestOrigin(request: NextRequest): string {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const proto = forwardedProto?.split(",")[0]?.trim() || request.nextUrl.protocol.replace(":", "");
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost?.split(",")[0]?.trim() || request.headers.get("host") || request.nextUrl.host;
+  return `${proto}://${host}`;
+}
+
 async function signOutAndRedirect(request: NextRequest) {
   const supabase = await createServerSupabase();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/sign-in", request.url), {
+  return NextResponse.redirect(new URL("/sign-in", requestOrigin(request)), {
     status: 303,
   });
 }
