@@ -76,7 +76,7 @@ export async function provisionMemberAction(formData: FormData) {
       : "viewer";
 
   try {
-    const token = await requireAccessToken();
+    const { token } = await requireSessionContext();
     await provisionWorkspaceMember(token, workspaceId, {
       email,
       role,

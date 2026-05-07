@@ -94,22 +94,22 @@
 
 ### Tests for User Story 2
 
-- [ ] T039 [P] [US2] Add contract tests for `POST /workspaces/{workspace_id}/connection/test` success and failure responses in `apps/api/tests/contract/test_data_connection_test_contract.py`.
-- [ ] T040 [P] [US2] Add integration tests for successful test activating pending credentials, writing `last_tested_at`, `last_successful_test_at`, and creating test/audit records in `apps/api/tests/integration/test_data_connection_test_success.py`.
-- [ ] T041 [P] [US2] Add integration tests for failed test categorizing `credential`, `network`, `permission`, `timeout`, and `unknown` failures without secret exposure in `apps/api/tests/integration/test_data_connection_test_failure.py`.
-- [ ] T042 [P] [US2] Add unit tests for Snowflake exception-to-failure-category mapping in `apps/api/tests/unit/test_snowflake_failure_mapping.py`.
-- [ ] T043 [P] [US2] Add Playwright smoke test for the Test button, status badge, last tested time, and sanitized error display in `apps/web/tests/data-connections.spec.ts`.
+- [x] T039 [P] [US2] Add contract tests for `POST /workspaces/{workspace_id}/connection/test` success and failure responses in `apps/api/tests/contract/test_data_connection_test_contract.py`.
+- [x] T040 [P] [US2] Add integration tests for successful test activating pending credentials, writing `last_tested_at`, `last_successful_test_at`, and creating test/audit records in `apps/api/tests/integration/test_data_connection_test_success.py`.
+- [x] T041 [P] [US2] Add integration tests for failed test categorizing `credential`, `network`, `permission`, `timeout`, and `unknown` failures without secret exposure in `apps/api/tests/integration/test_data_connection_test_failure.py`.
+- [x] T042 [P] [US2] Add unit tests for Snowflake exception-to-failure-category mapping in `apps/api/tests/unit/test_snowflake_failure_mapping.py`.
+- [x] T043 [P] [US2] Add Playwright smoke test for the Test button, status badge, last tested time, and sanitized error display in `apps/web/tests/data-connections.spec.ts`.
 
 ### Implementation for User Story 2
 
-- [ ] T044 [US2] Implement bounded Snowflake connectivity check that uses submitted/effective credentials and returns success or categorized failure in `apps/api/app/connections/snowflake.py`.
-- [ ] T045 [US2] Implement `test_connection` service behavior that selects pending credentials when present, promotes pending to effective on success, records test result, and writes a test audit in `apps/api/app/connections/service.py`.
-- [ ] T046 [US2] Implement failed-test behavior that sets `test_failed`, stores sanitized `last_error`, writes test result/audit, and does not store raw exceptions in `apps/api/app/connections/service.py`.
-- [ ] T047 [US2] Implement repository methods for writing connection test results and updating test status/timestamps in `apps/api/app/connections/repository.py`.
-- [ ] T048 [US2] Implement FastAPI `POST /workspaces/{workspace_id}/connection/test` route with `ConnectionTestResponse` in `apps/api/app/routes/connections.py`.
-- [ ] T049 [P] [US2] Add web API helper for testing a connection in `apps/web/app/lib/connections-api.ts`.
-- [ ] T050 [US2] Add server action for testing the connection and revalidating `/connections` in `apps/web/app/connections/actions.ts`.
-- [ ] T051 [US2] Add Test button, status badge, timestamp rendering, and sanitized error panel to `apps/web/app/connections/page.tsx`.
+- [x] T044 [US2] Implement bounded Snowflake connectivity check that uses submitted/effective credentials and returns success or categorized failure in `apps/api/app/connections/snowflake.py`.
+- [x] T045 [US2] Implement `test_connection` service behavior that selects pending credentials when present, promotes pending to effective on success, records test result, and writes a test audit in `apps/api/app/connections/service.py`.
+- [x] T046 [US2] Implement failed-test behavior that sets `test_failed`, stores sanitized `last_error`, writes test result/audit, and does not store raw exceptions in `apps/api/app/connections/service.py`.
+- [x] T047 [US2] Implement repository methods for writing connection test results and updating test status/timestamps in `apps/api/app/connections/repository.py`.
+- [x] T048 [US2] Implement FastAPI `POST /workspaces/{workspace_id}/connection/test` route with `ConnectionTestResponse` in `apps/api/app/routes/connections.py`.
+- [x] T049 [P] [US2] Add web API helper for testing a connection in `apps/web/app/lib/connections-api.ts`.
+- [x] T050 [US2] Add server action for testing the connection and revalidating `/connections` in `apps/web/app/connections/actions.ts`.
+- [x] T051 [US2] Add Test button, status badge, timestamp rendering, and sanitized error panel to `apps/web/app/connections/page.tsx`.
 
 **Checkpoint**: User Story 2 is complete when connection tests activate valid credentials, categorize safe failures, update admin-visible status, and produce no secret leaks.
 

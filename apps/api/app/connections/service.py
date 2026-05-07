@@ -9,6 +9,7 @@ from uuid import UUID
 from sqlalchemy.exc import IntegrityError
 
 from app.connections.authz import require_admin_membership
+from app.connections.enums import FailureCategory
 from app.connections.errors import (
     AuthzDeniedError,
     ConnectionConflictError,
@@ -16,13 +17,20 @@ from app.connections.errors import (
     DependencyUnavailableError,
 )
 from app.connections.protocols import ConnectionRepositoryProtocol
-from app.connections.schemas import DataConnectionResponse, UpsertConnectionRequest
-from app.connections.snowflake import SnowflakeTester
+from app.connections.redaction import redact_string
+from app.connections.schemas import (
+    ConnectionTestResponse,
+    DataConnectionResponse,
+    UpsertConnectionRequest,
+)
+from app.connections.snowflake import SnowflakeTester, categorize_snowflake_failure
 from app.connections.vault import VaultClient
 from app.models.data_connections import (
     DbAuditAction,
     DbAuditOutcome,
     DbConnectionStatus,
+    DbConnectionTestStatus,
+    DbFailureCategory,
 )
 from app.tenancy.resolver import ResolvedTenancy
 
@@ -224,6 +232,193 @@ class ConnectionService:
 
         response = await self.get_connection_metadata(session=session, actor=actor)
         return response, created
+
+    async def test_connection(
+        self,
+        *,
+        session,
+        actor: ResolvedTenancy,
+    ) -> ConnectionTestResponse:
+        require_admin_membership(actor)
+        started_at = self.now()
+
+        row = await self._repository.get_connection_for_tenant(
+            session, tenant_id=actor.tenant_id
+        )
+        if row is None:
+            from app.connections.errors import ConnectionNotFoundError
+
+            raise ConnectionNotFoundError("Connection not configured.")
+
+        secret_id = row.pending_vault_secret_id or row.vault_secret_id
+        credential_version = row.pending_secret_version or row.secret_version
+        if not secret_id:
+            from app.connections.errors import ConnectionNotFoundError
+
+            raise ConnectionNotFoundError("Connection credentials not configured.")
+
+        try:
+            secret = await self._vault.read_secret(secret_id=secret_id)
+        except DependencyUnavailableError as exc:
+            completed_at = self.now()
+            safe_error = redact_string(str(exc) or "Dependency unavailable.")
+            failure_category = FailureCategory.unknown
+            db_failure_category = DbFailureCategory.unknown
+
+            await self._repository.write_connection_test_result(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                attempted_by_membership_id=actor.membership_id,
+                credential_version=credential_version,
+                status=DbConnectionTestStatus.failure,
+                failure_category=db_failure_category,
+                sanitized_error=safe_error,
+                started_at=started_at,
+                completed_at=completed_at,
+            )
+            await self._repository.update_connection_test_state(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                status=DbConnectionStatus.test_failed,
+                last_tested_at=completed_at,
+                last_successful_test_at=row.last_successful_test_at,
+                last_error=safe_error,
+                updated_by_membership_id=actor.membership_id,
+            )
+            await self._repository.write_management_audit(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                actor_membership_id=actor.membership_id,
+                action=DbAuditAction.test,
+                outcome=DbAuditOutcome.failure,
+                failure_category=db_failure_category,
+                sanitized_message=safe_error,
+            )
+
+            connection = await self.get_connection_metadata(
+                session=session, actor=actor
+            )
+            return ConnectionTestResponse(
+                connection=connection,
+                test_status="failure",
+                failure_category=failure_category,
+                sanitized_error=safe_error,
+            )
+        account = secret.get("account", "").strip()
+        username = secret.get("username", "").strip()
+        password = secret.get("password", "")
+        role = secret.get("role", "").strip()
+        if not (account and username and password and role):
+            raise ConnectionValidationError("Stored credentials are incomplete.")
+
+        try:
+            await self._snowflake_tester.run_connectivity_check(
+                account=account,
+                user=username,
+                password=password,
+                warehouse=row.warehouse,
+                database=row.database,
+                schema=row.schema_,
+                role=role,
+            )
+        except Exception as exc:
+            completed_at = self.now()
+            failure_category = categorize_snowflake_failure(exc)
+            safe_error = redact_string(str(exc) or "Connection test failed.")
+
+            await self._repository.write_connection_test_result(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                attempted_by_membership_id=actor.membership_id,
+                credential_version=credential_version,
+                status=DbConnectionTestStatus.failure,
+                failure_category=DbFailureCategory(failure_category.value),
+                sanitized_error=safe_error,
+                started_at=started_at,
+                completed_at=completed_at,
+            )
+            await self._repository.update_connection_test_state(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                status=DbConnectionStatus.test_failed,
+                last_tested_at=completed_at,
+                last_successful_test_at=row.last_successful_test_at,
+                last_error=safe_error,
+                updated_by_membership_id=actor.membership_id,
+            )
+            await self._repository.write_management_audit(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                actor_membership_id=actor.membership_id,
+                action=DbAuditAction.test,
+                outcome=DbAuditOutcome.failure,
+                failure_category=DbFailureCategory(failure_category.value),
+                sanitized_message=safe_error,
+            )
+
+            connection = await self.get_connection_metadata(
+                session=session, actor=actor
+            )
+            return ConnectionTestResponse(
+                connection=connection,
+                test_status="failure",
+                failure_category=failure_category,
+                sanitized_error=safe_error,
+            )
+
+        # Success
+        completed_at = self.now()
+        await self._repository.write_connection_test_result(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            attempted_by_membership_id=actor.membership_id,
+            credential_version=credential_version,
+            status=DbConnectionTestStatus.success,
+            failure_category=None,
+            sanitized_error=None,
+            started_at=started_at,
+            completed_at=completed_at,
+        )
+
+        # Promote pending secret if present.
+        if row.pending_vault_secret_id is not None:
+            await self._repository.promote_pending_secret(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                updated_by_membership_id=actor.membership_id,
+            )
+
+        await self._repository.update_connection_test_state(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            status=DbConnectionStatus.active,
+            last_tested_at=completed_at,
+            last_successful_test_at=completed_at,
+            last_error=None,
+            updated_by_membership_id=actor.membership_id,
+        )
+        await self._repository.write_management_audit(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            actor_membership_id=actor.membership_id,
+            action=DbAuditAction.test,
+            outcome=DbAuditOutcome.success,
+            failure_category=None,
+            sanitized_message=None,
+        )
+
+        connection = await self.get_connection_metadata(session=session, actor=actor)
+        return ConnectionTestResponse(connection=connection, test_status="success")
 
 
 def _vault_secret_name(*, tenant_id: UUID, connection_id: UUID, version: int) -> str:
