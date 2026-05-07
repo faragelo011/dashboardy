@@ -76,7 +76,11 @@ def test_members_post_201_admin_invite_idempotent_on_duplicate_email(
 
     try:
         with TestClient(app) as client:
-            payload = {"email": "newbie@example.com", "role": "viewer"}
+            payload = {
+                "email": "newbie@example.com",
+                "role": "viewer",
+                "initial_password": "TempPassw0rd!",
+            }
             r1 = client.post(
                 f"/workspaces/{seeded.workspace_id}/members",
                 json=payload,

@@ -59,6 +59,20 @@ async def get_me(
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> MeResponse:
+    app_metadata = auth.jwt_payload.get("app_metadata")
+    must_reset = (
+        isinstance(app_metadata, dict)
+        and app_metadata.get("must_reset_password") is True
+    )
+    if must_reset:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error_code": "password_reset_required",
+                "message": "Password reset is required before accessing the workspace.",
+            },
+        )
+
     resolved = await resolve_active_membership(session, auth.user_id)
     if resolved is not None:
         return build_me_response(

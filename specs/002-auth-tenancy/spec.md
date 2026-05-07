@@ -33,15 +33,15 @@ An existing workspace member signs in and reaches the application with their ide
 
 ### User Story 2 - Admin Manages Workspace Members (Priority: P2)
 
-An admin invites and manages workspace members, assigning one authoritative role per member so access decisions are consistent across the product.
+An admin provisions and manages workspace members, assigning one authoritative role per member so access decisions are consistent across the product.
 
 **Why this priority**: The platform needs a reliable way to establish who belongs to a workspace and what each person is allowed to do.
 
-**Independent Test**: Can be tested by signing in as an admin, inviting a member, assigning a role, and verifying the new member's access matches that role.
+**Independent Test**: Can be tested by signing in as an admin, provisioning a member with an initial password, assigning a role, and verifying the new member's access matches that role.
 
 **Acceptance Scenarios**:
 
-1. **Given** an admin is signed in, **When** they invite a person by email and assign a role, **Then** the invited person can complete account setup and becomes a member of the workspace with that role.
+1. **Given** an admin is signed in, **When** they provision a person by email with an initial password and assign a role, **Then** the provisioned person can sign in, is forced to reset their password, and becomes a member of the workspace with that role.
 2. **Given** a non-admin member is signed in, **When** they attempt to manage workspace members, **Then** the system denies the action.
 3. **Given** an admin changes a member's role, **When** the affected member next performs a protected action, **Then** the system applies the updated role.
 
@@ -101,7 +101,7 @@ A member in the MVP sees their single workspace clearly without being asked to c
 - **FR-010**: The system MUST support one workspace per tenant for the MVP experience.
 - **FR-011**: The system MUST rely on operator pre-provisioning for tenant, workspace, and initial admin membership creation in the MVP.
 - **FR-012**: The system MUST let signed-in members view their own profile context, including available workspace and role information.
-- **FR-013**: The system MUST let admins invite people to the workspace by email and assign a membership role during or after invitation.
+- **FR-013**: The system MUST let admins provision people into the workspace by email with an initial password and assign a membership role during or after provisioning.
 - **FR-014**: The system MUST let admins deactivate memberships to remove future workspace access while preserving historical membership references.
 - **FR-015**: The system MUST deny protected tenant-scoped access to inactive memberships.
 - **FR-016**: The system MUST prevent non-admin members from inviting members, changing roles, deactivating memberships, or otherwise managing workspace membership.

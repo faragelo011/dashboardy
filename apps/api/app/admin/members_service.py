@@ -81,12 +81,13 @@ async def list_members(
     return [_to_member_schema(m) for m in rows]
 
 
-async def invite_member(
+async def provision_member(
     *,
     session: AsyncSession,
     actor: ResolvedTenancy,
     workspace_id: UUID,
     email: str,
+    initial_password: str,
     role: MembershipRole,
     supabase_admin: SupabaseAdmin,
 ) -> MemberSchema:
@@ -95,6 +96,11 @@ async def invite_member(
     normalized_email = email.strip().lower()
     if not normalized_email:
         raise ServiceError(error_code="bad_request", message="Email is required.")
+    if not initial_password or len(initial_password.strip()) < 8:
+        raise ServiceError(
+            error_code="bad_request",
+            message="Initial password must be at least 8 characters.",
+        )
 
     existing_by_email = await repository.get_membership_for_workspace_by_invited_email(
         session,
@@ -109,11 +115,13 @@ async def invite_member(
             message="Membership already exists but is inactive.",
         )
 
-    invited = await supabase_admin.invite_user(email=normalized_email)
+    provisioned = await supabase_admin.provision_user(
+        email=normalized_email, initial_password=initial_password.strip()
+    )
     existing_by_user = await repository.get_membership_for_workspace_by_user_id(
         session,
         workspace_id=workspace_id,
-        user_id=invited.user_id,
+        user_id=provisioned.user_id,
     )
     if existing_by_user is not None:
         if existing_by_user.status == MembershipStatus.active:
@@ -128,7 +136,7 @@ async def invite_member(
             session,
             tenant_id=actor.tenant_id,
             workspace_id=workspace_id,
-            user_id=invited.user_id,
+            user_id=provisioned.user_id,
             role=role,
             status=MembershipStatus.active,
             invited_email=normalized_email,
@@ -139,7 +147,7 @@ async def invite_member(
         existing = await repository.get_membership_for_workspace_by_user_id(
             session,
             workspace_id=workspace_id,
-            user_id=invited.user_id,
+            user_id=provisioned.user_id,
         )
         if existing is None:
             existing = await repository.get_membership_for_workspace_by_invited_email(

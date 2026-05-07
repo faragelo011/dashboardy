@@ -26,3 +26,12 @@ export async function fetchMe(accessToken: string): Promise<Response> {
     throw err;
   }
 }
+
+/** POST /auth/password-reset-complete using the caller's Supabase access token. */
+export async function completePasswordReset(accessToken: string): Promise<Response> {
+  return fetch(`${apiBase()}/auth/password-reset-complete`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+}

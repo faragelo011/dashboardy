@@ -35,7 +35,11 @@ def test_member_patch_200_admin_updates_role_and_deactivates(
         with TestClient(app) as client:
             invite = client.post(
                 f"/workspaces/{seeded.workspace_id}/members",
-                json={"email": "target@example.com", "role": "viewer"},
+                json={
+                    "email": "target@example.com",
+                    "role": "viewer",
+                    "initial_password": "TempPassw0rd!",
+                },
                 headers={"Authorization": "Bearer fake"},
             )
             assert invite.status_code == 201
