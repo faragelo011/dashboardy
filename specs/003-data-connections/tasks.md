@@ -123,23 +123,23 @@
 
 ### Tests for User Story 3
 
-- [ ] T052 [P] [US3] Add contract tests for `POST /workspaces/{workspace_id}/connection/rotate` 200/400/401/403/404 responses in `apps/api/tests/contract/test_data_connection_rotate_contract.py`.
-- [ ] T053 [P] [US3] Add integration tests for successful rotation submission, pending status, successful promotion after test, secret version increment, and rotate/test audit records in `apps/api/tests/integration/test_data_connection_rotate_success.py`.
-- [ ] T054 [P] [US3] Add integration tests for failed rotation preserving `vault_secret_id`, `secret_version`, and downstream effective credential while recording sanitized failure in `apps/api/tests/integration/test_data_connection_rotate_failure.py`.
-- [ ] T055 [P] [US3] Add unit tests for connection resolver/cache-holder invalidation using `secret_version` and a 60-second max staleness window in `apps/api/tests/unit/test_connection_resolution_cache.py`.
-- [ ] T056 [P] [US3] Add Playwright smoke test for credential rotation form, pending-test copy, success state, and failed-rotation message in `apps/web/tests/data-connections.spec.ts`.
+- [x] T052 [P] [US3] Add contract tests for `POST /workspaces/{workspace_id}/connection/rotate` 200/400/401/403/404 responses in `apps/api/tests/contract/test_data_connection_rotate_contract.py`.
+- [x] T053 [P] [US3] Add integration tests for successful rotation submission, pending status, successful promotion after test, secret version increment, and rotate/test audit records in `apps/api/tests/integration/test_data_connection_rotate_success.py`.
+- [x] T054 [P] [US3] Add integration tests for failed rotation preserving `vault_secret_id`, `secret_version`, and downstream effective credential while recording sanitized failure in `apps/api/tests/integration/test_data_connection_rotate_failure.py`.
+- [x] T055 [P] [US3] Add unit tests for connection resolver/cache-holder invalidation using `secret_version` and a 60-second max staleness window in `apps/api/tests/unit/test_connection_resolution_cache.py`.
+- [x] T056 [P] [US3] Add Playwright smoke test for credential rotation form, pending-test copy, success state, and failed-rotation message in `apps/web/tests/data-connections.spec.ts`.
 
 ### Implementation for User Story 3
 
-- [ ] T057 [US3] Implement `rotate_credentials` service behavior that stores replacement credentials as pending only, sets `pending_test`, leaves `vault_secret_id` unchanged, and writes a rotate audit in `apps/api/app/connections/service.py`.
-- [ ] T058 [US3] Implement successful pending-secret promotion that copies `pending_vault_secret_id` to `vault_secret_id`, increments `secret_version`, clears pending fields, and updates timestamps in `apps/api/app/connections/service.py`.
-- [ ] T059 [US3] Implement failed rotation handling that leaves effective secret fields unchanged, keeps or clears pending fields consistently, sets `test_failed`, and stores only sanitized error text in `apps/api/app/connections/service.py`.
-- [ ] T060 [US3] Implement repository methods for setting pending rotation fields, promoting pending fields, and preserving effective fields on failure in `apps/api/app/connections/repository.py`.
-- [ ] T061 [US3] Implement connection resolver helper that returns effective connection metadata and invalidates in-process holders by `secret_version` within 60 seconds in `apps/api/app/connections/resolver.py`.
-- [ ] T062 [US3] Implement FastAPI `POST /workspaces/{workspace_id}/connection/rotate` route in `apps/api/app/routes/connections.py`.
-- [ ] T063 [P] [US3] Add web API helper for rotating credentials in `apps/web/app/lib/connections-api.ts`.
-- [ ] T064 [US3] Add server action for credential rotation with password field validation and no echoing of submitted values in `apps/web/app/connections/actions.ts`.
-- [ ] T065 [US3] Add rotation UI section that explains activation requires a successful test in `apps/web/app/connections/page.tsx`.
+- [x] T057 [US3] Implement `rotate_credentials` service behavior that stores replacement credentials as pending only, sets `pending_test`, leaves `vault_secret_id` unchanged, and writes a rotate audit in `apps/api/app/connections/service.py`.
+- [x] T058 [US3] Implement successful pending-secret promotion that copies `pending_vault_secret_id` to `vault_secret_id`, increments `secret_version`, clears pending fields, and updates timestamps in `apps/api/app/connections/service.py`.
+- [x] T059 [US3] Implement failed rotation handling that leaves effective secret fields unchanged, keeps or clears pending fields consistently, sets `test_failed`, and stores only sanitized error text in `apps/api/app/connections/service.py`.
+- [x] T060 [US3] Implement repository methods for setting pending rotation fields, promoting pending fields, and preserving effective fields on failure in `apps/api/app/connections/repository.py`.
+- [x] T061 [US3] Implement connection resolver helper that returns effective connection metadata and invalidates in-process holders by `secret_version` within 60 seconds in `apps/api/app/connections/resolver.py`.
+- [x] T062 [US3] Implement FastAPI `POST /workspaces/{workspace_id}/connection/rotate` route in `apps/api/app/routes/connections.py`.
+- [x] T063 [P] [US3] Add web API helper for rotating credentials in `apps/web/app/lib/connections-api.ts`.
+- [x] T064 [US3] Add server action for credential rotation with password field validation and no echoing of submitted values in `apps/web/app/connections/actions.ts`.
+- [x] T065 [US3] Add rotation UI section that explains activation requires a successful test in `apps/web/app/connections/page.tsx`.
 
 **Checkpoint**: User Story 3 is complete when credential rotation is safe, test-gated, secret-free in all responses/logs/audits, and reflected in effective connection resolution within 60 seconds after success.
 
@@ -149,16 +149,16 @@
 
 **Purpose**: Final documentation, generated artifacts, validation, and security checks across all completed stories.
 
-- [ ] T066 [P] Add contract usage notes and implementation caveats in `specs/003-data-connections/contracts/README.md`.
-- [ ] T067 [P] Update quickstart with any final endpoint/status details discovered during implementation in `specs/003-data-connections/quickstart.md`.
-- [ ] T068 Regenerate or manually align shared TypeScript connection API types from `specs/003-data-connections/contracts/data-connections.openapi.yaml` into `packages/types/src/data-connections.ts`.
-- [ ] T069 [P] Add no-secret regression tests that scan captured API logs for submitted credential values in `apps/api/tests/test_data_connection_no_secret_in_logs.py`.
-- [ ] T070 [P] Add API README troubleshooting notes for Vault unavailable, Snowflake timeout, invalid credentials, and permission failure categories in `apps/api/README.md`.
-- [ ] T071 Run API validation commands for `apps/api`: `uv run --directory apps/api pytest` and `uv run --directory apps/api ruff check .`.
-- [ ] T072 Run web validation commands for `apps/web`: `pnpm --filter @dashboardy/web lint` and `pnpm --filter @dashboardy/web test`.
-- [ ] T073 Run Playwright validation for the connections flow: `pnpm --filter @dashboardy/web exec playwright test tests/data-connections.spec.ts`.
-- [ ] T074 Run monorepo validation commands from `package.json`: `pnpm lint` and `pnpm test`.
-- [ ] T075 Verify every required assertion in `specs/003-data-connections/quickstart.md` manually or with tests and record any follow-up notes in `specs/003-data-connections/quickstart.md`.
+- [x] T066 [P] Add contract usage notes and implementation caveats in `specs/003-data-connections/contracts/README.md`.
+- [x] T067 [P] Update quickstart with any final endpoint/status details discovered during implementation in `specs/003-data-connections/quickstart.md`.
+- [x] T068 Regenerate or manually align shared TypeScript connection API types from `specs/003-data-connections/contracts/data-connections.openapi.yaml` into `packages/types/src/data-connections.ts`.
+- [x] T069 [P] Add no-secret regression tests that scan captured API logs for submitted credential values in `apps/api/tests/test_data_connection_no_secret_in_logs.py`.
+- [x] T070 [P] Add API README troubleshooting notes for Vault unavailable, Snowflake timeout, invalid credentials, and permission failure categories in `apps/api/README.md`.
+- [x] T071 Run API validation commands for `apps/api`: `uv run --directory apps/api pytest` and `uv run --directory apps/api ruff check .`.
+- [x] T072 Run web validation commands for `apps/web`: `pnpm --filter @dashboardy/web lint` and `pnpm --filter @dashboardy/web test`.
+- [x] T073 Run Playwright validation for the connections flow: `pnpm --filter @dashboardy/web exec playwright test tests/data-connections.spec.ts`.
+- [x] T074 Run monorepo validation commands from `package.json`: `pnpm lint` and `pnpm test`.
+- [x] T075 Verify every required assertion in `specs/003-data-connections/quickstart.md` manually or with tests and record any follow-up notes in `specs/003-data-connections/quickstart.md`.
 
 ---
 

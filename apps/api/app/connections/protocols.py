@@ -126,3 +126,32 @@ class ConnectionRepositoryProtocol(Protocol):
         last_error: str | None,
         updated_by_membership_id: UUID,
     ) -> DataConnection | None: ...
+
+    @staticmethod
+    async def set_pending_rotation_secret(
+        session: AsyncSession,
+        *,
+        tenant_id: UUID,
+        connection_id: UUID,
+        pending_vault_secret_id: str,
+        pending_secret_version: int,
+        updated_by_membership_id: UUID,
+    ) -> DataConnection | None: ...
+
+    @staticmethod
+    async def promote_pending_rotation_secret(
+        session: AsyncSession,
+        *,
+        tenant_id: UUID,
+        connection_id: UUID,
+        updated_by_membership_id: UUID,
+    ) -> DataConnection | None: ...
+
+    @staticmethod
+    async def preserve_effective_secret_on_failure(
+        session: AsyncSession,
+        *,
+        tenant_id: UUID,
+        connection_id: UUID,
+        updated_by_membership_id: UUID,
+    ) -> DataConnection | None: ...

@@ -21,6 +21,8 @@ from app.connections.redaction import redact_string
 from app.connections.schemas import (
     ConnectionTestResponse,
     DataConnectionResponse,
+    RotateConnectionRequest,
+    SnowflakeCredentialsPayload,
     UpsertConnectionRequest,
 )
 from app.connections.snowflake import SnowflakeTester, categorize_snowflake_failure
@@ -172,20 +174,19 @@ class ConnectionService:
         # Credentials are optional for metadata-only updates.
         if payload.credentials is not None:
             creds = payload.credentials
+            pending_version = _next_vault_credential_version(
+                secret_version=row.secret_version,
+                pending_secret_version=row.pending_secret_version,
+            )
             secret_name = _vault_secret_name(
                 tenant_id=actor.tenant_id,
                 connection_id=row.id,
-                version=(row.secret_version or 0) + 1,
+                version=pending_version,
             )
             try:
                 secret_id = await self._vault.store_secret(
                     name=secret_name,
-                    secret_payload={
-                        "account": creds.account,
-                        "username": creds.username,
-                        "password": creds.password,
-                        "role": creds.role,
-                    },
+                    secret_payload=_vault_snowflake_secret_payload(creds),
                 )
             except DependencyUnavailableError as exc:
                 audit_action = (
@@ -204,8 +205,6 @@ class ConnectionService:
                     sanitized_message=str(exc),
                 )
                 raise
-
-            pending_version = (row.secret_version or 0) + 1
             updated = await self._repository.set_pending_secret(
                 session,
                 tenant_id=actor.tenant_id,
@@ -310,15 +309,36 @@ class ConnectionService:
         account = secret.get("account", "").strip()
         username = secret.get("username", "").strip()
         password = secret.get("password", "")
+        if not isinstance(password, str):
+            password = str(password)
         role = secret.get("role", "").strip()
-        if not (account and username and password and role):
-            raise ConnectionValidationError("Stored credentials are incomplete.")
+        pk_pem = secret.get("private_key_pem", "").strip()
+        pk_pp = secret.get("private_key_passphrase")
+        if pk_pp is not None:
+            pk_pp = str(pk_pp)
+            if not pk_pp.strip():
+                pk_pp = None
+
+        if pk_pem:
+            if not (account and username and role):
+                raise ConnectionValidationError("Stored credentials are incomplete.")
+            pw_arg: str | None = None
+            pk_arg = pk_pem
+            pp_arg = pk_pp
+        else:
+            if not (account and username and password and role):
+                raise ConnectionValidationError("Stored credentials are incomplete.")
+            pw_arg = password
+            pk_arg = None
+            pp_arg = None
 
         try:
             await self._snowflake_tester.run_connectivity_check(
                 account=account,
                 user=username,
-                password=password,
+                password=pw_arg,
+                private_key_pem=pk_arg,
+                private_key_passphrase=pp_arg,
                 warehouse=row.warehouse,
                 database=row.database,
                 schema=row.schema_,
@@ -347,7 +367,7 @@ class ConnectionService:
                 connection_id=row.id,
                 status=DbConnectionStatus.test_failed,
                 last_tested_at=completed_at,
-                last_successful_test_at=None,
+                last_successful_test_at=row.last_successful_test_at,
                 last_error=safe_error,
                 updated_by_membership_id=actor.membership_id,
             )
@@ -419,6 +439,107 @@ class ConnectionService:
 
         connection = await self.get_connection_metadata(session=session, actor=actor)
         return ConnectionTestResponse(connection=connection, test_status="success")
+
+    async def rotate_credentials(
+        self,
+        *,
+        session,
+        actor: ResolvedTenancy,
+        payload: RotateConnectionRequest,
+    ) -> DataConnectionResponse:
+        require_admin_membership(actor)
+
+        row = await self._repository.get_connection_for_tenant(
+            session, tenant_id=actor.tenant_id
+        )
+        if row is None or row.vault_secret_id is None:
+            from app.connections.errors import ConnectionNotFoundError
+
+            raise ConnectionNotFoundError("Active connection credentials are required.")
+
+        creds = payload.credentials
+        pending_version = _next_vault_credential_version(
+            secret_version=row.secret_version,
+            pending_secret_version=row.pending_secret_version,
+        )
+        secret_name = _vault_secret_name(
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            version=pending_version,
+        )
+        try:
+            secret_id = await self._vault.store_secret(
+                name=secret_name,
+                secret_payload=_vault_snowflake_secret_payload(creds),
+            )
+        except DependencyUnavailableError as exc:
+            safe_error = redact_string(str(exc) or "Dependency unavailable.")
+            await self._repository.write_management_audit(
+                session,
+                tenant_id=actor.tenant_id,
+                connection_id=row.id,
+                actor_membership_id=actor.membership_id,
+                action=DbAuditAction.rotate,
+                outcome=DbAuditOutcome.failure,
+                failure_category=DbFailureCategory.unknown,
+                sanitized_message=safe_error,
+            )
+            raise
+        await self._repository.set_pending_rotation_secret(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            pending_vault_secret_id=secret_id,
+            pending_secret_version=pending_version,
+            updated_by_membership_id=actor.membership_id,
+        )
+        await self._repository.write_management_audit(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            actor_membership_id=actor.membership_id,
+            action=DbAuditAction.rotate,
+            outcome=DbAuditOutcome.success,
+            failure_category=None,
+            sanitized_message=None,
+        )
+
+        return await self.get_connection_metadata(session=session, actor=actor)
+
+
+def _next_vault_credential_version(
+    *,
+    secret_version: int | None,
+    pending_secret_version: int | None,
+) -> int:
+    """Next version for `tenant:…/snowflake:vN` Vault names.
+
+    When a pending secret already reserved ``vK`` but the effective
+    ``secret_version`` is still lower (credentials not tested yet), the next
+    stored secret must use ``v(K+1)``, not ``v(effective+1)``, or Vault returns
+    409 for duplicate name.
+    """
+
+    effective = secret_version or 0
+    pending = pending_secret_version or 0
+    return max(effective, pending) + 1
+
+
+def _vault_snowflake_secret_payload(
+    creds: SnowflakeCredentialsPayload,
+) -> dict[str, str]:
+    out: dict[str, str] = {
+        "account": creds.account.strip(),
+        "username": creds.username.strip(),
+        "role": creds.role.strip(),
+    }
+    if creds.password and creds.password.strip():
+        out["password"] = creds.password
+    if creds.private_key_pem and creds.private_key_pem.strip():
+        out["private_key_pem"] = creds.private_key_pem.strip()
+    if creds.private_key_passphrase:
+        out["private_key_passphrase"] = creds.private_key_passphrase
+    return out
 
 
 def _vault_secret_name(*, tenant_id: UUID, connection_id: UUID, version: int) -> str:

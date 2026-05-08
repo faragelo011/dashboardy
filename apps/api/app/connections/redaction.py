@@ -10,6 +10,8 @@ _PASSWORD_KEYS = frozenset(
         "password",
         "private_key",
         "privatekey",
+        "private_key_pem",
+        "private_key_passphrase",
         "token",
         "access_token",
         "refresh_token",

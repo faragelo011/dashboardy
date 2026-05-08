@@ -1,6 +1,7 @@
 import type {
   ConnectionTestResponse,
   DataConnection,
+  RotateConnectionRequest,
   UpsertConnectionRequest,
 } from "@dashboardy/types";
 
@@ -45,20 +46,54 @@ function parseApiErrorBody(
   rawText: string,
   fallbackMessage: string,
 ): { message: string; error_code?: string } {
-  let parsed: { error_code?: string; message?: string } | null = null;
+  let parsed: {
+    error_code?: string;
+    message?: string;
+    detail?: unknown;
+  } | null = null;
   try {
-    parsed = JSON.parse(rawText) as { error_code?: string; message?: string };
+    parsed = JSON.parse(rawText) as {
+      error_code?: string;
+      message?: string;
+      detail?: unknown;
+    };
   } catch {
     parsed = null;
   }
+
+  let detailMessage: string | undefined;
+  let detailCode: string | undefined;
+  if (parsed?.detail !== null && parsed?.detail !== undefined) {
+    if (typeof parsed.detail === "string" && parsed.detail.trim()) {
+      detailMessage = parsed.detail.trim();
+    } else if (
+      typeof parsed.detail === "object" &&
+      !Array.isArray(parsed.detail)
+    ) {
+      const d = parsed.detail as { error_code?: string; message?: string };
+      if (typeof d.message === "string" && d.message.trim()) {
+        detailMessage = d.message.trim();
+      }
+      if (typeof d.error_code === "string" && d.error_code.trim()) {
+        detailCode = d.error_code.trim();
+      }
+    }
+  }
+
   const message =
-    parsed && typeof parsed.message === "string" && parsed.message.trim()
+    detailMessage ||
+    (parsed?.message && typeof parsed.message === "string" && parsed.message.trim()
       ? parsed.message.trim()
-      : rawText.trim() || fallbackMessage;
+      : undefined) ||
+    rawText.trim() ||
+    fallbackMessage;
   const error_code =
-    parsed && typeof parsed.error_code === "string" && parsed.error_code.trim()
+    detailCode ||
+    (parsed?.error_code &&
+    typeof parsed.error_code === "string" &&
+    parsed.error_code.trim()
       ? parsed.error_code.trim()
-      : undefined;
+      : undefined);
   return { message, error_code };
 }
 
@@ -107,4 +142,22 @@ export async function testWorkspaceConnection(
     throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
   return (await res.json()) as ConnectionTestResponse;
+}
+
+export async function rotateWorkspaceConnection(
+  accessToken: string,
+  workspaceId: string,
+  payload: RotateConnectionRequest,
+): Promise<DataConnection> {
+  const ws = encodeURIComponent(workspaceId);
+  const res = await apiFetch(`/workspaces/${ws}/connection/rotate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to rotate credentials");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
+  return (await res.json()) as DataConnection;
 }

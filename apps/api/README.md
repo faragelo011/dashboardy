@@ -58,3 +58,21 @@ Admin / dependency-facing codes:
 - `rate_limited`: upstream rate limiting (429)
 - `invite_rejected`: invite payload rejected by upstream (400)
 - `membership_conflict`: membership exists but is inactive / cannot be re-invited (409)
+
+## Feature 3 (data connections) troubleshooting
+
+Normalize errors as JSON with `error_code`, `message`, and optional object `details` (never contains submitted secrets).
+
+Typical failures while exercising `GET|PUT …/connection`, `POST …/connection/test`, and `POST …/connection/rotate`:
+
+| Situation                                          | Typical HTTP outcome | Hint                                                                                                                                 |
+|----------------------------------------------------|----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Supabase Vault down or unreachable                 | 503                  | Confirm `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY`; service stores pending/effective credential material exclusively in Vault.      |
+| Missing Vault env vars for a credential-bearing op | 503                  | `dependency_unavailable` from the unconfigured Vault adapter on `PUT` with credentials and on `POST …/test` / `rotate`.               |
+| Snowflake rejects login or bad MFA configuration   | 200 + `failure` body | Connectivity errors map to `failure_category: credential`; `sanitized_error` is admin-safe (no PEM/password echo).                   |
+| Network / firewall / DNS to Snowflake              | 200 + `failure`      | Look for `failure_category: network` after a bounded login/network timeout handled by `snowflake-connector-python`.                 |
+| Connected but role/warehouse/session insufficient   | 200 + `failure`      | Typically `failure_category: permission` once login completes but Snowflake rejects warehouse/role/session policy checks.              |
+| Long-running login / stalled OCSP handshake        | 200 + `failure`      | `failure_category: timeout` after bounded connector timeouts (`SNOWFLAKE_*_TIMEOUT_SECONDS` optional knobs).                           |
+| Tester could not categorize an exception           | 200 + `failure`      | `failure_category: unknown` preserves `sanitized_error` without emitting stack traces externally.                                       |
+
+Operational reminder: plaintext passwords, PEM keys, and Vault identifiers must never surface in REST shapes, Postgres audit rows managed by Feature 3, or structured logs (see regression tests scanning stdout).

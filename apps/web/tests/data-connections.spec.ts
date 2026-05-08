@@ -132,6 +132,38 @@ async function startMockApi(role: "admin" | "viewer"): Promise<Server> {
       });
       return;
     }
+    if (req.url === `/workspaces/${workspaceId}/connection/rotate`) {
+      if (role !== "admin") {
+        json(
+          res,
+          {
+            error_code: "authz_denied",
+            message: "You do not have permission to perform this action.",
+          },
+          403,
+        );
+        return;
+      }
+      if (req.method !== "POST") {
+        res.writeHead(405);
+        res.end();
+        return;
+      }
+      connectionStatus = "pending_test";
+      lastError = null;
+      json(res, {
+        status: "pending_test",
+        has_credentials: true,
+        name: "Acme Snowflake",
+        warehouse: "WH",
+        database: "DB",
+        schema: null,
+        last_tested_at: lastTestedAt,
+        last_successful_test_at: lastSuccessfulAt,
+        last_error: lastError,
+      });
+      return;
+    }
     res.writeHead(404);
     res.end();
   });
@@ -189,10 +221,10 @@ test("admin can access connections page and submit credentials", async ({
     await page.getByLabel("Warehouse").fill("WH");
     await page.getByLabel("Database").fill("DB");
 
-    await page.getByLabel("Account").fill("acct");
-    await page.getByLabel("Username").fill("user");
-    await page.getByLabel("Role").fill("SYSADMIN");
-    await page.getByLabel("Password").fill("supersecret");
+    await page.locator('input[name="account"]').fill("acct");
+    await page.locator('input[name="username"]').fill("user");
+    await page.locator('input[name="role"]').fill("SYSADMIN");
+    await page.locator('input[name="password"]').fill("supersecret");
 
     await page.getByRole("button", { name: "Save connection" }).click();
 
@@ -204,7 +236,7 @@ test("admin can access connections page and submit credentials", async ({
         .filter({ hasText: /pending test/i })
         .first(),
     ).toBeVisible();
-    await expect(page.getByLabel("Password")).toHaveValue("");
+    await expect(page.locator('input[name="password"]')).toHaveValue("");
 
     await page.getByRole("button", { name: "Test connection" }).click();
     await expect(
@@ -216,6 +248,19 @@ test("admin can access connections page and submit credentials", async ({
     await expect(
       page.getByText("—", { exact: true }),
     ).toHaveCount(0);
+
+    await page.locator('input[name="rotate_account"]').fill("acct");
+    await page.locator('input[name="rotate_username"]').fill("user");
+    await page.locator('input[name="rotate_role"]').fill("SYSADMIN");
+    await page.locator('input[name="rotate_password"]').fill("rotatedsecret");
+    await page.getByRole("button", { name: "Rotate credentials" }).click();
+    await expect(
+      page
+        .locator("header")
+        .locator("span")
+        .filter({ hasText: /pending test/i })
+        .first(),
+    ).toBeVisible();
   } finally {
     await stopMockApi(server);
   }

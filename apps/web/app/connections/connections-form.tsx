@@ -20,6 +20,7 @@ export function ConnectionsForm({
   connection: DataConnection | null;
 }) {
   const [password, setPassword] = useState("");
+  const [privateKeyPem, setPrivateKeyPem] = useState("");
   const isNotConfigured = connection?.status === "not_configured";
 
   return (
@@ -28,7 +29,10 @@ export function ConnectionsForm({
       className="rounded-3xl border border-border-3 bg-surface-0 p-5 sm:p-6"
       onSubmit={() => {
         // Clear after the browser captures FormData for the server action.
-        setTimeout(() => setPassword(""), 0);
+        setTimeout(() => {
+          setPassword("");
+          setPrivateKeyPem("");
+        }, 0);
       }}
     >
       <input type="hidden" name="workspace_id" value={workspaceId} />
@@ -95,8 +99,10 @@ export function ConnectionsForm({
         <div className="rounded-2xl border border-border-2 bg-surface-3 p-4">
           <h3 className="text-sm font-semibold">Credentials</h3>
           <p className="mt-1 text-xs leading-5 text-ink-muted">
-            Leave these blank to update metadata only. If you enter any credential
-            field, you must fill them all. Passwords are never echoed back.
+            Leave these blank to update metadata only. Provide either a{" "}
+            <span className="font-medium text-ink">password</span> or a{" "}
+            <span className="font-medium text-ink">private key PEM</span> (Snowflake
+            key-pair auth), not both. Secrets are never echoed back.
           </p>
 
           <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -127,15 +133,43 @@ export function ConnectionsForm({
                 autoComplete="off"
               />
             </label>
-            <label className="space-y-2">
-              <span className="text-sm font-medium">Password</span>
+            <label className="space-y-2 md:col-span-2">
+              <span className="text-sm font-medium">Password (password auth)</span>
               <input
                 name="password"
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.currentTarget.value)}
                 className={fieldClass}
-                placeholder="••••••••••"
+                placeholder="Leave empty if using PEM key below"
+                autoComplete="new-password"
+              />
+            </label>
+            <label className="space-y-2 md:col-span-2">
+              <span className="text-sm font-medium">
+                Private key PEM (key-pair auth)
+              </span>
+              <textarea
+                name="private_key_pem"
+                value={privateKeyPem}
+                onChange={(event) =>
+                  setPrivateKeyPem(event.currentTarget.value)
+                }
+                rows={6}
+                className={`${fieldClass} font-mono text-xs`}
+                placeholder="Paste full PEM (BEGIN … END block)"
+                autoComplete="off"
+              />
+            </label>
+            <label className="space-y-2 md:col-span-2">
+              <span className="text-sm font-medium">
+                Key passphrase (optional, if PEM is encrypted)
+              </span>
+              <input
+                name="private_key_passphrase"
+                type="password"
+                className={fieldClass}
+                placeholder="Only if your PEM is encrypted"
                 autoComplete="new-password"
               />
             </label>

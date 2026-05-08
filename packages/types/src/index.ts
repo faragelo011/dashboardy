@@ -18,6 +18,7 @@ export type {
   ConnectionTestResponse,
   ConnectionTestStatus,
   DataConnection,
+  DataConnectionsErrorResponse,
   FailureCategory,
   RotateConnectionRequest,
   SnowflakeCredentials,

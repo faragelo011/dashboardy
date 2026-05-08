@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.connections.enums import (
     ConnectionStatus,
@@ -38,8 +38,36 @@ class SnowflakeCredentialsPayload(BaseModel):
 
     account: str = Field(min_length=1)
     username: str = Field(min_length=1)
-    password: str = Field(min_length=1)
     role: str = Field(min_length=1)
+    password: str | None = Field(default=None, min_length=1)
+    private_key_pem: str | None = Field(default=None, min_length=1)
+    private_key_passphrase: str | None = Field(default=None, min_length=1)
+
+    @model_validator(mode="after")
+    def _password_xor_private_key(self) -> SnowflakeCredentialsPayload:
+        has_pw = bool(self.password and self.password.strip())
+        has_pk = bool(self.private_key_pem and self.private_key_pem.strip())
+        if has_pw and has_pk:
+            raise ValueError(
+                "Provide either password or private_key_pem for Snowflake, not both"
+            )
+        if not has_pw and not has_pk:
+            raise ValueError(
+                "Snowflake credentials require password or private_key_pem (key pair)"
+            )
+        if self.private_key_passphrase and not has_pk:
+            raise ValueError(
+                "private_key_passphrase is only valid with private_key_pem"
+            )
+        passphrase = (
+            self.private_key_passphrase.strip()
+            if self.private_key_passphrase
+            else None
+        )
+        if passphrase is not None and not passphrase:
+            passphrase = None
+        self.private_key_passphrase = passphrase
+        return self
 
 
 class UpsertConnectionRequest(BaseModel):

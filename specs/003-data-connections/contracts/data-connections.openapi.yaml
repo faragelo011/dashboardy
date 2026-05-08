@@ -294,10 +294,12 @@ components:
     SnowflakeCredentials:
       type: object
       additionalProperties: false
+      description: >
+        Use either password or private_key_pem for Snowflake authentication, not both.
+        Key-pair auth is required when the Snowflake user disallows passwords.
       required:
         - account
         - username
-        - password
         - role
       properties:
         account:
@@ -310,6 +312,15 @@ components:
           type: string
           minLength: 1
           writeOnly: true
+        private_key_pem:
+          type: string
+          minLength: 1
+          writeOnly: true
+          description: PEM-encoded PKCS#8 private key (RSA) for Snowflake key-pair auth.
+        private_key_passphrase:
+          type: string
+          writeOnly: true
+          description: Passphrase for an encrypted PEM, if applicable.
         role:
           type: string
           minLength: 1
