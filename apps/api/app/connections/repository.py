@@ -252,3 +252,61 @@ async def update_connection_test_state(
     row.updated_by_membership_id = updated_by_membership_id
     await session.flush()
     return row
+
+
+async def set_pending_rotation_secret(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    connection_id: UUID,
+    pending_vault_secret_id: str,
+    pending_secret_version: int,
+    updated_by_membership_id: UUID,
+) -> DataConnection | None:
+    """Set pending credentials for rotation without changing effective secret."""
+
+    return await set_pending_secret(
+        session,
+        tenant_id=tenant_id,
+        connection_id=connection_id,
+        pending_vault_secret_id=pending_vault_secret_id,
+        pending_secret_version=pending_secret_version,
+        status=DbConnectionStatus.pending_test,
+        updated_by_membership_id=updated_by_membership_id,
+    )
+
+
+async def promote_pending_rotation_secret(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    connection_id: UUID,
+    updated_by_membership_id: UUID,
+) -> DataConnection | None:
+    """Promote pending rotation credentials to effective fields."""
+
+    return await promote_pending_secret(
+        session,
+        tenant_id=tenant_id,
+        connection_id=connection_id,
+        updated_by_membership_id=updated_by_membership_id,
+    )
+
+
+async def preserve_effective_secret_on_failure(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    connection_id: UUID,
+    updated_by_membership_id: UUID,
+) -> DataConnection | None:
+    """Keep effective secret fields intact (used for failed rotation flows)."""
+
+    row = await _get_connection_for_tenant(
+        session, tenant_id=tenant_id, connection_id=connection_id
+    )
+    if row is None:
+        return None
+    row.updated_by_membership_id = updated_by_membership_id
+    await session.flush()
+    return row

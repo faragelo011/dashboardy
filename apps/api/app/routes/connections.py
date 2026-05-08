@@ -23,6 +23,7 @@ from app.connections.errors import (
 from app.connections.schemas import (
     ConnectionTestResponse,
     DataConnectionResponse,
+    RotateConnectionRequest,
     UpsertConnectionRequest,
 )
 from app.connections.service import ConnectionService
@@ -202,6 +203,57 @@ async def test_workspace_connection(
         result = await service.test_connection(session=session, actor=actor)
     except AuthzDeniedError as exc:
         _forbidden(error_code=exc.error_code, message=str(exc))
+    except DependencyUnavailableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"error_code": exc.error_code, "message": str(exc)},
+        ) from exc
+    except ConnectionServiceError as exc:
+        status_code = status.HTTP_400_BAD_REQUEST
+        if exc.error_code == "connection_not_found":
+            status_code = status.HTTP_404_NOT_FOUND
+        raise HTTPException(
+            status_code=status_code,
+            detail={"error_code": exc.error_code, "message": str(exc)},
+        ) from exc
+
+    await session.commit()
+    return result
+
+
+@router.post(
+    "/workspaces/{workspace_id}/connection/rotate",
+    response_model=DataConnectionResponse,
+)
+async def rotate_workspace_connection(
+    workspace_id: UUID,
+    payload: RotateConnectionRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> DataConnectionResponse:
+    actor = await _require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    try:
+        service = get_connection_service(vault_required=True)
+        result = await service.rotate_credentials(
+            session=session,
+            actor=actor,
+            payload=payload,
+        )
+    except AuthzDeniedError as exc:
+        _forbidden(error_code=exc.error_code, message=str(exc))
+    except ConnectionValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error_code": exc.error_code,
+                "message": str(exc),
+                "details": getattr(exc, "details", None),
+            },
+        ) from exc
     except DependencyUnavailableError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

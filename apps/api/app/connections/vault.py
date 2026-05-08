@@ -2,12 +2,58 @@
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Protocol, runtime_checkable
 
 import httpx
 
 from app.connections.errors import DependencyUnavailableError
+
+
+async def _post_rpc_with_optional_legacy_fallback(
+    *,
+    url: str,
+    headers: dict[str, str],
+    rpc_bodies: list[dict[str, object]],
+    timeout: float,
+    transport: httpx.AsyncBaseTransport | None,
+) -> httpx.Response:
+    """POST JSON-RPC bodies; retry the next shape only if PostgREST returns 404.
+
+    A 400 from the primary (jsonb `payload`) call means the RPC matched and the DB
+    rejected the work — retrying legacy flat ``p_*`` args then yields a misleading
+    404 and hides the real error.
+    """
+    resp: httpx.Response | None = None
+    async with httpx.AsyncClient(timeout=timeout, transport=transport) as client:
+        for i, body in enumerate(rpc_bodies):
+            resp = await client.post(url, headers=headers, json=body)
+            if resp.status_code < 400:
+                break
+            if resp.status_code == 404 and i + 1 < len(rpc_bodies):
+                continue
+            break
+    assert resp is not None
+    return resp
+
+
+def _pgrst_error_suffix(resp: httpx.Response) -> str:
+    """Short, non-sensitive detail from PostgREST JSON errors (debugging)."""
+    try:
+        data = resp.json()
+    except ValueError:
+        return ""
+    if not isinstance(data, dict):
+        return ""
+    parts: list[str] = []
+    for key in ("code", "message", "hint", "details"):
+        val = data.get(key)
+        if isinstance(val, str) and val.strip():
+            parts.append(val.strip()[:400])
+    if not parts:
+        return ""
+    return " (" + "; ".join(parts) + ")"
 
 
 @runtime_checkable
@@ -22,8 +68,11 @@ class VaultClient(Protocol):
 class HttpSupabaseVaultClient:
     """HTTP client shell for Supabase-backed Vault operations.
 
-    User story tasks wire the concrete Vault API path and payload shape. This
-    class owns outbound HTTP configuration so tests can substitute fakes.
+    Calls `public.dashboardy_vault_*` wrappers with a jsonb `{ "payload": ... }`
+    body first (Alembic 0009 / `scripts/supabase_vault_rpc_wrappers.sql`). If
+    PostgREST returns **404** (older DBs still on 0008's `text,text,text` / `uuid`
+    signatures), retries with flat `p_*` keys. A **400** is never retried: the
+    jsonb RPC was found and failed inside PostgreSQL.
     """
 
     def __init__(
@@ -32,8 +81,8 @@ class HttpSupabaseVaultClient:
         base_url: str,
         service_role_key: str,
         timeout_seconds: float = 30.0,
-        store_secret_path: str = "/rest/v1/rpc/vault_create_secret",
-        read_secret_path: str = "/rest/v1/rpc/vault_decrypt_secret",
+        store_secret_path: str = "/rest/v1/rpc/dashboardy_vault_create_secret",
+        read_secret_path: str = "/rest/v1/rpc/dashboardy_vault_read_secret_text",
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
         self._base_url = base_url.rstrip("/")
@@ -41,33 +90,51 @@ class HttpSupabaseVaultClient:
         self._timeout = timeout_seconds
         trimmed = store_secret_path.strip().strip("/")
         self._store_secret_path = (
-            f"/{trimmed}" if trimmed else "/rest/v1/rpc/vault_create_secret"
+            f"/{trimmed}"
+            if trimmed
+            else "/rest/v1/rpc/dashboardy_vault_create_secret"
         )
         read_trimmed = read_secret_path.strip().strip("/")
         self._read_secret_path = (
-            f"/{read_trimmed}" if read_trimmed else "/rest/v1/rpc/vault_decrypt_secret"
+            f"/{read_trimmed}"
+            if read_trimmed
+            else "/rest/v1/rpc/dashboardy_vault_read_secret_text"
         )
         self._transport = transport
 
-    async def store_secret(self, *, name: str, secret_payload: dict[str, str]) -> str:
+    def _service_headers(self) -> dict[str, str]:
         token = self._service_role_key
-        headers = {
+        return {
             "apikey": token,
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         }
+
+    async def store_secret(self, *, name: str, secret_payload: dict[str, str]) -> str:
         url = f"{self._base_url}{self._store_secret_path}"
-        payload = {"name": name, "secret": secret_payload}
+        secret_json = json.dumps(secret_payload, separators=(",", ":"))
+        inner = {"p_secret": secret_json, "p_name": name}
+        # Primary: jsonb `payload` (0009). Legacy fallback on 404 only (0006–0008).
+        rpc_bodies: list[dict[str, object]] = [
+            {"payload": inner},
+            {"p_secret": secret_json, "p_name": name},
+        ]
         try:
-            async with httpx.AsyncClient(
+            resp = await _post_rpc_with_optional_legacy_fallback(
+                url=url,
+                headers=self._service_headers(),
+                rpc_bodies=rpc_bodies,
                 timeout=self._timeout,
                 transport=self._transport,
-            ) as client:
-                resp = await client.post(url, headers=headers, json=payload)
+            )
         except httpx.HTTPError as exc:
             raise DependencyUnavailableError("Supabase dependency unavailable") from exc
+
         if resp.status_code >= 400:
-            raise DependencyUnavailableError("Supabase Vault rejected secret storage")
+            raise DependencyUnavailableError(
+                "Supabase Vault rejected secret storage"
+                + _pgrst_error_suffix(resp)
+            )
 
         secret_id = _extract_secret_id(resp)
         if not secret_id:
@@ -77,24 +144,26 @@ class HttpSupabaseVaultClient:
         return secret_id
 
     async def read_secret(self, *, secret_id: str) -> dict[str, str]:
-        token = self._service_role_key
-        headers = {
-            "apikey": token,
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
         url = f"{self._base_url}{self._read_secret_path}"
-        payload = {"secret_id": secret_id}
+        rpc_bodies: list[dict[str, object]] = [
+            {"payload": {"p_secret_id": secret_id}},
+            {"p_secret_id": secret_id},
+        ]
         try:
-            async with httpx.AsyncClient(
+            resp = await _post_rpc_with_optional_legacy_fallback(
+                url=url,
+                headers=self._service_headers(),
+                rpc_bodies=rpc_bodies,
                 timeout=self._timeout,
                 transport=self._transport,
-            ) as client:
-                resp = await client.post(url, headers=headers, json=payload)
+            )
         except httpx.HTTPError as exc:
             raise DependencyUnavailableError("Supabase dependency unavailable") from exc
+
         if resp.status_code >= 400:
-            raise DependencyUnavailableError("Supabase Vault rejected secret read")
+            raise DependencyUnavailableError(
+                "Supabase Vault rejected secret read" + _pgrst_error_suffix(resp)
+            )
 
         try:
             data = resp.json()
@@ -103,19 +172,32 @@ class HttpSupabaseVaultClient:
                 "Supabase Vault returned invalid json"
             ) from exc
 
-        if (
-            isinstance(data, dict)
-            and "secret" in data
-            and isinstance(data["secret"], dict)
-        ):
-            secret = data["secret"]
-            return {str(k): str(v) for k, v in secret.items()}
-        if isinstance(data, dict):
-            # Some deployments return the decrypted secret shape directly.
-            return {str(k): str(v) for k, v in data.items()}
-        raise DependencyUnavailableError(
-            "Supabase Vault did not return a secret payload"
-        )
+        if data is None:
+            raise DependencyUnavailableError("Supabase Vault did not return a secret")
+        if isinstance(data, dict) and len(data) == 1:
+            only = next(iter(data.values()))
+            if isinstance(only, str):
+                data = only
+        if not isinstance(data, str):
+            raise DependencyUnavailableError(
+                "Supabase Vault did not return a decrypted secret string"
+            )
+        decrypted = data
+        if not decrypted.strip():
+            raise DependencyUnavailableError(
+                "Supabase Vault did not return decrypted_secret"
+            )
+        try:
+            parsed = json.loads(decrypted)
+        except json.JSONDecodeError as exc:
+            raise DependencyUnavailableError(
+                "Supabase Vault secret payload was not JSON"
+            ) from exc
+        if not isinstance(parsed, dict):
+            raise DependencyUnavailableError(
+                "Supabase Vault secret payload was not an object"
+            )
+        return {str(k): str(v) for k, v in parsed.items()}
 
 
 def _extract_secret_id(resp: httpx.Response) -> str | None:

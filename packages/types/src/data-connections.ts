@@ -1,3 +1,8 @@
+/**
+ * Mirrors `contracts/data-connections.openapi.yaml` (Dashboardy Feature 3).
+ * Credential fields (`SnowflakeCredentials`) are intentionally write-only there;
+ * omit them when typing API responses (`DataConnection`).
+ */
 export type ConnectionStatus =
   | "not_configured"
   | "pending_test"
@@ -31,8 +36,13 @@ export interface DataConnection {
 export interface SnowflakeCredentials {
   account: string;
   username: string;
-  password: string;
   role: string;
+  /** Password auth; omit when using private_key_pem */
+  password?: string;
+  /** PEM PKCS#8 private key for key-pair auth; omit when using password */
+  private_key_pem?: string;
+  /** Optional passphrase if private_key_pem is encrypted */
+  private_key_passphrase?: string;
 }
 
 export interface UpsertConnectionRequest {
@@ -54,4 +64,11 @@ export interface ConnectionTestResponse {
   test_status: ConnectionTestStatus;
   failure_category?: FailureCategory;
   sanitized_error?: string | null;
+}
+
+/** Normalized Problem JSON for Feature 3 routes (`components.schemas.ErrorResponse`). */
+export interface DataConnectionsErrorResponse {
+  error_code: string;
+  message: string;
+  details?: Record<string, unknown> | null;
 }

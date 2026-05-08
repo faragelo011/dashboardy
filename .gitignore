@@ -66,5 +66,8 @@ playwright-report/
 *.swp
 *.swo
 
+# TS incremental (local)
+*.tsbuildinfo
+
 # Impeccable live session metadata (local-only)
 .impeccable-live.json

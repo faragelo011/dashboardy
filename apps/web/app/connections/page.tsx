@@ -5,7 +5,7 @@ import { getWorkspaceConnection } from "@/app/lib/connections-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
 import { ConnectionsForm } from "./connections-form";
-import { testConnectionAction } from "./actions";
+import { rotateConnectionAction, testConnectionAction } from "./actions";
 
 const formatUtcDateTime = (value: string) =>
   new Intl.DateTimeFormat("en", {
@@ -166,6 +166,98 @@ export default async function ConnectionsPage() {
                   <p className="mt-1 whitespace-pre-wrap leading-6">{connection.last_error}</p>
                 </div>
               ) : null}
+            </section>
+
+            <section className="rounded-3xl border border-border-3 bg-surface-1 p-5 sm:p-6">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-lg font-semibold">Rotate credentials</h2>
+                <p className="text-sm leading-6 text-ink-muted">
+                  Rotation is test-gated. New credentials become active only after a successful{" "}
+                  <span className="font-medium text-ink">Test connection</span>. Provide either a
+                  password or a private key PEM, not both.
+                </p>
+              </div>
+
+              <form action={rotateConnectionAction} className="mt-4 grid gap-4">
+                <input type="hidden" name="workspace_id" value={workspaceId} />
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2">
+                    <span className="text-sm font-medium">Account</span>
+                    <input
+                      name="rotate_account"
+                      className="min-h-11 w-full rounded-xl border border-border-4 bg-surface-0 px-3 py-2 text-sm outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                      placeholder="acme.us-east-1"
+                      autoComplete="off"
+                      required
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm font-medium">Role</span>
+                    <input
+                      name="rotate_role"
+                      className="min-h-11 w-full rounded-xl border border-border-4 bg-surface-0 px-3 py-2 text-sm outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                      placeholder="SYSADMIN"
+                      autoComplete="off"
+                      required
+                    />
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm font-medium">Username</span>
+                    <input
+                      name="rotate_username"
+                      className="min-h-11 w-full rounded-xl border border-border-4 bg-surface-0 px-3 py-2 text-sm outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                      placeholder="service_user"
+                      autoComplete="off"
+                      required
+                    />
+                  </label>
+                  <label className="space-y-2 md:col-span-2">
+                    <span className="text-sm font-medium">Password (password auth)</span>
+                    <input
+                      name="rotate_password"
+                      type="password"
+                      className="min-h-11 w-full rounded-xl border border-border-4 bg-surface-0 px-3 py-2 text-sm outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                      placeholder="Leave empty if rotating to key-pair auth"
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <label className="space-y-2 md:col-span-2">
+                    <span className="text-sm font-medium">Private key PEM (key-pair auth)</span>
+                    <textarea
+                      name="rotate_private_key_pem"
+                      rows={5}
+                      className="min-h-11 w-full rounded-xl border border-border-4 bg-surface-0 px-3 py-2 font-mono text-xs outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                      placeholder="Paste full PEM (BEGIN … END block)"
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label className="space-y-2 md:col-span-2">
+                    <span className="text-sm font-medium">
+                      Key passphrase (optional, if PEM is encrypted)
+                    </span>
+                    <input
+                      name="rotate_private_key_passphrase"
+                      type="password"
+                      className="min-h-11 w-full rounded-xl border border-border-4 bg-surface-0 px-3 py-2 text-sm outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35"
+                      placeholder="Only if your PEM is encrypted"
+                      autoComplete="new-password"
+                    />
+                  </label>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-t border-border-1 pt-4">
+                  <p className="text-xs leading-5 text-ink-faint">
+                    After rotation, status becomes <span className="font-medium">pending test</span>.
+                    If the test fails, the previous active credential remains effective.
+                  </p>
+                  <button
+                    className="min-h-10 rounded-xl border border-border-4 bg-surface-0 px-4 py-2 text-sm font-semibold transition hover:bg-surface-5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:bg-surface-5 disabled:text-ink-muted"
+                    disabled={!connection || connection.status === "not_configured"}
+                  >
+                    Rotate credentials
+                  </button>
+                </div>
+              </form>
             </section>
           </div>
 

@@ -27,7 +27,13 @@ services:
     env_file:
       - ../.env
     environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:postgres@postgres:5432/dashboardy
+      # App DB: bundled Postgres by default. To use your Supabase project's Postgres
+      # (same DB as Vault RPCs / migrations in production), set API_DATABASE_URL in
+      # `.env` when running Compose, e.g.
+      #   API_DATABASE_URL=postgresql+asyncpg://postgres.<ref>:...@aws-0-eu-central-1.pooler.supabase.com:5432/postgres?ssl=require
+      # Use Session mode (port 5432) for Alembic; pass --env-file ../.env from repo root so
+      # substitution picks it up. Host `uv run` continues to use DATABASE_URL (see .env.example).
+      DATABASE_URL: ${API_DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/dashboardy}
       ENVIRONMENT: local
       LOG_LEVEL: info
     depends_on:

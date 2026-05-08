@@ -218,7 +218,7 @@ pnpm --filter @dashboardy/web test
 pnpm --filter @dashboardy/web exec playwright test tests/data-connections.spec.ts
 ```
 
-The first `pytest` command runs only suites under `tests/unit`, `tests/integration`, and `tests/contract`. Tests at the `tests/` root (migrations, health, `tests/test_no_secret_in_logs.py`, and other top-level modules) are skipped unless invoked separately—the next line runs `tests/test_data_connection_no_secret_in_logs.py` for this feature. For the **full** API suite as in CI, run:
+The first `pytest` command runs only suites under `tests/unit`, `tests/integration`, and `tests/contract`. Root-level suites (for example migrations, health smoke tests, **`tests/test_data_connection_no_secret_in_logs.py`**, and other modules outside those folders) are skipped unless listed explicitly—that is what the dedicated second `pytest` line is for on this branch. For the **full** API suite as in CI, run:
 
 ```bash
 uv run --directory apps/api pytest

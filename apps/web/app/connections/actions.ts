@@ -2,10 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { UpsertConnectionRequest } from "@dashboardy/types";
+import type {
+  RotateConnectionRequest,
+  SnowflakeCredentials,
+  UpsertConnectionRequest,
+} from "@dashboardy/types";
 
 import {
   ApiError,
+  rotateWorkspaceConnection,
   testWorkspaceConnection,
   upsertWorkspaceConnection,
 } from "@/app/lib/connections-api";
@@ -31,6 +36,48 @@ const isUuid = (v: string) =>
     v,
   );
 
+function snowflakeCredentialsFromFields(input: {
+  account: string;
+  username: string;
+  role: string;
+  password: string;
+  privateKeyPem: string;
+  privateKeyPassphrase: string;
+}): SnowflakeCredentials {
+  const account = input.account.trim();
+  const username = input.username.trim();
+  const role = input.role.trim();
+  const password = input.password;
+  const privateKeyPem = input.privateKeyPem.trim();
+  const privateKeyPassphrase = input.privateKeyPassphrase;
+
+  if (!account || !username || !role) {
+    throw new Error("Account, username, and role are required for credentials.");
+  }
+
+  const hasPw = password.trim().length > 0;
+  const hasPk = privateKeyPem.length > 0;
+  if (hasPw && hasPk) {
+    throw new Error("Provide either password or private key PEM, not both.");
+  }
+  if (!hasPw && !hasPk) {
+    throw new Error("Provide either password or private key PEM for Snowflake.");
+  }
+
+  const base = { account, username, role };
+  if (hasPk) {
+    const out: SnowflakeCredentials = {
+      ...base,
+      private_key_pem: privateKeyPem,
+    };
+    if (privateKeyPassphrase.trim()) {
+      out.private_key_passphrase = privateKeyPassphrase;
+    }
+    return out;
+  }
+  return { ...base, password: password.trim() };
+}
+
 export async function upsertConnectionAction(formData: FormData) {
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
   if (!workspaceId || !isUuid(workspaceId)) {
@@ -46,6 +93,10 @@ export async function upsertConnectionAction(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "").trim();
+  const privateKeyPem = String(formData.get("private_key_pem") ?? "");
+  const privateKeyPassphrase = String(
+    formData.get("private_key_passphrase") ?? "",
+  );
 
   if (!name || !warehouse || !database) {
     throw new Error("Name, warehouse, and database are required.");
@@ -58,14 +109,18 @@ export async function upsertConnectionAction(formData: FormData) {
     schema: schema ? schema : null,
   };
 
-  const hasAnyCredField = Boolean(account || username || password || role);
+  const hasAnyCredField = Boolean(
+    account || username || password.trim() || role || privateKeyPem.trim(),
+  );
   if (hasAnyCredField) {
-    if (!account || !username || !password || !role) {
-      throw new Error(
-        "If you provide credentials, account, username, password, and role are all required.",
-      );
-    }
-    payload.credentials = { account, username, password, role };
+    payload.credentials = snowflakeCredentialsFromFields({
+      account,
+      username,
+      role,
+      password,
+      privateKeyPem,
+      privateKeyPassphrase,
+    });
   }
 
   try {
@@ -89,6 +144,44 @@ export async function testConnectionAction(formData: FormData) {
   try {
     const { token } = await requireSessionContext();
     await testWorkspaceConnection(token, workspaceId);
+    revalidatePath("/connections");
+  } catch (err) {
+    if (err instanceof ApiError) {
+      throw new Error(err.message);
+    }
+    throw err;
+  }
+}
+
+export async function rotateConnectionAction(formData: FormData) {
+  const workspaceId = String(formData.get("workspace_id") ?? "").trim();
+  if (!workspaceId || !isUuid(workspaceId)) {
+    throw new Error("Invalid workspace id.");
+  }
+
+  const account = String(formData.get("rotate_account") ?? "").trim();
+  const username = String(formData.get("rotate_username") ?? "").trim();
+  const password = String(formData.get("rotate_password") ?? "");
+  const role = String(formData.get("rotate_role") ?? "").trim();
+  const privateKeyPem = String(formData.get("rotate_private_key_pem") ?? "");
+  const privateKeyPassphrase = String(
+    formData.get("rotate_private_key_passphrase") ?? "",
+  );
+
+  const payload: RotateConnectionRequest = {
+    credentials: snowflakeCredentialsFromFields({
+      account,
+      username,
+      role,
+      password,
+      privateKeyPem,
+      privateKeyPassphrase,
+    }),
+  };
+
+  try {
+    const { token } = await requireSessionContext();
+    await rotateWorkspaceConnection(token, workspaceId, payload);
     revalidatePath("/connections");
   } catch (err) {
     if (err instanceof ApiError) {
