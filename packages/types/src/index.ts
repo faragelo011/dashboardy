@@ -24,3 +24,13 @@ export type {
   SnowflakeCredentials,
   UpsertConnectionRequest,
 } from "./data-connections";
+
+export type {
+  AdhocQueryExecuteRequest,
+  ColumnDescriptor,
+  ExecutionStatus,
+  PresentationClass,
+  QueryExecuteMeta,
+  QueryExecuteSuccessResponse,
+  QueryMode,
+} from "./query-execute";

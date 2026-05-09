@@ -1,0 +1,1 @@
+INSERT INTO src SELECT 1

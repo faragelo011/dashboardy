@@ -1,4 +1,6 @@
-from contextlib import asynccontextmanager
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -9,17 +11,50 @@ from app.admin.routes import router as admin_router
 from app.config import get_settings
 from app.logging import configure_logging
 from app.middleware import CorrelationIdMiddleware
-from app.routes import auth_router, connections_router, me_router, workspaces_router
+from app.routes import (
+    auth_router,
+    connections_router,
+    me_router,
+    query_router,
+    workspaces_router,
+)
 from app.routes.health import router as health_router
 from app.routes.ready import router as ready_router
 
 settings = get_settings()
 
+_logger = logging.getLogger(__name__)
+
+
+async def _cache_ttl_sweeper() -> None:
+    """Periodic ``DELETE`` for expired ``cache_entries`` (Feature 004 §3.3)."""
+
+    from app.db.session import get_async_session_maker
+    from app.query_engine.cache_repo import delete_expired
+
+    maker = get_async_session_maker()
+    while True:
+        try:
+            async with maker() as session:
+                await delete_expired(session)
+                await session.commit()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            _logger.exception("cache_entry_ttl_sweep_failed")
+        await asyncio.sleep(60)
+
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(_app: FastAPI):
     configure_logging(settings.LOG_LEVEL)
-    yield
+    sweep_task = asyncio.create_task(_cache_ttl_sweeper())
+    try:
+        yield
+    finally:
+        sweep_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await sweep_task
 
 
 app = FastAPI(title="Dashboardy API", lifespan=lifespan)
@@ -91,4 +126,5 @@ app.include_router(auth_router)
 app.include_router(me_router)
 app.include_router(workspaces_router)
 app.include_router(connections_router)
+app.include_router(query_router)
 app.include_router(admin_router)

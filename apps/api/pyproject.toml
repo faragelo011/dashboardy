@@ -19,6 +19,7 @@ dependencies = [
   "email-validator>=2.3.0",
   "snowflake-connector-python>=4.4.0",
   "cryptography>=42",
+  "sqlglot>=24",
 ]
 
 [dependency-groups]
