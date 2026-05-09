@@ -85,8 +85,21 @@ export const getProtectedMe = cache(async (): Promise<MeResponse> => {
     redirect("/sign-in");
   }
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error("[dashboardy] GET /me failed:", res.status, body);
+    let safeError = "unparseable error body";
+    try {
+      const text = await res.text();
+      if (text) {
+        const parsed = JSON.parse(text);
+        if (parsed?.detail?.error_code) {
+          safeError = parsed.detail.error_code;
+        } else if (parsed?.detail?.message) {
+          safeError = parsed.detail.message;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    console.error("[dashboardy] GET /me failed:", res.status, safeError);
     redirect("/sign-in");
   }
 

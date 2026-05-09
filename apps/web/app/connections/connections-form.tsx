@@ -22,13 +22,20 @@ export function ConnectionsForm({
 }) {
   const [password, setPassword] = useState("");
   const [privateKeyPem, setPrivateKeyPem] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const isNotConfigured = connection?.status === "not_configured";
 
   return (
     <form
       action={upsertConnectionAction}
       className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#12161E] border border-white/5 shadow-2xl"
-      onSubmit={() => {
+      onSubmit={(e) => {
+        if (password.length > 0 && privateKeyPem.length > 0) {
+          e.preventDefault();
+          setError("Please provide either a password or a private key, not both.");
+          return;
+        }
+        setError(null);
         // Clear after the browser captures FormData for the server action.
         setTimeout(() => {
           setPassword("");
@@ -36,7 +43,7 @@ export function ConnectionsForm({
         }, 0);
       }}
     >
-      <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 bg-[#D4AF37] opacity-[0.02] blur-3xl pointer-events-none rounded-full" />
+      <div aria-hidden="true" className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 bg-[#D4AF37] opacity-[0.02] blur-3xl pointer-events-none rounded-full" />
 
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
@@ -51,7 +58,7 @@ export function ConnectionsForm({
             </span>
           </div>
           <p className="text-sm text-[#A0AAB2] max-w-[55ch] leading-relaxed font-light">
-            Set the metadata blueprint below. Sensitive credentials submitted here are never revealed after submission to ensure maximum security protocol.
+            Set the connection details below. Sensitive credentials submitted here are not displayed after saving to ensure security.
           </p>
         </header>
 
@@ -110,6 +117,11 @@ export function ConnectionsForm({
           <p className="text-[11px] leading-5 text-[#A0AAB2] mb-8 font-light max-w-[65ch]">
             Skip these fields to retain existing credentials. Authenticate via standard password OR an encrypted private key PEM (key-pair). Do not populate both simultaneously.
           </p>
+          {error && (
+            <div className="mb-6 border border-red-500/30 bg-red-500/5 px-4 py-3 text-red-400 text-xs tracking-wide">
+              {error}
+            </div>
+          )}
 
           <div className="grid gap-8 md:grid-cols-2">
             <label className="flex flex-col gap-3 group/input">
@@ -158,7 +170,10 @@ export function ConnectionsForm({
                 name="password"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.currentTarget.value)}
+                onChange={(event) => {
+                  if (privateKeyPem.length === 0) setPassword(event.currentTarget.value);
+                }}
+                disabled={privateKeyPem.length > 0}
                 className={`${fieldClass} placeholder:font-sans`}
                 placeholder="Optional for password authentication..."
                 autoComplete="new-password"
@@ -176,9 +191,10 @@ export function ConnectionsForm({
               <textarea
                 name="private_key_pem"
                 value={privateKeyPem}
-                onChange={(event) =>
-                  setPrivateKeyPem(event.currentTarget.value)
-                }
+                onChange={(event) => {
+                  if (password.length === 0) setPrivateKeyPem(event.currentTarget.value);
+                }}
+                disabled={password.length > 0}
                 rows={6}
                 className={`${fieldClass} font-mono placeholder:font-sans text-[11px] leading-relaxed resize-none`}
                 placeholder="— BEGIN PRIVATE KEY —\n..."

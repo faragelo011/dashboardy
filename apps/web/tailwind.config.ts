@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}"],
@@ -61,7 +62,17 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        "@media (prefers-reduced-motion: reduce)": {
+          ".animate-fade-in-up, .animate-fade-in": {
+            animation: "none !important",
+          },
+        },
+      });
+    }),
+  ],
 };
 
 export default config;

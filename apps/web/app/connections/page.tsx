@@ -99,7 +99,7 @@ export default async function ConnectionsPage() {
                 {connection.status.replace(/_/g, " ")}
               </span>
               <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">
-                Namespace: <span className="text-white font-light lowercase font-mono">{me.current_workspace.workspace_name}</span>
+                Namespace: <span className="text-white font-light font-mono">{me.current_workspace.workspace_name}</span>
               </span>
             </div>
           ) : null}
@@ -112,7 +112,7 @@ export default async function ConnectionsPage() {
           </section>
         ) : null}
 
-        <section className="grid gap-12 lg:gap-24 lg:grid-cols-[1.2fr_0.8fr] animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+        <section className="grid gap-12 lg:gap-24 lg:grid-cols-[1.2fr_0.8fr] animate-fade-in-up [animation-delay:100ms]">
           
           <div className="flex flex-col gap-16">
             <ConnectionsForm workspaceId={workspaceId} connection={connection} />
@@ -123,7 +123,7 @@ export default async function ConnectionsPage() {
                 <div>
                   <h2 className="text-2xl font-serif text-[#F0F2F5] tracking-wide font-light mb-2">Diagnostic Test</h2>
                   <p className="text-[11px] leading-5 text-[#A0AAB2] font-light max-w-[40ch]">
-                    Execute bounded connectivity simulation. Upon verification, pending vaults are transposed to operational status.
+                    Test the connection to your Snowflake warehouse. When successful, the connection becomes active.
                   </p>
                 </div>
                 <form action={testConnectionAction} className="shrink-0">
@@ -276,17 +276,17 @@ export default async function ConnectionsPage() {
             <h2 className="text-2xl font-serif font-light text-white mb-10">Procedural Flow</h2>
             <ol className="space-y-8 text-[13px] font-light text-[#A0AAB2] leading-relaxed relative border-l border-white/10 ml-[2px] pl-6 pb-2">
               <li className="relative">
-                <span className="absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full bg-[#12161E] border border-white/30" />
+                <span aria-hidden="true" className="absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full bg-[#12161E] border border-white/30" />
                 <span className="text-[#D4AF37] block text-[10px] uppercase tracking-[0.15em] mb-1">Phase Alpha</span>
                 Store organizational definitions and initial secret keys. Framework shifts to <span className="text-white">Pending Test</span> state.
               </li>
               <li className="relative">
-                <span className="absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full bg-[#12161E] border border-[#D4AF37]" />
+                <span aria-hidden="true" className="absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full bg-[#12161E] border border-[#D4AF37]" />
                 <span className="text-[#D4AF37] block text-[10px] uppercase tracking-[0.15em] mb-1">Phase Beta</span>
                 Run diagnostic simulation. Actuates the provided tokens and confirms systemic handshake.
               </li>
               <li className="relative">
-                <span className="absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full bg-[#12161E] border border-white/30" />
+                <span aria-hidden="true" className="absolute -left-[30px] top-1 w-2.5 h-2.5 rounded-full bg-[#12161E] border border-white/30" />
                 <span className="text-[#D4AF37] block text-[10px] uppercase tracking-[0.15em] mb-1">Phase Gamma</span>
                 Review telemetry. Unsuccessful binds produce sanitized error strings void of critical secrets.
               </li>

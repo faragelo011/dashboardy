@@ -229,7 +229,7 @@ export default async function MembersPage() {
                       ))}
                     </select>
                     <button
-                      className={`${quietButtonClass} md:mt-3 md:w-full opacity-0 group-hover:opacity-100 transition-opacity`}
+                      className={`${quietButtonClass} md:mt-3 md:w-full`}
                       disabled={!isActive}
                     >
                       Apply Shift
@@ -256,7 +256,7 @@ export default async function MembersPage() {
                   <form action={deactivateMemberAction} className="md:flex md:justify-end">
                     <input type="hidden" name="workspace_id" value={workspaceId} />
                     <input type="hidden" name="membership_id" value={member.id} />
-                    <button className={`${dangerButtonClass} opacity-0 group-hover:opacity-100 transition-opacity`} disabled={!isActive}>
+                    <button className={`${dangerButtonClass}`} disabled={!isActive}>
                       Terminate
                     </button>
                   </form>
@@ -395,7 +395,7 @@ export default async function MembersPage() {
                     <form action={deleteAssetGrantAction} className="mt-2 md:mt-0 md:text-right">
                       <input type="hidden" name="workspace_id" value={workspaceId} />
                       <input type="hidden" name="grant_id" value={grant.id} />
-                      <button className="text-[10px] uppercase tracking-[0.15em] text-[#EF4444] hover:text-[#FF6B6B] transition-colors border-b border-[#EF4444]/30 hover:border-[#FF6B6B] pb-[1px] opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                      <button className="text-[10px] uppercase tracking-[0.15em] text-[#EF4444] hover:text-[#FF6B6B] transition-colors border-b border-[#EF4444]/30 hover:border-[#FF6B6B] pb-[1px]">
                         Revoke
                       </button>
                     </form>

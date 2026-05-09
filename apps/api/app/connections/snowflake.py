@@ -79,9 +79,9 @@ class SnowflakeConnectorTester:
                 try:
                     pkb = private_key_der_pkcs8_from_pem(
                         pem=private_key_pem.strip(),
-                        passphrase=private_key_passphrase.strip()
-                        if private_key_passphrase
-                        else None,
+                        passphrase=None
+                        if not private_key_passphrase or not private_key_passphrase.strip()
+                        else private_key_passphrase,
                     )
                 except ValueError as exc:
                     raise DependencyUnavailableError(

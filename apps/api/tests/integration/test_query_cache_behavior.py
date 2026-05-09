@@ -98,7 +98,7 @@ async def _seed_workspace_connection() -> tuple[
 
     class _ConnSvc:
         async def resolve_active_execution_credentials(self, *, session, tenant_id):  # noqa: ARG002
-            assert tenant_id == tid_str
+            assert tenant_id == tenant.id
             return conn_stub, secret
 
     return uid, tenancy, _ConnSvc()
