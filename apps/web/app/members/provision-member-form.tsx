@@ -24,7 +24,7 @@ export function ProvisionMemberForm({
   return (
     <form
       ref={formRef}
-      className="rounded-3xl border border-border-3 bg-surface-0 p-5 sm:p-6"
+      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#12161E] inline-block border-[0.5px] border-white/10"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -44,38 +44,40 @@ export function ProvisionMemberForm({
     >
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold tracking-[-0.02em]">Add teammate</h2>
-            <p className="mt-1 max-w-[56ch] text-sm leading-6 text-ink-muted">
-              Provision access with a temporary password. The user will be forced
-              to reset it on first login.
-            </p>
+      <div className="flex flex-col gap-10">
+        <header className="flex flex-col gap-2 relative z-10">
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-serif text-[#F0F2F5] tracking-wide font-light">
+              Invite
+            </h2>
+            <span className="uppercase tracking-[0.15em] text-[10px] text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 bg-[#D4AF37]/5">
+              Admin Access Built-In
+            </span>
           </div>
-          <span className="w-fit rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent-soft-ink">
-            Admin only
-          </span>
-        </div>
+          <p className="text-sm text-[#A0AAB2] max-w-[50ch] leading-relaxed font-light">
+            Grant secure workspace access directly. An initial credential will be created and mandated for reset upon entry.
+          </p>
+        </header>
 
-        <div className="grid gap-4 md:grid-cols-[minmax(0,1.3fr)_minmax(220px,0.7fr)]">
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Email address</span>
+        <div className="grid gap-12 lg:grid-cols-2 relative z-10">
+          <label className="flex flex-col gap-3 group/input">
+            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              Email Address
+            </span>
             <input
               name="email"
               type="email"
               required
               className={fieldClass}
-              placeholder="alex@company.com"
+              placeholder="e.g. executive@company.com"
               disabled={isPending}
             />
-            <span className="block text-xs leading-5 text-ink-faint">
-              The user signs in with this email.
-            </span>
           </label>
 
-          <label className="space-y-2">
-            <span className="text-sm font-medium">Role</span>
+          <label className="flex flex-col gap-3 group/input">
+            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              Access Tier
+            </span>
             <select
               name="role"
               className={fieldClass}
@@ -83,64 +85,51 @@ export function ProvisionMemberForm({
               disabled={isPending}
             >
               {roleOptions.map(([value, label]) => (
-                <option key={value} value={value}>
+                <option key={value} value={value} className="bg-[#0B0F15] text-[#F0F2F5]">
                   {label}
                 </option>
               ))}
             </select>
           </label>
-        </div>
 
-        <label className="space-y-2">
-          <span className="text-sm font-medium">Temporary initial password</span>
-          <input
-            name="initial_password"
-            type="password"
-            required
-            minLength={8}
-            className={fieldClass}
-            placeholder="At least 8 characters"
-            autoComplete="new-password"
-            disabled={isPending}
-          />
-          <span className="block text-xs leading-5 text-ink-faint">
-            The user must change this password the first time they sign in.
-          </span>
-        </label>
-
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-          {roleOptions.map(([value, label, description]) => (
-            <div
-              key={value}
-              className="rounded-2xl border border-border-2 bg-surface-3 px-3 py-3"
-            >
-              <div className="text-sm font-medium">{label}</div>
-              <p className="mt-1 text-xs leading-5 text-ink-faint">{description}</p>
-            </div>
-          ))}
+          <label className="flex flex-col gap-3 lg:col-span-2 group/input">
+            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              Temporary Credential
+            </span>
+            <input
+              name="initial_password"
+              type="password"
+              required
+              minLength={8}
+              className={fieldClass}
+              placeholder="Required: minimum 8 characters"
+              autoComplete="new-password"
+              disabled={isPending}
+            />
+          </label>
         </div>
 
         {error ? (
           <div
             role="alert"
-            aria-live="assertive"
-            className="rounded-xl border border-danger-border bg-danger-soft-strong px-3 py-2 text-sm text-danger-ink-strong"
+            className="border-l-2 border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-200 font-light relative z-10"
           >
             {error}
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-3 border-t border-border-1 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs leading-5 text-ink-faint">
-            Review the role before provisioning. You can change access later from
-            the roster.
+        <div className="pt-8 border-t border-white/5 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between relative z-10">
+          <p className="text-[11px] leading-5 text-[#5C6A7A] uppercase tracking-[0.05em]">
+            Access can be revoked from the roster.
           </p>
           <button className={primaryButtonClass} disabled={isPending}>
-            {isPending ? "Provisioning…" : "Provision member"}
+            {isPending ? "Connecting..." : "Provision Access"}
           </button>
         </div>
       </div>
+      
+      {/* Decorative luxury mesh */}
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#D4AF37] opacity-[0.03] blur-3xl pointer-events-none rounded-full" />
     </form>
   );
 }
-

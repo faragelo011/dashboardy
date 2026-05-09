@@ -28,6 +28,7 @@ from app.connections.schemas import (
 from app.connections.snowflake import SnowflakeTester, categorize_snowflake_failure
 from app.connections.vault import VaultClient
 from app.models.data_connections import (
+    DataConnection,
     DbAuditAction,
     DbAuditOutcome,
     DbConnectionStatus,
@@ -439,6 +440,54 @@ class ConnectionService:
 
         connection = await self.get_connection_metadata(session=session, actor=actor)
         return ConnectionTestResponse(connection=connection, test_status="success")
+
+    async def resolve_active_execution_credentials(
+        self,
+        *,
+        session,
+        tenant_id: UUID,
+    ) -> tuple[
+        DataConnection,
+        dict[str, str],
+    ] | None:
+        """Snowflake Vault material for read-only analytic execution paths.
+
+        Reuses Vault HTTP read semantics already implemented for connection testing.
+        Returns ``None`` when no **active**, fully configured connection exists.
+        """
+
+        row = await self._repository.get_connection_for_tenant(
+            session, tenant_id=tenant_id
+        )
+        if row is None or row.status != DbConnectionStatus.active:
+            return None
+        if not row.vault_secret_id:
+            return None
+        secret = await self._vault.read_secret(secret_id=row.vault_secret_id)
+        account = secret.get("account", "").strip()
+        username = secret.get("username", "").strip()
+        password = secret.get("password", "")
+        if not isinstance(password, str):
+            password = str(password)
+        role = secret.get("role", "").strip()
+        pk_pem = secret.get("private_key_pem", "").strip()
+        pk_pp = secret.get("private_key_passphrase")
+        if pk_pp is not None:
+            pk_pp = str(pk_pp)
+            if not pk_pp.strip():
+                pk_pp = None
+
+        if pk_pem:
+            if not (account and username and role):
+                raise ConnectionValidationError("Stored credentials are incomplete.")
+        else:
+            if not (account and username and password and role):
+                raise ConnectionValidationError("Stored credentials are incomplete.")
+        # Downstream callers must avoid logging credential payloads / raw JWT.
+        normalized: dict[str, str] = {
+            k: str(v) for k, v in secret.items() if v is not None
+        }
+        return row, normalized
 
     async def rotate_credentials(
         self,

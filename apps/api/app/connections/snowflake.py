@@ -11,7 +11,7 @@ from app.connections.enums import FailureCategory
 from app.connections.errors import DependencyUnavailableError
 
 
-def _private_key_der_pkcs8(*, pem: str, passphrase: str | None) -> bytes:
+def private_key_der_pkcs8_from_pem(*, pem: str, passphrase: str | None) -> bytes:
     """Load a PEM PKCS#8/RSA private key and return PKCS8 DER bytes for Snowflake."""
     key = serialization.load_pem_private_key(
         pem.encode("utf-8"),
@@ -77,7 +77,7 @@ class SnowflakeConnectorTester:
             )
             if private_key_pem and private_key_pem.strip():
                 try:
-                    pkb = _private_key_der_pkcs8(
+                    pkb = private_key_der_pkcs8_from_pem(
                         pem=private_key_pem.strip(),
                         passphrase=private_key_passphrase.strip()
                         if private_key_passphrase

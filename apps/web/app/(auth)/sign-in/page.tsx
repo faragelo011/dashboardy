@@ -5,6 +5,12 @@ import { useRouter } from "next/navigation";
 
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
+const fieldBoxyClass =
+  "w-full bg-[#0B0F15] border border-white/10 px-4 py-3 text-[#F0F2F5] text-sm focus:outline-none focus:border-[#D4AF37]/50 focus:bg-[#12161E] focus:ring-1 focus:ring-[#D4AF37]/30 transition-all rounded-sm placeholder:text-[#5C6A7A] disabled:opacity-50 disabled:cursor-not-allowed font-light tracking-wide";
+
+const primaryButtonClass =
+  "w-full bg-[#D4AF37] text-black px-6 py-4 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center mt-4";
+
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -81,31 +87,40 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-surface-app text-ink">
-      <div className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6 py-10">
-        <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-            Access control
+    <main className="min-h-dvh bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37] flex items-center justify-center relative overflow-hidden">
+      
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 -mr-40 -mt-20 w-[600px] h-[600px] bg-[#D4AF37] opacity-[0.02] blur-[100px] pointer-events-none rounded-full" />
+      <div className="absolute bottom-0 left-0 -ml-40 -mb-20 w-[400px] h-[400px] bg-[#FBE398] opacity-[0.015] blur-[100px] pointer-events-none rounded-full" />
+
+      <div className="w-full max-w-md px-6 py-12 relative z-10 animate-fade-in-up">
+        
+        <header className="mb-10 text-center flex flex-col items-center">
+          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37] mb-4">
+            Authorized Personnel Only
           </p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-ink-strong">
-            Sign in
+          <h1 className="text-4xl sm:text-5xl font-serif text-white tracking-tight font-light mb-4">
+            Sign In
           </h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Use your workspace account to continue.
+          <p className="text-sm text-[#A0AAB2] font-light max-w-[35ch] mx-auto leading-relaxed">
+            Please authenticate using your designated corporate workspace credentials.
           </p>
-        </div>
+        </header>
 
         <form
-          className="flex flex-col gap-4"
+          className="flex flex-col gap-6 bg-[#0B0F15] p-8 sm:p-10 border border-white/5 shadow-2xl relative"
           onSubmit={onSubmit}
           aria-busy={loading}
         >
-          <div className="flex flex-col gap-1.5">
+          {/* Form decorative accent */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-px bg-gradient-to-r from-transparent via-[#D4AF37]/50 to-transparent" />
+
+          <div className="flex flex-col gap-2 relative group/input">
             <label
               htmlFor="email"
-              className="text-sm font-medium text-ink"
+              className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors"
             >
-              Email
+              Identity (Email)
             </label>
             <input
               id="email"
@@ -114,18 +129,18 @@ export default function SignInPage() {
               required
               autoComplete="email"
               inputMode="email"
-              className="h-11 w-full rounded-xl border border-border-0 bg-surface-1 px-3 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-faint focus:border-focus focus:ring-4 focus:ring-focus-ring/30 disabled:cursor-not-allowed disabled:bg-surface-5"
-              placeholder="name@company.com"
+              className={fieldBoxyClass}
+              placeholder="e.g. executive@company.com"
               value={email}
               onChange={(ev) => setEmail(ev.target.value)}
               disabled={loading}
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2 relative group/input">
             <label
               htmlFor="password"
-              className="text-sm font-medium text-ink"
+              className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors"
             >
               Password
             </label>
@@ -135,7 +150,8 @@ export default function SignInPage() {
               type="password"
               required
               autoComplete="current-password"
-              className="h-11 w-full rounded-xl border border-border-0 bg-surface-1 px-3 text-sm text-ink shadow-sm outline-none transition-colors placeholder:text-ink-faint focus:border-focus focus:ring-4 focus:ring-focus-ring/30 disabled:cursor-not-allowed disabled:bg-surface-5"
+              className={`${fieldBoxyClass} placeholder:font-sans`}
+              placeholder="Enter your private password..."
               value={password}
               onChange={(ev) => setPassword(ev.target.value)}
               disabled={loading}
@@ -150,8 +166,9 @@ export default function SignInPage() {
               role="alert"
               aria-live="assertive"
               aria-atomic="true"
-              className="rounded-xl border border-danger-border bg-danger-soft-strong px-3 py-2 text-sm text-danger-ink-strong"
+              className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-[12px] text-[#A0AAB2] font-mono leading-relaxed"
             >
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[#EF4444] mb-1 font-semibold">Verification Failed</div>
               {error}
             </div>
           ) : null}
@@ -159,15 +176,14 @@ export default function SignInPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-1 inline-flex h-11 items-center justify-center rounded-xl bg-accent px-4 text-sm font-semibold text-surface-3 shadow-sm transition-colors hover:bg-accent-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:bg-border-3"
+            className={primaryButtonClass}
           >
-            {loading ? "Signing in…" : "Sign in"}
+            {loading ? "Authenticating..." : "Log In"}
           </button>
         </form>
 
-        <p className="mt-6 text-xs leading-relaxed text-ink-muted">
-          By continuing, you agree to the security policies of your
-          organization.
+        <p className="mt-12 text-center text-[10px] uppercase tracking-[0.1em] text-[#5C6A7A]">
+          Security Policy: Zero-Trust Ecosystem
         </p>
       </div>
     </main>

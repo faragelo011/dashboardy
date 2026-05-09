@@ -21,6 +21,8 @@ def presentation_class_ttl_seconds(
         raw = s.QUERY_ENGINE_CACHE_TTL_KPI_SECONDS
     elif pc == PresentationClass.chart:
         raw = s.QUERY_ENGINE_CACHE_TTL_CHART_SECONDS
-    else:
+    elif pc == PresentationClass.table:
         raw = s.QUERY_ENGINE_CACHE_TTL_TABLE_SECONDS
+    else:
+        raise ValueError(f"Unknown PresentationClass: {pc}")
     return min(raw, s.QUERY_ENGINE_CACHE_GLOBAL_TTL_CEILING_SECONDS)

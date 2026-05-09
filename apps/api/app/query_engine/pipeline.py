@@ -7,6 +7,7 @@ Queue overload → **429** ``warehouse_busy``.
 
 from __future__ import annotations
 
+import logging
 import time
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -55,6 +56,8 @@ from app.query_engine.schemas import (
 from app.query_engine.snowflake_run import execute_snowflake_select
 from app.tenancy.permissions import can_execute_workspace_query
 from app.tenancy.resolver import ResolvedTenancy
+
+_logger = logging.getLogger(__name__)
 
 _STRUCTURAL_SQL_HASH = canonical_sql_sha256("__query_engine_structural_rejection__")
 
@@ -512,6 +515,27 @@ async def execute_workspace_query(
                 "message": "Warehouse execution capacity is saturated.",
             },
         )
+    except Exception as exc:
+        _logger.exception("snowflake_runner_unexpected_failure")
+        await _audit(
+            connection_id=connection_row.id,
+            sql_hash=sql_hash,
+            bound_hash=bound_hash,
+            row_count=0,
+            bytes_scanned=None,
+            exec_status=ExecutionStatus.warehouse_error,
+            error_code="warehouse_query_failed",
+            cache_hit=False,
+            audit_sq_id=saved_question_id,
+            audit_dash_id=dashboard_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error_code": "warehouse_query_failed",
+                "message": "An unexpected error occurred during query execution.",
+            },
+        ) from exc
 
     resolved_meta_code = (
         None
@@ -539,26 +563,29 @@ async def execute_workspace_query(
         and sf_out.status == ExecutionStatus.ok
         and presentation_class is not None
     ):
-        ttl_secs = presentation_class_ttl_seconds(presentation_class, settings=cfg)
-        expires_at = datetime.now(tz=UTC) + timedelta(seconds=ttl_secs)
-        blob = _snowflake_payload_for_cache(
-            column_names=sf_out.column_names,
-            column_types=sf_out.column_types,
-            rows=sf_out.rows,
-            truncated=sf_out.truncated,
-        )
-        await upsert_entry(
-            session,
-            CacheEntryUpsertDTO(
-                tenant_id=tenancy.tenant_id,
-                connection_id=connection_row.id,
-                secret_version=connection_row.secret_version,
-                cache_key=cache_key_digest,
-                payload=blob,
-                expires_at=expires_at,
-                presentation_class=presentation_class,
-            ),
-        )
+        try:
+            ttl_secs = presentation_class_ttl_seconds(presentation_class, settings=cfg)
+            expires_at = datetime.now(tz=UTC) + timedelta(seconds=ttl_secs)
+            blob = _snowflake_payload_for_cache(
+                column_names=sf_out.column_names,
+                column_types=sf_out.column_types,
+                rows=sf_out.rows,
+                truncated=sf_out.truncated,
+            )
+            await upsert_entry(
+                session,
+                CacheEntryUpsertDTO(
+                    tenant_id=tenancy.tenant_id,
+                    connection_id=connection_row.id,
+                    secret_version=connection_row.secret_version,
+                    cache_key=cache_key_digest,
+                    payload=blob,
+                    expires_at=expires_at,
+                    presentation_class=presentation_class,
+                ),
+            )
+        except Exception:
+            _logger.exception("cache_write_failed")
 
     pairs = zip(sf_out.column_names, sf_out.column_types, strict=True)
     columns_model = [

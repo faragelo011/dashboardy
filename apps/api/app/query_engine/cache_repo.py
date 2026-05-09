@@ -63,7 +63,6 @@ async def upsert_entry(session: AsyncSession, dto: CacheEntryUpsertDTO) -> UUID:
             "payload": ins.excluded.payload,
             "expires_at": ins.excluded.expires_at,
             "presentation_class": ins.excluded.presentation_class,
-            "created_at": func.now(),
         },
     ).returning(CacheEntry.id)
     pk = await session.scalar(stmt)

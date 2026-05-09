@@ -18,7 +18,7 @@ Immutable line of accountability for every terminal query attempt (cached or liv
 | `tenant_id` | UUID NOT NULL | FK → `tenants.id`; align with app tenancy resolution |
 | `workspace_id` | UUID NOT NULL | FK → `workspaces.id` |
 | `user_id` | UUID NOT NULL | Supabase Auth user id |
-| `connection_id` | UUID NOT NULL | FK → `data_connections.id` for tenant’s single connection |
+| `connection_id` | UUID NULL | FK → `data_connections.id` for tenant’s connection (nullable via 0013 for pre-connection failures) |
 | `saved_question_id` | UUID NULL | FK deferred until `saved_questions` exists — nullable + no FK constraint in F4 **or** FK with migration in F5 |
 | `dashboard_id` | UUID NULL | Optional FK when widget/dashboard assets exist (F6) |
 | `sql_hash` | CHAR(64) NOT NULL | Hex SHA-256 of canonicalized SQL text |

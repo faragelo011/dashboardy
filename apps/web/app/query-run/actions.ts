@@ -18,6 +18,7 @@ export type RunQueryFormState =
         truncated: boolean;
         row_count: number;
         cache_hit: boolean;
+        error_code?: string;
       };
       rawJson: string;
     }
@@ -75,6 +76,7 @@ export async function runAdhocQueryAction(
         truncated: m.truncated,
         row_count: m.row_count,
         cache_hit: m.cache_hit,
+        error_code: m.error_code ?? undefined,
       },
       rawJson: JSON.stringify(payload, null, 2),
     };

@@ -70,22 +70,23 @@ async def acquire_execution_slot() -> AsyncIterator[None]:
             )
         rt.waiting_blocked += 1
 
+    acquired = False
     try:
         await asyncio.wait_for(
             rt.exec_sem.acquire(), timeout=rt.slot_wait_seconds
         )
+        acquired = True
     except TimeoutError as exc:
-        async with rt.wait_lock:
-            rt.waiting_blocked -= 1
         raise QueueTimeoutError(
             "timed out waiting for a query execution slot "
             f"({int(rt.slot_wait_seconds)}s)"
         ) from exc
-
-    async with rt.wait_lock:
-        rt.waiting_blocked -= 1
+    finally:
+        async with rt.wait_lock:
+            rt.waiting_blocked -= 1
 
     try:
         yield
     finally:
-        rt.exec_sem.release()
+        if acquired:
+            rt.exec_sem.release()

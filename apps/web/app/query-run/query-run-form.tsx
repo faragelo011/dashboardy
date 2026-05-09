@@ -22,7 +22,14 @@ export function QueryRunForm() {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
           startTransition(() => {
-            void runAdhocQueryAction(null, fd).then(setState);
+            void runAdhocQueryAction(null, fd)
+              .then(setState)
+              .catch((err) => {
+                setState({
+                  ok: false,
+                  message: err instanceof Error ? err.message : "Transport or runtime failure.",
+                });
+              });
           });
         }}
       >

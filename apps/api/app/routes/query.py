@@ -28,7 +28,7 @@ async def post_workspace_query_execute(
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> QueryExecuteSuccessResponse:
-    actor = await connections_routes._require_active_membership(
+    actor = await connections_routes.require_active_membership(
         session=session,
         user_id=auth.user_id,
         workspace_id=workspace_id,

@@ -212,7 +212,7 @@ Task T022 apps/api/tests/unit/test_query_parser.py
 3. **STOP**: demo MVP (`spec SC‑001`/`SC‑006` materially satisfied for ad hoc lane).
 4. Only then tackle **Phase 4** then **Phase 5** sequentially because both mutate `pipeline.py`.
 
-### Ordering tips forjunior/smaller LLMs
+### Ordering tips for junior/smaller LLMs
 
 - Never edit **`pipeline.py`** without running **`ruff`** + **`pytest`** subset touched.
 - Prefer **thin** `routes/query.py`; push logic into `query_engine/` modules (+ helps tests).

@@ -23,6 +23,25 @@ export type MeResponse = {
 };
 
 export const getProtectedMe = cache(async (): Promise<MeResponse> => {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim()
+  ) {
+    console.error(
+      "[dashboardy] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY — server cannot authenticate requests.",
+    );
+    redirect("/sign-in");
+  }
+  const apiBaseCandidate = (
+    process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_PUBLIC_URL
+  )?.trim();
+  if (!apiBaseCandidate) {
+    console.error(
+      "[dashboardy] Missing API_PUBLIC_URL or NEXT_PUBLIC_API_PUBLIC_URL — server cannot fetch /me.",
+    );
+    redirect("/sign-in");
+  }
+
   const supabase = await createServerSupabase();
   const {
     data: { session },
@@ -30,7 +49,15 @@ export const getProtectedMe = cache(async (): Promise<MeResponse> => {
   if (!session?.access_token) {
     redirect("/sign-in");
   }
-  const res = await fetchMe(session.access_token);
+
+  let res: Response;
+  try {
+    res = await fetchMe(session.access_token);
+  } catch (err) {
+    console.error("[dashboardy] fetch GET /me failed before HTTP response:", err);
+    redirect("/sign-in");
+  }
+
   if (res.status === 401) {
     redirect("/sign-in");
   }
@@ -59,7 +86,26 @@ export const getProtectedMe = cache(async (): Promise<MeResponse> => {
   }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`GET /me failed: ${res.status} ${body}`);
+    console.error("[dashboardy] GET /me failed:", res.status, body);
+    redirect("/sign-in");
   }
-  return (await res.json()) as MeResponse;
+
+  let me: MeResponse;
+  try {
+    me = (await res.json()) as MeResponse;
+  } catch (err) {
+    console.error("[dashboardy] GET /me returned non-JSON:", err);
+    redirect("/sign-in");
+  }
+
+  if (
+    !me?.current_workspace?.workspace_id ||
+    typeof me.current_workspace.role !== "string" ||
+    !me?.user?.id
+  ) {
+    console.error("[dashboardy] GET /me returned an unexpected payload shape.");
+    redirect("/sign-in");
+  }
+
+  return me;
 });

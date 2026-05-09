@@ -14,7 +14,7 @@
 cd apps/api && uv run alembic upgrade head
 ```
 
-Expect new tables: `query_audit_logs`, `cache_entries` (after implementation lands).
+Migrations create these tables: `query_audit_logs`, `cache_entries`.
 
 ## Run API
 
@@ -54,7 +54,7 @@ Shared TypeScript shapes for the success envelope live in `packages/types/src/qu
 
 ## Golden parser tests
 
-- Add SQL fixtures under `apps/api/tests/...` (allow + deny folders) asserting **zero** Snowflake connector calls when policy rejects.
+- Add SQL fixtures under `apps/api/tests/fixtures/query_sql/allowed` and `apps/api/tests/fixtures/query_sql/denied` asserting **zero** Snowflake connector calls when policy rejects.
 
 ## Concurrency sanity
 

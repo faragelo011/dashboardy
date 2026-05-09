@@ -28,9 +28,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.alter_column(
-        "query_audit_logs",
-        "connection_id",
-        existing_type=postgresql.UUID(as_uuid=True),
-        nullable=False,
+    raise NotImplementedError(
+        "Irreversible: connection_id may contain NULLs after upgrade. "
+        "Backfill or delete NULL rows manually before re-attempting."
     )
