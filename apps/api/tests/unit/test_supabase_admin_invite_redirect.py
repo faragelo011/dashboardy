@@ -61,4 +61,3 @@ async def test_provision_sets_app_metadata_and_password(
     assert payload["password"] == "TempPassw0rd!"
     assert payload["email_confirm"] is True
     assert payload["app_metadata"] == {"must_reset_password": True}
-

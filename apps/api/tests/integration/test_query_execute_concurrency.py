@@ -131,9 +131,13 @@ async def test_slot_wait_timeout_returns_429_warehouse_busy(
     monkeypatch.setenv("QUERY_ENGINE_CONCURRENT_SNOWFLAKE_EXECUTIONS", "2")
     monkeypatch.setenv("QUERY_ENGINE_EXECUTION_SLOT_WAIT_SECONDS", "1")
 
-    user_id, tenant_id, workspace_id, membership_id, connection_id = (
-        await _seed_analyst_workspace_with_active_connection()
-    )
+    (
+        user_id,
+        tenant_id,
+        workspace_id,
+        membership_id,
+        connection_id,
+    ) = await _seed_analyst_workspace_with_active_connection()
     secret = {
         "account": "acct",
         "username": "user",
@@ -143,9 +147,7 @@ async def test_slot_wait_timeout_returns_429_warehouse_busy(
     conn_row = SimpleNamespace(id=connection_id, secret_version=0)
 
     class _StubConnectionService:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
+        async def resolve_active_execution_credentials(self, *, session, tenant_id):  # noqa: ARG002
             return conn_row, secret
 
     service = _StubConnectionService()
@@ -189,9 +191,13 @@ async def test_wait_buffer_full_returns_429_warehouse_busy(
     monkeypatch.setenv("QUERY_ENGINE_WAITING_REQUESTS_QUEUE_DEPTH", "1")
     monkeypatch.setenv("QUERY_ENGINE_EXECUTION_SLOT_WAIT_SECONDS", "5")
 
-    user_id, tenant_id, workspace_id, membership_id, connection_id = (
-        await _seed_analyst_workspace_with_active_connection()
-    )
+    (
+        user_id,
+        tenant_id,
+        workspace_id,
+        membership_id,
+        connection_id,
+    ) = await _seed_analyst_workspace_with_active_connection()
     secret = {
         "account": "acct",
         "username": "user",
@@ -201,9 +207,7 @@ async def test_wait_buffer_full_returns_429_warehouse_busy(
     conn_row = SimpleNamespace(id=connection_id, secret_version=0)
 
     class _StubConnectionService:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
+        async def resolve_active_execution_credentials(self, *, session, tenant_id):  # noqa: ARG002
             return conn_row, secret
 
     service = _StubConnectionService()

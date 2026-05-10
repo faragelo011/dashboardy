@@ -191,9 +191,7 @@ class ConnectionService:
                 )
             except DependencyUnavailableError as exc:
                 audit_action = (
-                    DbAuditAction.create
-                    if created
-                    else DbAuditAction.metadata_update
+                    DbAuditAction.create if created else DbAuditAction.metadata_update
                 )
                 await self._repository.write_management_audit(
                     session,
@@ -446,10 +444,13 @@ class ConnectionService:
         *,
         session,
         tenant_id: UUID,
-    ) -> tuple[
-        DataConnection,
-        dict[str, str],
-    ] | None:
+    ) -> (
+        tuple[
+            DataConnection,
+            dict[str, str],
+        ]
+        | None
+    ):
         """Snowflake Vault material for read-only analytic execution paths.
 
         Reuses Vault HTTP read semantics already implemented for connection testing.
@@ -484,8 +485,22 @@ class ConnectionService:
             if not (account and username and password and role):
                 raise ConnectionValidationError("Stored credentials are incomplete.")
         # Downstream callers must avoid logging credential payloads / raw JWT.
+        ALLOWED_KEYS = {
+            "private_key",
+            "private_key_pem",
+            "private_key_passphrase",
+            "username",
+            "password",
+            "account",
+            "role",
+            "warehouse",
+            "database",
+            "schema",
+        }
         normalized: dict[str, str] = {
-            k: str(v) for k, v in secret.items() if v is not None and k != "private_key_passphrase"
+            k: str(v)
+            for k, v in secret.items()
+            if v is not None and k in ALLOWED_KEYS and k != "private_key_passphrase"
         }
         if pk_pp is not None:
             normalized["private_key_passphrase"] = pk_pp

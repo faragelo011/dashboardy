@@ -290,6 +290,7 @@ async def test_widget_mode_second_call_is_cache_hit(
         return ("SELECT 1", {})
 
     monkeypatch.setattr("app.query_engine.pipeline.resolve_modal_sql", _resolve)
+
     async def _sf(*_a, **_k):
         return _snowflake_ok()
 

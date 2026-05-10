@@ -117,15 +117,15 @@ export default async function MembersPage() {
           <dl className="flex gap-16 shrink-0 pt-8 lg:pt-0">
             <div className="relative group">
               <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-2">Admins</dt>
-              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{Math.floor(adminCount).toString().padStart(2, '0')}</dd>
+              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{adminCount.toString().padStart(2, '0')}</dd>
             </div>
             <div className="relative group">
               <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-2">Analysts</dt>
-              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{Math.floor(analystCount).toString().padStart(2, '0')}</dd>
+              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{analystCount.toString().padStart(2, '0')}</dd>
             </div>
             <div className="relative group">
               <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-2">Viewers</dt>
-              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{Math.floor(viewerCount).toString().padStart(2, '0')}</dd>
+              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{viewerCount.toString().padStart(2, '0')}</dd>
             </div>
           </dl>
         </header>
@@ -148,7 +148,7 @@ export default async function MembersPage() {
 
           <aside className="relative py-8 lg:py-12 px-2 flex flex-col justify-center">
             {/* Minimalist vertical divider for large screens */}
-            <div className="hidden lg:block absolute left-[-48px] top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+            <div aria-hidden="true" className="hidden lg:block absolute left-[-48px] top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
             
             <h2 className="text-2xl font-serif font-light text-white mb-10">Directory Overview</h2>
             <dl className="space-y-6">
@@ -329,14 +329,14 @@ export default async function MembersPage() {
                     <label className="block">
                       <span className="block text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] mb-3">Extraction Ability</span>
                       <div className="flex h-[36px] items-center gap-4">
-                        <label className="relative flex cursor-pointer items-center p-0">
+                        <label className="relative flex cursor-pointer items-center p-0 gap-4">
                           <input
                             name="can_export"
                             type="checkbox"
                             className="peer cursor-pointer appearance-none rounded-sm border border-white/30 w-4 h-4 checked:bg-[#D4AF37] checked:border-[#D4AF37] transition-all"
                           />
+                          <span className="text-sm font-light text-[#A0AAB2]">Authorize download</span>
                         </label>
-                        <span className="text-sm font-light text-[#A0AAB2]">Authorize download</span>
                       </div>
                     </label>
                   </div>
@@ -364,7 +364,7 @@ export default async function MembersPage() {
             </div>
 
             <div className="pt-8 lg:pt-14 relative">
-              <div className="hidden lg:block absolute left-[-2rem] top-14 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+              <div aria-hidden="true" className="hidden lg:block absolute left-[-2rem] top-14 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
               
               <div className="hidden grid-cols-[minmax(0,1.2fr)_100px_90px_auto] gap-4 mb-4 pb-4 border-b border-white/5 text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] md:grid">
                 <div>Asset Signature</div>

@@ -34,4 +34,3 @@ def test_asset_grant_delete_204_admin_deletes_grant(
         )
     assert after.status_code == 200
     assert all(g["id"] != str(seeded.existing_grant_id) for g in after.json()["grants"])
-

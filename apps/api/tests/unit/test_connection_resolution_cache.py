@@ -14,6 +14,7 @@ async def test_resolver_cache_invalidation_by_secret_version():
     connection_id = uuid4()
 
     now = datetime(2026, 1, 1, tzinfo=UTC)
+
     def clock() -> datetime:
         return now
 
@@ -60,4 +61,3 @@ async def test_resolver_cache_invalidation_by_secret_version():
         assert r3.secret_version == 2
     finally:
         repo.get_connection_for_tenant = orig  # type: ignore[assignment]
-

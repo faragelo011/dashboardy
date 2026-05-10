@@ -124,4 +124,3 @@ def test_failed_rotation_test_does_not_change_effective_secret_version(
         # Effective secret_version must remain unchanged.
         assert body2["connection"]["secret_version"] == 1
         assert body2["connection"]["status"] == "test_failed"
-

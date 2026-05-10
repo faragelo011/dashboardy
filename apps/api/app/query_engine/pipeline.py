@@ -588,9 +588,7 @@ async def execute_workspace_query(
             _logger.exception("cache_write_failed")
 
     pairs = zip(sf_out.column_names, sf_out.column_types, strict=True)
-    columns_model = [
-        ColumnDescriptor(name=n, type=t) for n, t in pairs
-    ]
+    columns_model = [ColumnDescriptor(name=n, type=t) for n, t in pairs]
 
     resp_meta = QueryExecuteMeta(
         status=sf_out.status,

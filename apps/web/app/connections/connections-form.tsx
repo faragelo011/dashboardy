@@ -118,7 +118,7 @@ export function ConnectionsForm({
             Skip these fields to retain existing credentials. Authenticate via standard password OR an encrypted private key PEM (key-pair). Do not populate both simultaneously.
           </p>
           {error && (
-            <div className="mb-6 border border-red-500/30 bg-red-500/5 px-4 py-3 text-red-400 text-xs tracking-wide">
+            <div role="alert" aria-live="assertive" className="mb-6 border border-red-500/30 bg-red-500/5 px-4 py-3 text-red-400 text-xs tracking-wide">
               {error}
             </div>
           )}
@@ -206,11 +206,12 @@ export function ConnectionsForm({
                 PEM Passphrase <span className="opacity-50">(If Encrypted)</span>
               </span>
               <input
-                name="private_key_passphrase"
+                name={password.length > 0 ? undefined : "private_key_passphrase"}
                 type="password"
                 className={`${fieldClass} placeholder:font-sans`}
                 placeholder="Decryption key..."
                 autoComplete="new-password"
+                disabled={password.length > 0}
               />
             </label>
           </div>

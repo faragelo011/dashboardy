@@ -111,9 +111,7 @@ def upgrade() -> None:
         sa.Column("cache_key", sa.String(length=128), nullable=False),
         sa.Column("payload", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
-        sa.Column(
-            "presentation_class", cache_presentation_class, nullable=False
-        ),
+        sa.Column("presentation_class", cache_presentation_class, nullable=False),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

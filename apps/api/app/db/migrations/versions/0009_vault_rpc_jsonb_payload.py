@@ -98,7 +98,9 @@ def _has_vault_decrypted_secrets(bind: object) -> bool:
 def _grant_service_role_execute(bind: object) -> bool:
     return bool(
         bind.execute(
-            sa.text("SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role')")
+            sa.text(
+                "SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role')"
+            )
         ).scalar()
     )
 
@@ -155,6 +157,4 @@ def downgrade() -> None:
     op.execute(
         "DROP FUNCTION IF EXISTS public.dashboardy_vault_read_secret_text(jsonb);"
     )
-    op.execute(
-        "DROP FUNCTION IF EXISTS public.dashboardy_vault_create_secret(jsonb);"
-    )
+    op.execute("DROP FUNCTION IF EXISTS public.dashboardy_vault_create_secret(jsonb);")

@@ -72,9 +72,7 @@ async def acquire_execution_slot() -> AsyncIterator[None]:
 
     acquired = False
     try:
-        await asyncio.wait_for(
-            rt.exec_sem.acquire(), timeout=rt.slot_wait_seconds
-        )
+        await asyncio.wait_for(rt.exec_sem.acquire(), timeout=rt.slot_wait_seconds)
         acquired = True
     except TimeoutError as exc:
         raise QueueTimeoutError(

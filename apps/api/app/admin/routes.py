@@ -307,4 +307,3 @@ async def delete_external_asset_grant(
 
     await session.commit()
     return None
-

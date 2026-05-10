@@ -221,4 +221,3 @@ async def update_member(
         raise NotFound(error_code="not_found", message="Member not found.")
 
     return _to_member_schema(membership)
-

@@ -81,12 +81,8 @@ def test_connection_mutations_require_matching_tenant(
 ) -> None:
     async def run() -> None:
         try:
-            tenant_a = await seed_workspace_with_actor(
-                actor_role=MembershipRole.admin
-            )
-            tenant_b = await seed_workspace_with_actor(
-                actor_role=MembershipRole.admin
-            )
+            tenant_a = await seed_workspace_with_actor(actor_role=MembershipRole.admin)
+            tenant_b = await seed_workspace_with_actor(actor_role=MembershipRole.admin)
             maker = get_async_session_maker()
             async with maker() as session:
                 b_conn = await repository.create_connection(

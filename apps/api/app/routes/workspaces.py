@@ -71,4 +71,3 @@ async def switch_workspace(
             "message": "Workspace access is required.",
         },
     )
-

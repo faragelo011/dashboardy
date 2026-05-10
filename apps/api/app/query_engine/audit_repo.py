@@ -2,6 +2,7 @@
 
 Workers may die before flush; still try to flush one audit row before responding.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

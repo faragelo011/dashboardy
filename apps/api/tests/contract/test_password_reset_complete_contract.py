@@ -23,9 +23,7 @@ class _FakeSupabaseAdmin:
 
 def test_password_reset_complete_204(monkeypatch: pytest.MonkeyPatch):
     fake = _FakeSupabaseAdmin()
-    app.dependency_overrides[
-        get_supabase_admin_provider
-    ] = lambda: lambda: fake
+    app.dependency_overrides[get_supabase_admin_provider] = lambda: lambda: fake
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
         lambda _t: {
@@ -78,4 +76,3 @@ def test_password_reset_complete_503_on_supabase_error(monkeypatch: pytest.Monke
             get_supabase_admin_provider,
             None,
         )
-

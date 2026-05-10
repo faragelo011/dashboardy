@@ -204,11 +204,7 @@ def test_put_credentials_pem_and_passphrase_markers_absent_from_captured_logs(
     _tenant_id, workspace_id = asyncio.run(_seed_admin(user_id=uid))
     pem_marker = f"dc-log-probe-pem-{uuid.uuid4().hex}"
     passphrase_marker = f"dc-log-probe-pp-{uuid.uuid4().hex}"
-    faux_pem = (
-        "-----BEGIN PRIVATE KEY-----\n"
-        f"{pem_marker}\n"
-        "-----END PRIVATE KEY-----"
-    )
+    faux_pem = f"-----BEGIN PRIVATE KEY-----\n{pem_marker}\n-----END PRIVATE KEY-----"
 
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",

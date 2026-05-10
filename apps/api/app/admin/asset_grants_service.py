@@ -174,4 +174,3 @@ async def delete_grant(
     )
     if not deleted:
         raise NotFound(error_code="not_found", message="Grant not found.")
-

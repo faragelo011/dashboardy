@@ -23,8 +23,8 @@ def test_member_patch_200_admin_updates_role_and_deactivates(
 ):
     seeded = asyncio.run(seed_workspace_with_actor(actor_role=MembershipRole.admin))
     invited_user_id = uuid.uuid4()
-    app.dependency_overrides[get_supabase_admin_provider] = (
-        lambda: lambda: FakeSupabaseAdmin(invited_user_id)
+    app.dependency_overrides[get_supabase_admin_provider] = lambda: (
+        lambda: FakeSupabaseAdmin(invited_user_id)
     )
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
@@ -83,4 +83,3 @@ def test_member_patch_403_non_admin_denied(
         )
     assert r.status_code == 403
     assert r.json()["error_code"] == "authz_denied"
-

@@ -279,4 +279,3 @@ def test_external_client_dashboard_grant_wrapper_allows_only_matching_dashboard(
     )
     assert denied.allowed is False
     assert denied.reason == PermissionReason.grant_required
-

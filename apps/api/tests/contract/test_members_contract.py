@@ -66,8 +66,8 @@ def test_members_post_201_admin_invite_idempotent_on_duplicate_email(
 ):
     seeded = asyncio.run(seed_workspace_with_actor(actor_role=MembershipRole.admin))
     invited_user_id = uuid.uuid4()
-    app.dependency_overrides[get_supabase_admin_provider] = (
-        lambda: lambda: FakeSupabaseAdmin(invited_user_id)
+    app.dependency_overrides[get_supabase_admin_provider] = lambda: (
+        lambda: FakeSupabaseAdmin(invited_user_id)
     )
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
@@ -97,4 +97,3 @@ def test_members_post_201_admin_invite_idempotent_on_duplicate_email(
         assert r1.json()["user_id"] == str(invited_user_id)
     finally:
         app.dependency_overrides.pop(get_supabase_admin_provider, None)
-

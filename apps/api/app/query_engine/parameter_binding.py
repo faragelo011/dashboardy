@@ -15,7 +15,7 @@ from app.query_engine.hashing import (
 )
 from app.query_engine.parser import parse_and_validate
 
-_PYFORMAT = re.compile(r'%\(([A-Za-z][A-Za-z0-9_]*)\)s')
+_PYFORMAT = re.compile(r"%\(([A-Za-z][A-Za-z0-9_]*)\)s")
 
 _BIND_MARKER = "__DASHBOARDY_PYBIND_"
 
@@ -52,7 +52,7 @@ _UNMASK_BINDING = re.compile(
 
 
 def unmask_pyformat_bindings(canonical_masked: str) -> str:
-    return _UNMASK_BINDING.sub(lambda m: f'%({m.group("name")})s', canonical_masked)
+    return _UNMASK_BINDING.sub(lambda m: f"%({m.group('name')})s", canonical_masked)
 
 
 def _required_binding_names(exec_sql: str) -> set[str]:

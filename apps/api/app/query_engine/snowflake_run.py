@@ -192,9 +192,11 @@ def _blocking_execute_select(
         category = categorize_snowflake_failure(exc)
         cls_name = exc.__class__.__name__
         is_timeoutish = cls_name in ("OperationalError", "TimeoutError")
-        stat = ExecutionStatus.timeout if (
-            is_timeoutish or category.value == "timeout"
-        ) else ExecutionStatus.warehouse_error
+        stat = (
+            ExecutionStatus.timeout
+            if (is_timeoutish or category.value == "timeout")
+            else ExecutionStatus.warehouse_error
+        )
 
         cols: list[str] = []
         if cursor is not None and cursor.description:

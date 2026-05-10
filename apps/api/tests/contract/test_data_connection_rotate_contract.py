@@ -129,4 +129,3 @@ def test_rotate_200_shape(monkeypatch: pytest.MonkeyPatch, use_live_postgres: No
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "pending_test"
-

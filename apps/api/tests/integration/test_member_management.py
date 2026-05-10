@@ -160,4 +160,3 @@ def test_inactive_member_cannot_manage_members(
         )
     assert r.status_code == 403
     assert r.json()["error_code"] == "inactive_membership"
-
