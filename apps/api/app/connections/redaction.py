@@ -19,32 +19,51 @@ _PASSWORD_KEYS = frozenset(
     }
 )
 
-_VAULT_SECRET_ID = re.compile(
+_SENSITIVE_KEY_PATTERN = (
+    r"password|private_key|privatekey|private_key_pem|private_key_passphrase|"
+    r"token|access_token|refresh_token|secret"
+)
+_VAULT_KEY_PATTERN = r"vault_secret_id|pending_vault_secret_id"
+
+_ASSIGNMENT_PREFIX = (
     r"(?P<prekey>[\"']?)"
-    r"(?P<key>vault_secret_id|pending_vault_secret_id)\b"
+    r"(?P<key>{key_pattern})\b"
     r"(?P<postkey>[\"']?)"
     r"(?P<pre_d>\s*)"
     r"(?P<delim>[:=])"
     r"(?P<post_d>\s*)"
-    r"(?P<open_q>[\"']?)"
-    r"(?P<token>[^,\s}\"']+)"
-    r"(?P<close_q>[\"']?)",
+)
+_QUOTED_REDACT_REPL = (
+    r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
+    r"\g<open_q><redacted>\g<open_q>"
+)
+_UNQUOTED_REDACT_REPL = (
+    r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
+    r"\g<open_q><redacted>\g<close_q>"
+)
+
+_QUOTED_SENSITIVE_ASSIGNMENT = re.compile(
+    _ASSIGNMENT_PREFIX.format(key_pattern=_SENSITIVE_KEY_PATTERN)
+    + r"(?P<open_q>['\"])(?P<token>.*?)(?P=open_q)",
+    re.IGNORECASE,
+)
+_UNQUOTED_SENSITIVE_ASSIGNMENT = re.compile(
+    _ASSIGNMENT_PREFIX.format(key_pattern=_SENSITIVE_KEY_PATTERN)
+    + r"(?P<open_q>)(?P<token>[^,\s\"']+)(?P<close_q>)",
+    re.IGNORECASE,
+)
+_QUOTED_VAULT_SECRET_ID = re.compile(
+    _ASSIGNMENT_PREFIX.format(key_pattern=_VAULT_KEY_PATTERN)
+    + r"(?P<open_q>['\"])(?P<token>.*?)(?P=open_q)",
+    re.IGNORECASE,
+)
+_UNQUOTED_VAULT_SECRET_ID = re.compile(
+    _ASSIGNMENT_PREFIX.format(key_pattern=_VAULT_KEY_PATTERN)
+    + r"(?P<open_q>)(?P<token>[^,\s\"']+)(?P<close_q>)",
     re.IGNORECASE,
 )
 
 _SNOWFLAKE_CONN_HINT = re.compile(r"snowflake://[^\s'\"]+", re.IGNORECASE)
-_SENSITIVE_ASSIGNMENT = re.compile(
-    r"(?P<prekey>[\"']?)"
-    r"(?P<key>password|private_key|privatekey|private_key_pem|private_key_passphrase|token|access_token|refresh_token|secret)\b"
-    r"(?P<postkey>[\"']?)"
-    r"(?P<pre_d>\s*)"
-    r"(?P<delim>[:=])"
-    r"(?P<post_d>\s*)"
-    r"(?P<open_q>[\"']?)"
-    r"(?P<token>[^,\s}\"']+)"
-    r"(?P<close_q>[\"']?)",
-    re.IGNORECASE,
-)
 _PEM_BLOCK = re.compile(
     r"-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----",
     re.IGNORECASE | re.DOTALL,
@@ -54,16 +73,10 @@ _PEM_BLOCK = re.compile(
 def redact_string(value: str) -> str:
     out = value
     out = _PEM_BLOCK.sub("<redacted-private-key>", out)
-    out = _SENSITIVE_ASSIGNMENT.sub(
-        r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
-        r"\g<open_q><redacted>\g<close_q>",
-        out,
-    )
-    out = _VAULT_SECRET_ID.sub(
-        r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
-        r"\g<open_q><redacted>\g<close_q>",
-        out,
-    )
+    out = _QUOTED_SENSITIVE_ASSIGNMENT.sub(_QUOTED_REDACT_REPL, out)
+    out = _UNQUOTED_SENSITIVE_ASSIGNMENT.sub(_UNQUOTED_REDACT_REPL, out)
+    out = _QUOTED_VAULT_SECRET_ID.sub(_QUOTED_REDACT_REPL, out)
+    out = _UNQUOTED_VAULT_SECRET_ID.sub(_UNQUOTED_REDACT_REPL, out)
     out = _SNOWFLAKE_CONN_HINT.sub("snowflake://<redacted>", out)
     return out
 

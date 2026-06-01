@@ -167,7 +167,11 @@ def test_put_connection_400_invalid_credential_auth_shape(
     assert r.status_code == 400
     body = r.json()
     assert body["error_code"] == "validation_error"
-    assert "secret" not in str(body).lower()
+    body_text = str(body)
+    for key in ("password", "private_key_pem", "private_key_passphrase"):
+        value = credentials.get(key)
+        if value:
+            assert value not in body_text, f"response leaked credential field {key!r}"
 
 
 def test_put_connection_503_when_vault_missing_config(

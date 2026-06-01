@@ -50,6 +50,13 @@ def test_redact_string_password_assignment() -> None:
     assert '"password":"<redacted>"' in out
 
 
+def test_redact_string_quoted_passphrase_with_spaces() -> None:
+    out = redact_string('private_key_passphrase="alpha beta"')
+    assert "alpha beta" not in out
+    assert "beta" not in out
+    assert 'private_key_passphrase="<redacted>"' in out
+
+
 def test_redact_string_private_key_pem_block() -> None:
     out = redact_string(
         "bad key -----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----"

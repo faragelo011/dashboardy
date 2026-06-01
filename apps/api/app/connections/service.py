@@ -556,25 +556,23 @@ class ConnectionService:
             if not (account and username and password and role):
                 raise ConnectionValidationError("Stored credentials are incomplete.")
         # Downstream callers must avoid logging credential payloads / raw JWT.
-        ALLOWED_KEYS = {
-            "private_key",
-            "private_key_pem",
-            "private_key_passphrase",
-            "username",
-            "password",
-            "account",
-            "role",
-            "warehouse",
-            "database",
-            "schema",
-        }
         normalized: dict[str, str] = {
-            k: str(v)
-            for k, v in secret.items()
-            if v is not None and k in ALLOWED_KEYS and k != "private_key_passphrase"
+            "account": account,
+            "username": username,
+            "role": role,
         }
-        if pk_pp is not None:
-            normalized["private_key_passphrase"] = pk_pp
+        if pk_pem:
+            normalized["private_key_pem"] = pk_pem
+            if pk_pp is not None:
+                normalized["private_key_passphrase"] = pk_pp
+        else:
+            normalized["password"] = password
+        for optional in ("warehouse", "database", "schema"):
+            raw = secret.get(optional)
+            if raw is not None:
+                trimmed = str(raw).strip()
+                if trimmed:
+                    normalized[optional] = trimmed
         return row, normalized
 
     async def rotate_credentials(

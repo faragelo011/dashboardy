@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 
-import { runAdhocQueryAction, type RunQueryFormState } from "./actions";
+import {
+  fetchFullQueryResultAction,
+  runAdhocQueryAction,
+  type FullQueryResultState,
+  type RunQueryFormState,
+} from "./actions";
 
 const fieldClass =
   "w-full min-h-[200px] bg-[#0B0F15] border border-white/10 px-4 py-3 text-[#F0F2F5] text-[13px] font-mono focus:outline-none focus:border-[#D4AF37]/50 focus:bg-[#12161E] focus:ring-1 focus:ring-[#D4AF37]/30 transition-all rounded-sm placeholder:text-[#5C6A7A] disabled:opacity-50 disabled:cursor-not-allowed tracking-wide font-light";
@@ -12,16 +17,20 @@ const primaryButtonClass =
 
 export function QueryRunForm() {
   const [state, setState] = useState<RunQueryFormState | null>(null);
+  const [fullResult, setFullResult] = useState<FullQueryResultState | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [isFullPending, startFullTransition] = useTransition();
 
   return (
     <div className="flex flex-col gap-8">
       <form
+        data-query-run-form
         className="bg-[#0B0F15] p-8 sm:p-12 border border-white/5 shadow-2xl relative overflow-hidden"
         onSubmit={(e) => {
           e.preventDefault();
           const fd = new FormData(e.currentTarget);
           startTransition(() => {
+            setFullResult(null);
             void runAdhocQueryAction(null, fd)
               .then(setState)
               .catch((err) => {
@@ -106,13 +115,47 @@ export function QueryRunForm() {
               </div>
             </dl>
           </div>
-          <div className="border border-white/10 bg-[#0B0F15]/80 p-5">
-            <div className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] mb-3 font-medium">
-              Result JSON
+          <div className="border border-white/10 bg-[#0B0F15]/80 p-5 flex flex-col gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-[#D4AF37] font-medium">
+                Result JSON (preview)
+              </div>
+              <button
+                type="button"
+                disabled={isFullPending}
+                className="border border-[#D4AF37]/40 px-4 py-2 text-[10px] uppercase tracking-[0.15em] text-[#D4AF37] hover:bg-[#D4AF37]/10 transition-colors disabled:opacity-50"
+                onClick={() => {
+                  const form = document.querySelector<HTMLFormElement>(
+                    "form[data-query-run-form]",
+                  );
+                  if (!form) return;
+                  const fd = new FormData(form);
+                  startFullTransition(() => {
+                    void fetchFullQueryResultAction(null, fd)
+                      .then(setFullResult)
+                      .catch((err) => {
+                        setFullResult({
+                          ok: false,
+                          message:
+                            err instanceof Error
+                              ? err.message
+                              : "Failed to load full result.",
+                        });
+                      });
+                  });
+                }}
+              >
+                {isFullPending ? "Loading…" : "Load full result JSON"}
+              </button>
             </div>
             <pre className="text-[11px] font-mono text-[#A0AAB2] whitespace-pre-wrap overflow-x-auto max-h-[480px] overflow-y-auto leading-relaxed">
-              {state.rawJson}
+              {fullResult?.ok === true ? fullResult.rawJson : state.rawJson}
             </pre>
+            {fullResult?.ok === false ? (
+              <p className="text-[12px] text-[#EF4444] font-light" role="alert">
+                {fullResult.message}
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}

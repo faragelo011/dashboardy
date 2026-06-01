@@ -305,8 +305,11 @@ components:
         - required:
             - password
           not:
-            required:
-              - private_key_pem
+            anyOf:
+              - required:
+                  - private_key_pem
+              - required:
+                  - private_key_passphrase
         - required:
             - private_key_pem
           not:
