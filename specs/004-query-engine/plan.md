@@ -5,9 +5,9 @@
 
 ## Summary
 
-Deliver backend **safe query execution**: sqlglot-backed structural validation, Snowflake dispatch with timeouts and strict row ceilings, asyncio bounded concurrency and wait queues emitting **`warehouse_busy`**, Postgres-backed short-TTL **`cache_entries`** with permission re-validation on reads, **`query_audit_logs`** on every terminal path with at least **90-day** retention, and **`POST /workspaces/{workspace_id}/query/execute`** gated to internal roles (`admin`, `analyst`, `viewer`). **`external_client`** is barred until grant-first orchestration arrives.
+Deliver backend **safe ad hoc query execution** for authoring roles: sqlglot-backed structural validation, Snowflake dispatch with timeouts and strict row ceilings, asyncio bounded concurrency and wait queues emitting **`warehouse_busy`**, Postgres-backed short-TTL **`cache_entries`** foundations for future reusable modes with permission re-validation helpers, **`query_audit_logs`** on every terminal path with at least **90-day** retention, and **`POST /workspaces/{workspace_id}/query/execute`** gated so ad hoc SQL is limited to `admin` and `analyst`. **`viewer`** and **`external_client`** are barred from ad hoc SQL until grant-first saved/dashboard orchestration arrives.
 
-Add a minimal protected **Run query** page under `apps/web` for harness-style verification—not Feature 5–6 authoring.
+Add a minimal protected **Run query** page under `apps/web` for admin/analyst harness-style verification—not Feature 5–6 authoring.
 
 Decisions consolidate [research.md](research.md), the feature spec, and constitution v1.2.0 (Sections 7, 8.2, 3.3).
 
@@ -20,8 +20,8 @@ Decisions consolidate [research.md](research.md), the feature spec, and constitu
 **Target Platform**: Linux containers per Feature 1 (Bunny Magic Containers)  
 **Project Type**: pnpm Turborepo monorepo (`apps/web`, `apps/api`, shared `packages/`)  
 **Performance Goals**: 30s warehouse ceiling per execution; MVP **5,000** row default fetch and **10,000** hard cap (§7.4); 10 concurrent Snowflake executions per API instance with up to ~25s wait for a slot (implementation plan baseline)  
-**Constraints**: Backend-only credential access; bound parameters only (no literal concatenation); no secrets in audits; **`external_client`** never reaches validation or Snowflake in Feature 4  
-**Scale/Scope**: Execute endpoint, audit + cache persistence, concurrency gate; excludes saved question CRUD, dashboard builder UX, synchronous CSV streaming
+**Constraints**: Backend-only credential access; bound parameters only (no literal concatenation); no secrets in audits; **`viewer`** and **`external_client`** never reach validation or Snowflake for ad hoc SQL in Feature 4
+**Scale/Scope**: Ad hoc execute endpoint, audit + cache persistence foundations, concurrency gate; excludes saved question CRUD, production saved/widget execution, dashboard builder UX, synchronous CSV streaming
 
 ## Constitution Check
 
@@ -34,7 +34,7 @@ Reference: [.specify/memory/constitution.md](../../.specify/memory/constitution.
 | §7 Raw SQL parser + warehouse SELECT posture | Pass — sqlglot policy + Vault-resolved SF role remain defense in depth |
 | §7.4 timeouts and row limits | Pass — 30s / 5k default / 10k hard |
 | §7.6 audit schema + 90-day retention | Pass — `query_audit_logs` |
-| §3.3 cache TTLs, re-auth on read, invalidation | Pass — `cache_entries` + triggers in data-model |
+| §3.3 cache TTLs, re-auth on read, invalidation | Pass — `cache_entries`, TTL helpers, and re-auth helpers for future reusable modes; ad hoc remains uncached |
 | §8.2 concurrency + typed busy (not silent 5xx) | Pass — semaphore + bounded queue + `warehouse_busy` |
 | §2 no durable BI warehouse data in app DB | Pass — only bounded TTL cache JSON |
 | §9 backend owns execution and audit | Pass |
@@ -88,7 +88,7 @@ packages/types/src/
 └── (generated or hand-written query execute DTOs)
 ```
 
-**Structure Decision**: New FastAPI **`query_engine`** package keeps validation, cache, queue, and Snowflake execution cohesive. Routes depend on Feature 2 context and a thin **modality authorization** hook future features will extend. Next.js **`query-run`** is internal-only per FR-017.
+**Structure Decision**: New FastAPI **`query_engine`** package keeps validation, cache, queue, and Snowflake execution cohesive. Routes depend on Feature 2 context and a thin **modality authorization** hook future features will extend. Next.js **`query-run`** is admin/analyst-only per FR-017.
 
 ## Complexity Tracking
 
@@ -114,6 +114,6 @@ See [research.md](research.md). Technical Context has no remaining **NEEDS CLARI
 
 ## Post-Design Constitution Re-check
 
-Artifacts preserve tenant isolation, parser plus least-privilege warehouse role, TTL cache as non-authoritative optimization, mandatory audit rows, deterministic overload handling, and internal-only callers for Feature 4.
+Artifacts preserve tenant isolation, parser plus least-privilege warehouse role, TTL cache as non-authoritative optimization, mandatory audit rows, deterministic overload handling, and author-only ad hoc callers for Feature 4.
 
 **Gate result**: Pass.

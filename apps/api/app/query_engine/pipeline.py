@@ -1,7 +1,8 @@
 """Query execution orchestration (Feature 004).
 
-Ad hoc queries never use the result cache. Saved question / widget modes resolve SQL via
-``modal_sql_resolve.resolve_modal_sql`` (Feature 5–6). ``None`` → **422**.
+Ad hoc queries never use the result cache. Saved question / widget request
+shapes are reserved for Features 5-6 and are denied before parser/Snowflake
+until an owning asset layer supplies authorization and SQL context.
 Queue overload → **429** ``warehouse_busy``.
 """
 
@@ -214,6 +215,16 @@ async def execute_workspace_query(
     if not modality.allowed:
         params: dict[str, Any] = getattr(payload, "parameters", {}) or {}
         sh, ph = _stub_mode_hashes(str(payload.mode), params)
+        mode_value = str(payload.mode)
+        if mode_value == QueryMode.saved_question.value:
+            error_code = "saved_question_not_implemented"
+            message = "Saved question execution is not available yet."
+        elif mode_value == QueryMode.widget.value:
+            error_code = "feature_not_available"
+            message = "Widget execution is not available yet."
+        else:
+            error_code = "authz_denied"
+            message = "Query execution is not permitted for this modality."
         await _audit(
             connection_id=None,
             sql_hash=sh,
@@ -221,7 +232,7 @@ async def execute_workspace_query(
             row_count=0,
             bytes_scanned=None,
             exec_status=ExecutionStatus.authz_denied,
-            error_code="authz_denied",
+            error_code=error_code,
             cache_hit=False,
             audit_sq_id=getattr(payload, "saved_question_id", None),
             audit_dash_id=getattr(payload, "dashboard_id", None),
@@ -229,8 +240,8 @@ async def execute_workspace_query(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={
-                "error_code": "authz_denied",
-                "message": "Query execution is not permitted for this modality.",
+                "error_code": error_code,
+                "message": message,
             },
         )
 
@@ -238,7 +249,6 @@ async def execute_workspace_query(
         sql_text = payload.sql_text
         parameters = dict(payload.parameters)
     elif isinstance(payload, SavedQuestionQueryExecuteRequest):
-        mode_for_cache = QueryMode.saved_question.value
         resolved = await resolve_modal_sql(
             session,
             tenant_id=tenancy.tenant_id,
@@ -252,19 +262,20 @@ async def execute_workspace_query(
                 bound_hash=ph,
                 row_count=0,
                 bytes_scanned=None,
-                exec_status=ExecutionStatus.rejected_by_parser,
+                exec_status=ExecutionStatus.authz_denied,
                 error_code="saved_question_not_implemented",
                 cache_hit=False,
                 audit_sq_id=payload.saved_question_id,
                 audit_dash_id=None,
             )
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail={
                     "error_code": "saved_question_not_implemented",
                     "message": "Saved question execution is not available yet.",
                 },
             )
+        mode_for_cache = QueryMode.saved_question.value
         sql_text, parameters = resolved
         cacheable = True
         bypass_cache = payload.bypass_cache
@@ -273,7 +284,6 @@ async def execute_workspace_query(
         filter_state_hash = payload.filter_state_hash
     else:
         assert isinstance(payload, WidgetQueryExecuteRequest)
-        mode_for_cache = QueryMode.widget.value
         resolved = await resolve_modal_sql(
             session,
             tenant_id=tenancy.tenant_id,
@@ -287,19 +297,20 @@ async def execute_workspace_query(
                 bound_hash=ph,
                 row_count=0,
                 bytes_scanned=None,
-                exec_status=ExecutionStatus.rejected_by_parser,
-                error_code="widget_execution_not_implemented",
+                exec_status=ExecutionStatus.authz_denied,
+                error_code="feature_not_available",
                 cache_hit=False,
                 audit_sq_id=payload.saved_question_id,
                 audit_dash_id=payload.dashboard_id,
             )
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                status_code=status.HTTP_403_FORBIDDEN,
                 detail={
-                    "error_code": "widget_execution_not_implemented",
+                    "error_code": "feature_not_available",
                     "message": "Widget execution is not available yet.",
                 },
             )
+        mode_for_cache = QueryMode.widget.value
         sql_text, parameters = resolved
         cacheable = True
         bypass_cache = payload.bypass_cache
@@ -436,35 +447,55 @@ async def execute_workspace_query(
         )
         if entry is not None:
             perm_hit = can_execute_workspace_query(tenancy.role)
-            if perm_hit.allowed:
-                mod_hit = await authorize_query_modality(
-                    session,
-                    tenancy,
-                    payload.model_dump(mode="python"),
+            mod_hit = await authorize_query_modality(
+                session,
+                tenancy,
+                payload.model_dump(mode="python"),
+            )
+            if not perm_hit.allowed or not mod_hit.allowed:
+                await _audit(
+                    connection_id=connection_row.id,
+                    sql_hash=sql_hash,
+                    bound_hash=bound_hash,
+                    row_count=0,
+                    bytes_scanned=None,
+                    exec_status=ExecutionStatus.authz_denied,
+                    error_code="authz_denied",
+                    cache_hit=False,
+                    audit_sq_id=saved_question_id,
+                    audit_dash_id=dashboard_id,
                 )
-                if mod_hit.allowed:
-                    try:
-                        resp = _response_from_cached_payload(
-                            entry.payload,
-                            wall_ms=wall_ms(),
-                        )
-                    except (KeyError, TypeError, ValueError):
-                        # Malformed cache row; fall through to live warehouse execution.
-                        pass
-                    else:
-                        await _audit(
-                            connection_id=connection_row.id,
-                            sql_hash=sql_hash,
-                            bound_hash=bound_hash,
-                            row_count=resp.meta.row_count,
-                            bytes_scanned=None,
-                            exec_status=ExecutionStatus.ok,
-                            error_code=None,
-                            cache_hit=True,
-                            audit_sq_id=saved_question_id,
-                            audit_dash_id=dashboard_id,
-                        )
-                        return resp
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail={
+                        "error_code": "authz_denied",
+                        "message": (
+                            "Cached query reuse is not permitted for this principal."
+                        ),
+                    },
+                )
+            try:
+                resp = _response_from_cached_payload(
+                    entry.payload,
+                    wall_ms=wall_ms(),
+                )
+            except (KeyError, TypeError, ValueError):
+                # Malformed cache row; fall through to live warehouse execution.
+                pass
+            else:
+                await _audit(
+                    connection_id=connection_row.id,
+                    sql_hash=sql_hash,
+                    bound_hash=bound_hash,
+                    row_count=resp.meta.row_count,
+                    bytes_scanned=None,
+                    exec_status=ExecutionStatus.ok,
+                    error_code=None,
+                    cache_hit=True,
+                    audit_sq_id=saved_question_id,
+                    audit_dash_id=dashboard_id,
+                )
+                return resp
 
     try:
         async with acquire_execution_slot():

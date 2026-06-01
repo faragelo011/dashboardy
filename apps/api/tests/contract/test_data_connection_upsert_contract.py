@@ -117,6 +117,59 @@ def test_put_connection_400_empty_credentials(
     assert r.status_code == 400
 
 
+@pytest.mark.parametrize(
+    "credentials",
+    [
+        {
+            "account": "acct",
+            "username": "user",
+            "role": "SYSADMIN",
+        },
+        {
+            "account": "acct",
+            "username": "user",
+            "password": "secret",
+            "private_key_pem": (
+                "-----BEGIN PRIVATE KEY-----\nkey\n-----END PRIVATE KEY-----"
+            ),
+            "role": "SYSADMIN",
+        },
+        {
+            "account": "acct",
+            "username": "user",
+            "private_key_passphrase": "passphrase",
+            "role": "SYSADMIN",
+        },
+    ],
+)
+def test_put_connection_400_invalid_credential_auth_shape(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+    credentials: dict[str, str],
+):
+    uid = uuid.uuid4()
+    workspace_id = asyncio.run(_seed_member(user_id=uid, role="admin"))
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {"sub": str(uid), "email": "admin@example.com"},
+    )
+    with TestClient(app) as client:
+        r = client.put(
+            f"/workspaces/{workspace_id}/connection",
+            headers={"Authorization": "Bearer fake"},
+            json={
+                "name": "Acme Snowflake",
+                "warehouse": "WH",
+                "database": "DB",
+                "credentials": credentials,
+            },
+        )
+    assert r.status_code == 400
+    body = r.json()
+    assert body["error_code"] == "validation_error"
+    assert "secret" not in str(body).lower()
+
+
 def test_put_connection_503_when_vault_missing_config(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,

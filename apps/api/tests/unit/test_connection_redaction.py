@@ -44,6 +44,20 @@ def test_redact_string_preserves_colon_delimiter() -> None:
     assert "uuid-here" not in out
 
 
+def test_redact_string_password_assignment() -> None:
+    out = redact_string('upstream failed {"password":"super-secret"}')
+    assert "super-secret" not in out
+    assert '"password":"<redacted>"' in out
+
+
+def test_redact_string_private_key_pem_block() -> None:
+    out = redact_string(
+        "bad key -----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----"
+    )
+    assert "abc" not in out
+    assert "<redacted-private-key>" in out
+
+
 def test_redact_exception_value() -> None:
     exc = RuntimeError("See snowflake://acct/db for detail")
     out = redact_value(exc)

@@ -46,6 +46,10 @@ def _snowflake_ok() -> SnowflakeSelectOutcome:
     )
 
 
+async def _allow_modality(*_args, **_kwargs) -> PermissionDecision:
+    return PermissionDecision(True, PermissionReason.allowed)
+
+
 async def _seed_workspace_connection() -> tuple[
     uuid.UUID,
     ResolvedTenancy,
@@ -128,6 +132,10 @@ async def test_saved_question_second_call_is_cache_hit(
         "app.query_engine.pipeline.resolve_modal_sql",
         _resolve,
     )
+    monkeypatch.setattr(
+        "app.query_engine.pipeline.authorize_query_modality",
+        _allow_modality,
+    )
 
     async def _sf(*_a, **_k):
         return _snowflake_ok()
@@ -184,6 +192,10 @@ async def test_bypass_cache_skips_read_and_write(
         return ("SELECT 1", {})
 
     monkeypatch.setattr("app.query_engine.pipeline.resolve_modal_sql", _resolve)
+    monkeypatch.setattr(
+        "app.query_engine.pipeline.authorize_query_modality",
+        _allow_modality,
+    )
 
     async def _sf(*_a, **_k):
         calls["sf"] += 1
@@ -290,6 +302,10 @@ async def test_widget_mode_second_call_is_cache_hit(
         return ("SELECT 1", {})
 
     monkeypatch.setattr("app.query_engine.pipeline.resolve_modal_sql", _resolve)
+    monkeypatch.setattr(
+        "app.query_engine.pipeline.authorize_query_modality",
+        _allow_modality,
+    )
 
     async def _sf(*_a, **_k):
         return _snowflake_ok()

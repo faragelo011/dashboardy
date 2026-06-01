@@ -1,11 +1,7 @@
 """Baseline authorization hooks for POST .../query/execute.
 
-Saved-question and dashboard asset grants stay in Features 5-6.
-This validates mode strings plus internal/external membership posture only.
-Routes must reject external_client before parsers; denies here still need audits
-marked authz_denied in pipeline wiring.
-
-Unused session placeholder until asset lookups ship.
+Feature 4 only permits ad hoc SQL for authoring roles. Saved-question and
+dashboard/widget execution must wait for Features 5-6 to provide asset context.
 """
 
 from __future__ import annotations
@@ -28,9 +24,6 @@ async def authorize_query_modality(
 ) -> PermissionDecision:
     _ = session
 
-    if tenancy.role == MembershipRole.external_client:
-        return PermissionDecision(False, PermissionReason.role_not_allowed)
-
     mode = request_body.get("mode")
     if not isinstance(mode, str):
         return PermissionDecision(False, PermissionReason.role_not_allowed)
@@ -39,4 +32,10 @@ async def authorize_query_modality(
     except ValueError:
         return PermissionDecision(False, PermissionReason.role_not_allowed)
 
-    return PermissionDecision(True, PermissionReason.allowed)
+    if mode != QueryMode.adhoc.value:
+        return PermissionDecision(False, PermissionReason.grant_required)
+
+    if tenancy.role in (MembershipRole.admin, MembershipRole.analyst):
+        return PermissionDecision(True, PermissionReason.allowed)
+
+    return PermissionDecision(False, PermissionReason.role_not_allowed)

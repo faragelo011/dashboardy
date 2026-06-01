@@ -33,10 +33,32 @@ _VAULT_SECRET_ID = re.compile(
 )
 
 _SNOWFLAKE_CONN_HINT = re.compile(r"snowflake://[^\s'\"]+", re.IGNORECASE)
+_SENSITIVE_ASSIGNMENT = re.compile(
+    r"(?P<prekey>[\"']?)"
+    r"(?P<key>password|private_key|privatekey|private_key_pem|private_key_passphrase|token|access_token|refresh_token|secret)\b"
+    r"(?P<postkey>[\"']?)"
+    r"(?P<pre_d>\s*)"
+    r"(?P<delim>[:=])"
+    r"(?P<post_d>\s*)"
+    r"(?P<open_q>[\"']?)"
+    r"(?P<token>[^,\s}\"']+)"
+    r"(?P<close_q>[\"']?)",
+    re.IGNORECASE,
+)
+_PEM_BLOCK = re.compile(
+    r"-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def redact_string(value: str) -> str:
     out = value
+    out = _PEM_BLOCK.sub("<redacted-private-key>", out)
+    out = _SENSITIVE_ASSIGNMENT.sub(
+        r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
+        r"\g<open_q><redacted>\g<close_q>",
+        out,
+    )
     out = _VAULT_SECRET_ID.sub(
         r"\g<prekey>\g<key>\g<postkey>\g<pre_d>\g<delim>\g<post_d>"
         r"\g<open_q><redacted>\g<close_q>",

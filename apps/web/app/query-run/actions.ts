@@ -30,10 +30,12 @@ export async function runAdhocQueryAction(
 ): Promise<RunQueryFormState> {
   const me = await getProtectedMe();
 
-  if (me.current_workspace.role === "external_client") {
+  const canRunAdhoc =
+    me.current_workspace.role === "admin" || me.current_workspace.role === "analyst";
+  if (!canRunAdhoc) {
     return {
       ok: false,
-      message: "External client accounts cannot execute ad hoc SQL from this page.",
+      message: "Only admins and analysts can execute ad hoc SQL from this page.",
     };
   }
 

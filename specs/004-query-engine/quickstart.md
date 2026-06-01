@@ -30,14 +30,14 @@ cd apps/web && pnpm dev
 
 Default dev URL: **http://localhost:3000**. Ensure `API_PUBLIC_URL` or `NEXT_PUBLIC_API_PUBLIC_URL` points at the API (e.g. `http://localhost:8000`).
 
-Signed-in workspace members with role **admin**, **analyst**, or **viewer** see **Run query** in the top nav and can open **http://localhost:3000/query-run** to POST ad hoc SQL (`mode: adhoc`) and view **meta.status**, **meta.duration_ms**, **meta.truncated**, and full JSON. **`external_client`** users do not get the nav link and are redirected away from `/query-run` if they hit it directly.
+Signed-in workspace members with role **admin** or **analyst** see **Run query** in the top nav and can open **http://localhost:3000/query-run** to POST ad hoc SQL (`mode: adhoc`) and view **meta.status**, **meta.duration_ms**, **meta.truncated**, and full JSON. **`viewer`** and **`external_client`** users do not get the nav link and are redirected away from `/query-run` if they hit it directly.
 
 Shared TypeScript shapes for the success envelope live in `packages/types/src/query-execute.ts` (aligned with the OpenAPI contract).
 
 ## Smoke: execute (after implementation)
 
 1. Sign in via web or obtain a JWT another way.
-2. `GET /me` — confirm `admin` | `analyst` | `viewer` membership on the target workspace.
+2. `GET /me` — confirm `admin` or `analyst` membership on the target workspace.
 3. `POST /workspaces/{workspace_id}/query/execute` with body:
 
    ```json
@@ -49,7 +49,7 @@ Shared TypeScript shapes for the success envelope live in `packages/types/src/qu
    }
    ```
 
-4. Expect **422** if SQL fails parser policy; **403** if principal is `external_client`; **429** if queue saturated; otherwise **200** with `columns`, `rows`, `meta.status`, `meta.duration_ms`, `meta.truncated`.
+4. Expect **422** if SQL fails parser policy; **403** if principal is `viewer` or `external_client`; **429** if queue saturated; otherwise **200** with `columns`, `rows`, `meta.status`, `meta.duration_ms`, `meta.truncated`.
 5. Verify a row landed in **`query_audit_logs`** with matching `tenant_id`, `workspace_id`, `user_id`, `sql_hash`, and `cache_hit=false` for ad hoc.
 
 ## Golden parser tests
@@ -67,8 +67,8 @@ Complete manually in dev/staging (or tick when covered by automated tests). File
 - [ ] Parser rejects multi-statement, DDL/DML, and session mutation patterns (golden files).
 - [ ] Row cap enforced at **10,000** hard / **5,000** default per constitution §7.4 with `truncated` + `row_limit_exceeded` when semantics require.
 - [ ] **30s** warehouse timeout surfaced as `timeout`.
-- [ ] **`external_client`** never reaches Snowflake (**403** path).
+- [ ] **`viewer`** and **`external_client`** ad hoc requests never reach parser or Snowflake (**403** path).
 - [ ] **`query_audit_logs`** row for every intentional attempt terminal path.
-- [ ] **Web UI**: `/query-run` returns 200 for benign `SELECT 1` when API + connection are healthy; summary shows `meta.status` / `duration_ms` / `truncated`.
-- [ ] Cache: ad hoc never hits Postgres cache; KPI/chart/table paths respect TTL ceilings and permission re-check on read.
+- [ ] **Web UI**: `/query-run` returns 200 for benign `SELECT 1` when API + connection are healthy and the caller is `admin`/`analyst`; summary shows `meta.status` / `duration_ms` / `truncated`; viewers cannot access the page.
+- [ ] Cache: ad hoc never hits Postgres cache; service-level future-mode helpers respect KPI/chart/table TTL ceilings and permission re-check on read.
 - [ ] TTL sweeper or periodic job deletes `expires_at < now()` cache rows.

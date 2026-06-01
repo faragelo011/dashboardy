@@ -7,7 +7,9 @@ import { QueryRunForm } from "./query-run-form";
 
 export default async function QueryRunPage() {
   const me = await getProtectedMe();
-  if (me.current_workspace.role === "external_client") {
+  const canRunAdhoc =
+    me.current_workspace.role === "admin" || me.current_workspace.role === "analyst";
+  if (!canRunAdhoc) {
     redirect("/");
   }
 
@@ -24,7 +26,7 @@ export default async function QueryRunPage() {
           </h1>
           <p className="text-sm text-[#A0AAB2] font-light leading-relaxed max-w-[60ch]">
             Runs against the workspace&apos;s active Snowflake connection using your session. Row limits
-            and caching follow server policy. External client accounts cannot use this page.
+            and caching follow server policy. Only admins and analysts can use this page.
           </p>
         </header>
 

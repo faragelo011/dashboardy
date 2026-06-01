@@ -43,4 +43,7 @@ class AuthzDeniedError(ConnectionServiceError):
 
 class DependencyUnavailableError(ConnectionServiceError):
     def __init__(self, message: str = "Dependency unavailable") -> None:
+        from app.connections.redaction import redact_string
+
+        message = redact_string(message)
         super().__init__(message, error_code="dependency_unavailable")

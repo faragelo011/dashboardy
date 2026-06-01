@@ -124,3 +124,71 @@ def test_failed_rotation_test_does_not_change_effective_secret_version(
         # Effective secret_version must remain unchanged.
         assert body2["connection"]["secret_version"] == 1
         assert body2["connection"]["status"] == "test_failed"
+
+
+def test_rotate_vault_failure_persists_failure_audit(
+    use_live_postgres: None, monkeypatch: pytest.MonkeyPatch
+):
+    from app.connections.errors import DependencyUnavailableError
+    from app.models.data_connections import (
+        ConnectionManagementAuditRecord,
+        DbAuditAction,
+        DbAuditOutcome,
+    )
+    from sqlalchemy import select
+
+    uid = uuid.uuid4()
+    tenant_id, workspace_id, _membership_id, conn_id = asyncio.run(
+        _seed_admin_and_active_connection(user_id=uid)
+    )
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {"sub": str(uid), "email": "admin@example.com"},
+    )
+
+    async def fake_store_secret(
+        self, *, name: str, secret_payload: dict[str, str]
+    ) -> str:
+        _ = name, secret_payload
+        raise DependencyUnavailableError("Vault failed password=super-secret")
+
+    monkeypatch.setattr(
+        "app.connections.vault.HttpSupabaseVaultClient.store_secret",
+        fake_store_secret,
+    )
+    monkeypatch.setenv("SUPABASE_URL", "http://supabase.local")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-role")
+
+    with TestClient(app) as client:
+        r = client.post(
+            f"/workspaces/{workspace_id}/connection/rotate",
+            headers={"Authorization": "Bearer t"},
+            json={
+                "credentials": {
+                    "account": "acct",
+                    "username": "user",
+                    "password": "newsecret",
+                    "role": "SYSADMIN",
+                }
+            },
+        )
+
+    assert r.status_code == 503
+    assert "super-secret" not in r.text
+
+    async def _load_audit():
+        from app.db.session import get_async_session_maker
+
+        maker = get_async_session_maker()
+        async with maker() as session:
+            stmt = select(ConnectionManagementAuditRecord).where(
+                ConnectionManagementAuditRecord.tenant_id == tenant_id,
+                ConnectionManagementAuditRecord.connection_id == conn_id,
+                ConnectionManagementAuditRecord.action == DbAuditAction.rotate,
+            )
+            return (await session.execute(stmt)).scalar_one()
+
+    audit = asyncio.run(_load_audit())
+    assert audit.outcome == DbAuditOutcome.failure
+    assert audit.sanitized_message is not None
+    assert "super-secret" not in audit.sanitized_message

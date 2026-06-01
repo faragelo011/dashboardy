@@ -25,7 +25,7 @@ description: "Task list for Feature 004 — Query engine implementation"
 | Global cache TTL ceiling | 900 s (15 min) | constitution §3.3 |
 | Audit retention | ≥ 90 days | constitution §7.6 / spec FR-008 |
 
-**Who may call execute**: workspace members with role `admin`, `analyst`, or `viewer` only. **`external_client` → HTTP 403** with `authz_denied` before parser or Snowflake (spec clarification).
+**Who may call ad hoc execute**: workspace members with role `admin` or `analyst` only. **`viewer`** and **`external_client`** receive HTTP 403 with `authz_denied` before parser or Snowflake (spec clarification and constitution role semantics). Future saved-question/widget execution may include viewers only after asset-scoped orchestration supplies an explicit authorization allowance.
 
 ## Format checklist
 
@@ -71,8 +71,8 @@ Use `[P]` only when task touches **different files** than incomplete upstream ta
 
 ### Tenancy authorization hook
 
-- [X] T012 Add `apps/api/app/tenancy/permissions.py` helper e.g. `can_execute_workspace_query(actor_role: MembershipRole) -> PermissionDecision` returning **deny** for `MembershipRole.external_client`, **allow** for `admin`/`analyst`/`viewer`.
-- [X] T013 Add `apps/api/app/query_engine/authz_modalities.py`: async function `(session, ResolvedTenancy, request_body) -> PermissionDecision` implementing Feature 4 baseline: **`external_client` already blocked** upstream; for internal roles accept a **placeholder** rule: allow `adhoc` + `saved_question` + `widget` when membership is active and workspace matches path—**document** that saved-question / widget asset checks move to Features 5–6 (`spec.md` assumptions). Returning denied must emit audit with `authz_denied`.
+- [X] T012 Add `apps/api/app/tenancy/permissions.py` helper e.g. `can_execute_adhoc_query(actor_role: MembershipRole) -> PermissionDecision` returning **allow** for `admin`/`analyst` and **deny** for `viewer`/`external_client`.
+- [X] T013 Add `apps/api/app/query_engine/authz_modalities.py`: async function `(session, ResolvedTenancy, request_body) -> PermissionDecision` implementing Feature 4 baseline: allow `adhoc` only for `admin`/`analyst` when membership is active and workspace matches path; deny `viewer`/`external_client` before parser/Snowflake; return denied for `saved_question`/`widget` until Features 5-6 provide authoritative asset authorization. Returning denied must emit audit with `authz_denied` and may use secondary `error_code` such as `feature_not_available` or `saved_question_not_implemented`; do not label these denials as parser rejections.
 
 ### Persistence helpers
 
@@ -85,21 +85,27 @@ Use `[P]` only when task touches **different files** than incomplete upstream ta
 
 ## Phase 3: User Story 1 — Ad hoc read-only execution (P1) 🎯 MVP
 
-**Goal**: Internal user runs **parameterized** ad hoc SQL; parser blocks bad SQL; Snowflake runs with timeout + row cap; **every** attempt writes `query_audit_logs`; **no cache** for ad hoc (spec FR‑013).
+**Goal**: Internal authoring user runs **parameterized** ad hoc SQL; parser blocks bad SQL; Snowflake runs with timeout + row cap; **every** attempt writes `query_audit_logs`; **no cache** for ad hoc (spec FR‑013).
 
-**Independent test**: `POST /workspaces/{workspace_id}/query/execute` with `mode=adhoc` returns `200` + rows for benign `SELECT 1`; `422` for denied golden SQL **without** calling Snowflake; audit row exists with matching `sql_hash` / zeros for `duration_ms` pre-warehouse rejections appropriately; `external_client` JWT yields **403** before Snowflake.
+**Independent test**: `POST /workspaces/{workspace_id}/query/execute` with `mode=adhoc` returns `200` + rows for benign `SELECT 1` when called by `admin`/`analyst`; `422` for denied golden SQL **without** calling Snowflake; audit row exists with matching `sql_hash` / zeros for `duration_ms` pre-warehouse rejections appropriately; `viewer` and `external_client` JWTs yield **403** before parser/Snowflake.
 
 ### Implementation
 
 - [x] T016 [US1] Implement Pydantic request/response schemas in `apps/api/app/query_engine/schemas.py` mirroring **`specs/004-query-engine/contracts/query-execute.openapi.yaml`** (`QueryExecuteRequest` discriminated union, `QueryExecuteSuccessResponse`, `ColumnDescriptor`, `QueryExecuteMeta`).
 - [x] T017 [US1] Implement Snowflake runner `apps/api/app/query_engine/snowflake_run.py`: given resolved `DataConnection` + Vault-retrieved credential (reuse **`app.connections.resolver`/Vault patterns** — do **not** duplicate Vault HTTP), establish connection with **≤30s** network/query timeout knob, **`parameter bindings only`** executed via Snowflake connector param style compatible with sanitized SQL placeholders; enforce **fetch capped at configured max rows**, set `truncated` flag vs `row_limit_exceeded` per product rules; optionally read `QUERY_ID`/`bytes scanned` telemetry when available (`bytes_scanned` nullable columns).
 - [x] T018 [US1] Implement parameter coercion module `apps/api/app/query_engine/parameter_binding.py`: for `adhoc`, ensure every **`%(name)s`** (or chosen convention—**pick one documented style**) in canonical SQL maps to supplied `parameters` dict keys; mismatches/`extra keys` **`422`** before warehouse; hashing uses T008 helpers.
-- [x] T019 [US1] Implement orchestration **`execute_query`** in `apps/api/app/query_engine/pipeline.py` ordered steps mirroring **`specs/004-query-engine/research.md`** & `docs/implementation-plan.md`: resolve membership → **`external_client` short-circuit 403 + audit `authz_denied`** → modality auth stub (T013) → load **`data_connections`** requiring **`active`** operational state (reuse Feature 3 repository/service semantics—if no usable connection respond **404** per OpenAPI README with clear `error_code` e.g. `connection_not_ready`) → `parse_and_validate` → bind params → **`acquire_execution_slot`** (T011); on success run Snowflake; **always append audit row** with `cache_hit=false` for adhoc; normalize JSON envelope.
+- [x] T019 [US1] Implement orchestration **`execute_query`** in `apps/api/app/query_engine/pipeline.py` ordered steps mirroring **`specs/004-query-engine/research.md`** & `docs/implementation-plan.md`: resolve membership → **`viewer`/`external_client` ad hoc short-circuit 403 + audit `authz_denied`** → modality auth gate (T013) → load **`data_connections`** requiring **`active`** operational state (reuse Feature 3 repository/service semantics—if no usable connection respond **404** per OpenAPI README with clear `error_code` e.g. `connection_not_ready`) → `parse_and_validate` → bind params → **`acquire_execution_slot`** (T011); on success run Snowflake; **always append audit row** with `cache_hit=false` for adhoc; normalize JSON envelope.
 - [x] T020 [US1] Add FastAPI router `apps/api/app/routes/query.py` with `router = APIRouter(tags=["query"])` and **`POST "/workspaces/{workspace_id}/query/execute"`** matching contract path; reuse **`get_verified_supabase_user`**, **`get_db`**, **`resolve_membership_for_workspace`** patterns from `apps/api/app/routes/connections.py`; map domain errors to **`HTTPException`** detail dicts **`error_code` + `message`** consistent with **`apps/api/app/main.py`** normalization handler.
 - [x] T021 [US1] Register router in `apps/api/app/main.py` (`include_router`) and export in `apps/api/app/routes/__init__.py` if that module aggregates routers.
 - [x] T022 [P] [US1] Add unit tests `apps/api/tests/unit/test_query_parser.py` iterating **`allowed/` + `denied/`** fixtures; assert **Snowflake connector is not imported/called** in parser tests (monkeypatch if needed).
 
 **Checkpoint MVP**: Authenticated analyst can run `SELECT 1`; denied SQL yields `422`; audit populated; Snowflake touched only after parser passes.
+
+### Required outcome tests
+
+- [X] T022A [P] [US1] Add timeout outcome tests in `apps/api/tests/integration/test_query_execute_outcomes.py` with a fake runner exceeding the 30-second policy; assert response meta/status `timeout`, no generic 500, and a single audit row with `status=timeout`.
+- [X] T022B [P] [US1] Add row-limit outcome tests in `apps/api/tests/integration/test_query_execute_outcomes.py` with fake result sets over the default and hard caps; assert capped rows, truncation signaling, `row_limit_exceeded` where policy requires, and matching audit row counts.
+- [X] T022C [P] [US1] Add authorization tests in `apps/api/tests/integration/test_query_execute_authz.py` proving `viewer` and `external_client` ad hoc requests return `403 authz_denied` before parser/Snowflake.
 
 ---
 
@@ -118,9 +124,9 @@ Use `[P]` only when task touches **different files** than incomplete upstream ta
 
 ## Phase 5: User Story 3 — Result cache (P3)
 
-**Goal**: `saved_question` + `widget` modes may read/write `cache_entries` when eligible; **permission re-check** before returning cached payload; **`bypass_cache`** forces miss; ad hoc **never** writes cache; TTL classes per presentation_class; sweeper removes expired rows (constitution §3.3).
+**Goal**: Cache foundations are ready for future `saved_question` + `widget` modes; **permission re-check** helpers run before returning cached payload; **`bypass_cache`** forces non-reuse; ad hoc **never** writes cache; TTL classes per presentation_class; sweeper removes expired rows (constitution §3.3).
 
-**Independent test**: Two identical `saved_question` requests (mocked Snowflake) within TTL: first `cache_hit=false`, second `cache_hit=true`; after permission flip, cached payload **must not** be returned; `bypass_cache=true` yields miss.
+**Independent test**: Service-level cache tests verify identity construction, TTL selection, expiry deletion, and permission re-check without requiring Feature 5/6 asset tables. Ad hoc requests never produce cache rows or `cache_hit=true`.
 
 ### Implementation
 
@@ -128,13 +134,13 @@ Use `[P]` only when task touches **different files** than incomplete upstream ta
 
 - [X] T026 [US3] Implement TTL resolver `presentation_class_ttl_seconds(PresentationClass) -> int` in `apps/api/app/query_engine/cache_ttl.py` using locked table rows; clamp user-supplied TTL lowering only (Feature 6 field stub optional—omit until dashboard JSON arrives, but reserve TODO constant hook).
 
-- [X] T027 [US3] Extend `pipeline.py` branching: modes **`saved_question`** and **`widget`** attempt cache **read after** modality auth re-check succeeds; write cache after successful Snowflake **`200` path** (`ok`) with expiry = `now + ttl`; on read hit: run **fresh** modality authorization + membership role checks before returning serialized JSON payload; refusal → behave as cache miss (**no stale rows**).
+- [X] T027 [US3] Extend `pipeline.py` branching so **`saved_question`** and **`widget`** remain pre-dispatch disabled until Features 5-6 supply authoritative asset context; return a documented denial/unavailable outcome with exactly one audit row, and do not label the outcome as `rejected_by_parser`. Keep cache read/write helpers callable from service-level tests for future eligible modes after modality authorization re-check succeeds.
 
 - [X] T028 [US3] Add background sweeper wired in FastAPI **`lifespan`** (`apps/api/app/main.py`): `asyncio.create_task` periodic `DELETE FROM cache_entries WHERE expires_at < now()` sleeping e.g. 60s—document shutdown cancellation; alternative acceptable if cron-based **document explicitly** + add manual admin endpoint (`NO` unless spec grows—prefer internal task per quickstart simplicity).
 
 ### Tests (supports SC‑003 explicitly)
 
-- [X] T029 [P] [US3] Add `apps/api/tests/integration/test_query_cache_behavior.py` with faked warehouse + seeded cache rows verifying hit/miss, `bypass_cache`, and **`adhoc` never persists** cache rows.
+- [X] T029 [P] [US3] Add `apps/api/tests/integration/test_query_cache_behavior.py` with service-level cache fixtures verifying identity, TTL, `bypass_cache` non-reuse, permission re-check refusal, expiry deletion, and **`adhoc` never persists** cache rows.
 
 **Checkpoint**: Cache correctness & auth re-check observable in tests without manual Snowflake reliance.
 
@@ -144,8 +150,8 @@ Use `[P]` only when task touches **different files** than incomplete upstream ta
 
 **Purpose**: FR‑017 minimal surface & operator ergonomics (`spec.md` FR‑017).
 
-- [X] T030 Implement protected page `apps/web/app/query-run/page.tsx` (+ small client component file colocated if preferred) issuing `POST /workspaces/{workspace_id}/query/execute` with JSON body **`mode:"adhoc"`** using existing web API base URL + session fetch helpers (mirror `apps/web/app/connections/*` token/header pattern); show raw JSON outcome + **`meta.status` / `truncated` / duration** visibly.
-- [X] T031 Add navigation affordance guarded to internal testers only (minimal link/button from existing protected shell — e.g. `apps/web/app/layout.tsx` or existing nav component referencing user role from `/me` payload — **avoid** exposing to unsigned users).
+- [X] T030 Implement protected page `apps/web/app/query-run/page.tsx` (+ small client component file colocated if preferred) issuing `POST /workspaces/{workspace_id}/query/execute` with JSON body **`mode:"adhoc"`** using existing web API base URL + session fetch helpers (mirror `apps/web/app/connections/*` token/header pattern); show raw JSON outcome + **`meta.status` / `truncated` / duration** visibly; restrict page access to `admin`/`analyst`.
+- [X] T031 Add navigation affordance guarded to internal authoring testers only (minimal link/button from existing protected shell — e.g. `apps/web/app/layout.tsx` or existing nav component referencing user role from `/me` payload — **avoid** exposing to unsigned users or viewers).
 - [X] T032 [P] Add hand-written TS types Optional `packages/types/src/query-execute.ts` matching OpenAPI (or codegen note README only—pick one minimal approach documenting chosen path).
 - [X] T033 [P] Update `specs/004-query-engine/quickstart.md` if endpoints/dev ports diverge during integration; verify checklist section matches actual URLs.
 - [ ] T034 Run through manual checklist in `specs/004-query-engine/quickstart.md` after implementation (record gaps as GitHub issue—no scope expansion here).
@@ -161,7 +167,7 @@ Phase 1 (T001–T003)
        ↓
 Phase 2 Foundational (T004–T015)  ← blocks everything
        ↓
-Phase 3 US1 (T016–T022)  ← MVP STOP line
+Phase 3 US1 (T016–T022C)  ← MVP STOP line
        ↓
 Phase 4 US2 (T023–T024)  ← can begin after Phase 3 queue wired (T019+T023 touch same files sequentially)
        ↓
@@ -223,8 +229,8 @@ Task T022 apps/api/tests/unit/test_query_parser.py
 ## Notes
 
 - **Do not log** Vault secrets / raw JWT / raw parameter payloads in structlog contexts.
-- **`saved_question_id` correctness**: until Feature 5 tables exist you may stub DB lookup with **temporary in-memory UUID placeholder** guarded by pytest only—**shipping** behavior should **404/not_found** for unknown IDs **or** treat as parameterized **adhoc-SQL-not-yet-supported** documented error; clarify product choice minimal: **recommended** ⇒ `422` **`saved_question_not_implemented`** for unknown IDs to avoid phantom execution.
-- **Widget mode** optional stub: may return **`422` feature_not_available** until Feature 6 if product owner agrees—**default** per spec is implement request schema + cache key fields now, execute path may short-circuit with explicit error until dashboard service exists; if short-circuiting, still **write audit** row with `rejected_by_parser` OR custom `error_code` consistent with HTTP **422** (choose one—document in `pipeline.py` docstring when landing stub).
+- **`saved_question_id` correctness**: until Feature 5 tables exist, production `saved_question` mode should short-circuit before parser/Snowflake with `403 authz_denied` when no asset-scoped authorization allowance exists, plus secondary `error_code` such as `saved_question_not_implemented`; do not execute phantom SQL for unknown IDs.
+- **Widget mode**: until Feature 6 tables exist, production `widget` mode should short-circuit before parser/Snowflake with `403 authz_denied` when no asset-scoped authorization allowance exists, plus secondary `error_code` such as `feature_not_available`; still write one audit row and do not use `rejected_by_parser` unless the SQL parser actually rejected SQL.
 
 ---
 
@@ -244,10 +250,10 @@ Task T022 apps/api/tests/unit/test_query_parser.py
 |-------|----------|-------|
 | Setup | T001–T003 | 3 |
 | Foundational | T004–T015 | 12 |
-| US1 | T016–T022 | 7 |
+| US1 | T016–T022C | 10 |
 | US2 | T023–T024 | 2 |
 | US3 | T025–T029 | 5 |
 | Polish | T030–T034 | 5 |
-| **Total** | **T001–T034** | **34** |
+| **Total** | **T001–T034 plus T022A–T022C** | **37** |
 
 Every task line includes at least one concrete repo path or explicit fixture location.

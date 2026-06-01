@@ -3,13 +3,13 @@ info:
   title: Dashboardy API - Query Engine (Feature 4)
   version: 0.4.0
   description: |
-    Execute read-only parameterized SQL against the tenant Snowflake connection with backend
+    Execute read-only parameterized ad hoc SQL against the tenant Snowflake connection with backend
     structural validation (sqlglot policy), concurrency backpressure (`warehouse_busy`), audit
     logging (`query_audit_logs`), and tenant-scoped result caching (`cache_entries`) per
     constitution v1.2.0 §3.3, §7, §8.2.
 
-    Callers MUST be authenticated internal workspace members (`admin`, `analyst`, `viewer`);
-    `external_client` principals receive authorization failures before validation.
+    Ad hoc callers MUST be authenticated internal authoring members (`admin`, `analyst`);
+    `viewer` and `external_client` principals receive authorization failures before validation.
 
 servers:
   - url: https://api.staging.dashboardy.app
@@ -26,10 +26,13 @@ paths:
       operationId: executeWorkspaceQuery
       summary: Execute a validated analytics query for a workspace
       description: |
-        Internal roles only (`admin`, `analyst`, `viewer`). Dispatches structured SQL modes:
-        **adhoc**, **saved_question**, **widget**.
+        Ad hoc SQL is limited to internal authoring roles (`admin`, `analyst`).
+        The contract reserves future structured modes **saved_question** and **widget**,
+        but Feature 4 implementations MUST NOT execute those modes until owning asset
+        features provide authoritative SQL, parameter declarations, and authorization.
 
-        Structural rejections (`rejected_by_parser`) and binding mismatches return **422** with
+        Disabled future modes return **403** (`authz_denied`) when no asset-scoped
+        authorization allowance exists. Structural rejections (`rejected_by_parser`) and binding mismatches return **422** with
         a normalized error envelope. Authorization failures return **403**. Queue saturation
         returns **429** with `error_code: warehouse_busy`. Successful HTTP handling with
         warehouse outcomes uses **200** and places the execution `status` inside `meta.status`
@@ -301,6 +304,7 @@ components:
             - authz_denied
             - warehouse_busy
             - rejected_by_parser
+            - feature_not_available
         message:
           type: string
         details:

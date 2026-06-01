@@ -204,6 +204,7 @@ async def test_workspace_connection(
     except AuthzDeniedError as exc:
         _forbidden(error_code=exc.error_code, message=str(exc))
     except DependencyUnavailableError as exc:
+        await session.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"error_code": exc.error_code, "message": str(exc)},
@@ -255,6 +256,7 @@ async def rotate_workspace_connection(
             },
         ) from exc
     except DependencyUnavailableError as exc:
+        await session.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"error_code": exc.error_code, "message": str(exc)},

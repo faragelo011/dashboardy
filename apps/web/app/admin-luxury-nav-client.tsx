@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type Props = {
-  /** Hide ad hoc query link for `external_client` and unsigned contexts (defensive). */
+  /** Hide ad hoc query link for non-authoring roles and unsigned contexts. */
   showRunQuery: boolean;
 };
 
