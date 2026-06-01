@@ -42,7 +42,7 @@ async function apiFetch(
   });
 }
 
-function parseApiErrorBody(
+export function parseApiErrorBody(
   rawText: string,
   fallbackMessage: string,
 ): { message: string; error_code?: string } {

@@ -125,4 +125,3 @@ def test_rotate_then_successful_test_promotes_pending_and_increments_version(
         assert body2["test_status"] == "success"
         assert body2["connection"]["status"] == "active"
         assert body2["connection"]["secret_version"] == 2
-

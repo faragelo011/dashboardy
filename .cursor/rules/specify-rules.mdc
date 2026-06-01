@@ -6,7 +6,7 @@ alwaysApply: true
 
 # dashboardy Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-04-29
+Auto-generated from all feature plans. Last updated: 2026-05-08
 
 ## Active Technologies
 - Python 3.12 (API), TypeScript 5.x (web/shared packages) + FastAPI, Pydantic v2, SQLAlchemy 2.x async, asyncpg, Alembic, httpx, structlog/python-json-logger; Next.js 14 App Router, React 18, `@supabase/ssr` for auth session handling, generated/shared TypeScript contracts in `packages/types` (002-auth-tenancy)

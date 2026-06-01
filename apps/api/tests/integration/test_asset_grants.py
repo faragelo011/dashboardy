@@ -121,4 +121,3 @@ def test_non_admin_denied_asset_grant_management(
         )
     assert r.status_code == 403
     assert r.json()["error_code"] == "authz_denied"
-

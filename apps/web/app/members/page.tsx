@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
 import { listExternalAssetGrants } from "@/app/lib/asset-grants-api";
 import { listWorkspaceMembers } from "@/app/lib/members-api";
@@ -20,17 +21,18 @@ const roleOptions = [
   ["external_client", "External client", "Access only granted assets."],
 ] as const;
 
+// Luxury Aesthetic Form Fields & Buttons
 const fieldClass =
-  "min-h-11 w-full rounded-xl border border-border-4 bg-surface-1 px-3 py-2 text-sm outline-none transition focus-visible:border-focus focus-visible:ring-2 focus-visible:ring-focus-ring/35 disabled:cursor-not-allowed disabled:bg-surface-5 disabled:text-ink-muted";
+  "w-full bg-transparent border-b border-white/20 px-0 py-2 text-[#F0F2F5] text-sm focus:outline-none focus:border-[#D4AF37] focus:ring-0 transition-colors rounded-none placeholder:text-[#5C6A7A] focus:bg-transparent disabled:opacity-50 disabled:cursor-not-allowed";
 
 const primaryButtonClass =
-  "min-h-11 rounded-xl bg-accent px-5 py-2 text-sm font-semibold text-surface-3 transition hover:bg-accent-hover active:bg-accent-active disabled:cursor-not-allowed disabled:bg-border-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  "bg-[#D4AF37] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center";
 
 const quietButtonClass =
-  "min-h-10 rounded-xl border border-border-4 px-3 py-2 text-sm font-medium transition hover:bg-surface-5 disabled:cursor-not-allowed disabled:text-ink-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  "text-[#A0AAB2] hover:text-[#D4AF37] transition-colors text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 px-4 py-3 hover:border-[#D4AF37]/50 disabled:opacity-50 disabled:cursor-not-allowed block text-center min-w-max";
 
 const dangerButtonClass =
-  "min-h-10 rounded-xl border border-danger-border px-3 py-2 text-sm font-medium text-danger-ink transition hover:bg-danger-soft disabled:cursor-not-allowed disabled:border-border-2 disabled:text-ink-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus";
+  "text-[#EF4444] hover:text-white transition-colors text-[10px] uppercase tracking-[0.15em] bg-transparent border border-[#EF4444]/30 px-4 py-3 hover:bg-[#EF4444]/30 disabled:opacity-50 disabled:cursor-not-allowed block text-center min-w-max";
 
 const roleLabel = (role: string) =>
   roleOptions.find(([value]) => value === role)?.[1] ?? role;
@@ -89,57 +91,54 @@ export default async function MembersPage() {
   const viewerCount = activeMembers.filter((member) => member.role === "viewer").length;
 
   return (
-    <main className="bg-surface-app text-ink">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
-        <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted">
-              Access control
+    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+      <AdminLuxuryNav />
+      <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
+        
+        {/* Luxury Header */}
+        <header className="flex flex-col gap-12 lg:flex-row lg:items-end lg:justify-between border-b border-white/10 pb-12">
+          <div className="max-w-3xl space-y-6">
+            <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+              Workspace Directory
             </p>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-[-0.03em] text-ink-strong">
-                Workspace members
+            <div className="space-y-4">
+              <h1 className="text-5xl lg:text-7xl font-serif text-white tracking-tight font-light leading-none">
+                Access <span className="italic opacity-80">&</span> Control
               </h1>
-              <p className="max-w-[65ch] text-sm leading-6 text-ink-muted">
-                Invite teammates, adjust roles, and review external access for{" "}
-                <span className="font-medium text-ink">
+              <p className="max-w-[45ch] text-sm lg:text-base leading-relaxed text-[#A0AAB2] font-light">
+                Manage executive delegates and oversee external asset distribution for{" "}
+                <span className="text-white font-normal underline decoration-[#D4AF37] decoration-1 underline-offset-4">
                   {me.current_workspace.workspace_name}
-                </span>
-                .
+                </span>.
               </p>
             </div>
           </div>
 
-          <dl className="grid grid-cols-3 overflow-hidden rounded-2xl border border-border-3 bg-surface-2">
-            <div className="border-r border-border-1 px-4 py-3">
-              <dt className="text-xs text-ink-faint">Admins</dt>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">{adminCount}</dd>
+          <dl className="flex gap-16 shrink-0 pt-8 lg:pt-0">
+            <div className="relative group">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-2">Admins</dt>
+              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{adminCount.toString().padStart(2, '0')}</dd>
             </div>
-            <div className="border-r border-border-1 px-4 py-3">
-              <dt className="text-xs text-ink-faint">Analysts</dt>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">
-                {analystCount}
-              </dd>
+            <div className="relative group">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-2">Analysts</dt>
+              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{analystCount.toString().padStart(2, '0')}</dd>
             </div>
-            <div className="px-4 py-3">
-              <dt className="text-xs text-ink-faint">Viewers</dt>
-              <dd className="mt-1 text-lg font-semibold tabular-nums">{viewerCount}</dd>
+            <div className="relative group">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-2">Viewers</dt>
+              <dd className="text-4xl font-serif font-light text-white group-hover:text-[#D4AF37] transition-colors">{viewerCount.toString().padStart(2, '0')}</dd>
             </div>
           </dl>
         </header>
 
         {loadError ? (
-          <section
-            className="rounded-2xl border border-danger-border bg-danger-soft-strong p-4 text-sm text-danger-ink-strong"
-            role="alert"
-          >
-            <h2 className="font-semibold">Access data did not load</h2>
-            <p className="mt-1 leading-6">
-              {loadError} Check your connection, then refresh this page.
-            </p>
+          <section className="border border-red-500/20 bg-red-500/5 p-6 animate-fade-in-up">
+            <h2 className="text-[#EF4444] text-[11px] uppercase tracking-[0.15em] mb-2">System Error</h2>
+            <p className="mt-1 text-sm text-[#A0AAB2] font-light">{loadError}</p>
           </section>
         ) : null}
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.55fr)]">
+
+        <section className="grid gap-12 lg:gap-24 lg:grid-cols-[1.2fr_0.8fr] animate-fade-in-up" style={{ animationDelay: '100ms' }}>
+          
           <ProvisionMemberForm
             workspaceId={workspaceId}
             fieldClass={fieldClass}
@@ -147,94 +146,93 @@ export default async function MembersPage() {
             roleOptions={roleOptions}
           />
 
-          <aside className="rounded-3xl border border-border-3 bg-surface-5 p-5">
-            <h2 className="text-sm font-semibold">Access review</h2>
-            <dl className="mt-4 space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-ink-faint">Active members</dt>
-                <dd className="font-semibold tabular-nums">{activeMembers.length}</dd>
+          <aside className="relative py-8 lg:py-12 px-2 flex flex-col justify-center">
+            {/* Minimalist vertical divider for large screens */}
+            <div aria-hidden="true" className="hidden lg:block absolute left-[-48px] top-4 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+            
+            <h2 className="text-2xl font-serif font-light text-white mb-10">Directory Overview</h2>
+            <dl className="space-y-6">
+              <div className="flex items-end justify-between border-b border-white/5 pb-4 group">
+                <dt className="text-[11px] uppercase tracking-[0.15em] text-[#5C6A7A] group-hover:text-[#D4AF37] transition-colors">Active Members</dt>
+                <dd className="font-serif text-lg font-light">{activeMembers.length}</dd>
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-ink-faint">Inactive members</dt>
-                <dd className="font-semibold tabular-nums">{inactiveMembers.length}</dd>
+              <div className="flex items-end justify-between border-b border-white/5 pb-4 group">
+                <dt className="text-[11px] uppercase tracking-[0.15em] text-[#5C6A7A] group-hover:text-[#D4AF37] transition-colors">Inactive Accounts</dt>
+                <dd className="font-serif text-lg font-light text-[#5C6A7A]">{inactiveMembers.length}</dd>
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-ink-faint">External clients</dt>
-                <dd className="font-semibold tabular-nums">{externalClients.length}</dd>
+              <div className="flex items-end justify-between border-b border-white/5 pb-4 group">
+                <dt className="text-[11px] uppercase tracking-[0.15em] text-[#5C6A7A] group-hover:text-[#D4AF37] transition-colors">External Partners</dt>
+                <dd className="font-serif text-lg font-light">{externalClients.length}</dd>
               </div>
             </dl>
-            <p className="mt-5 rounded-2xl bg-surface-2 p-3 text-xs leading-5 text-ink-muted">
-              Keep at least two admins active so workspace access does not depend
-              on one person.
+            
+            <p className="mt-8 text-[11px] leading-5 text-[#5C6A7A] max-w-[40ch] font-light italic">
+              * Redundancy protocol: Ensure a minimum of two active administrators to maintain uninterrupted governance mapping.
             </p>
           </aside>
         </section>
 
-        <section className="rounded-3xl border border-border-3 bg-surface-1">
-          <div className="flex flex-col gap-2 border-b border-border-1 px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
-            <div>
-              <h2 className="text-lg font-semibold tracking-[-0.02em]">
-                Member roster
-              </h2>
-              <p className="mt-1 text-sm text-ink-muted">
-                Change roles inline or deactivate access when someone leaves.
-              </p>
-            </div>
-            <span className="text-xs font-medium text-ink-faint">
-              {members.length} total
+        {/* Member Roster */}
+        <section className="mt-8 animate-fade-in-up" style={{ animationDelay: '200ms' }}>
+          <div className="flex items-end justify-between mb-8 pb-4 border-b border-white/10">
+            <h2 className="text-2xl font-serif text-white font-light">
+              Executive Roster
+            </h2>
+            <span className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">
+              Capacity: {members.length} {members.length === 1 ? 'delegate' : 'delegates'}
             </span>
           </div>
 
-          <div className="hidden grid-cols-[minmax(0,1.6fr)_minmax(150px,0.7fr)_minmax(110px,0.45fr)_minmax(120px,0.5fr)_minmax(170px,0.75fr)] gap-3 border-b border-border-1 bg-surface-4 px-6 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:grid">
-            <div>Email</div>
-            <div>Role</div>
+          <div className="hidden grid-cols-[minmax(0,1.4fr)_minmax(130px,0.6fr)_minmax(100px,0.4fr)_minmax(110px,0.4fr)_minmax(150px,0.6fr)] gap-4 px-6 text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] md:grid pb-4">
+            <div>Identity</div>
+            <div>Clearance Level</div>
             <div>Status</div>
-            <div>Joined</div>
-            <div className="text-right">Actions</div>
+            <div>Enlistment Date</div>
+            <div className="text-right">Governance Actions</div>
           </div>
 
-          <div className="divide-y divide-border-0">
-            {members.map((member) => {
+          <div className="flex flex-col gap-2">
+            {members.map((member, i) => {
               const isActive = member.status === "active";
               return (
                 <div
                   key={member.id}
-                  className="grid gap-4 px-5 py-4 md:grid-cols-[minmax(0,1.6fr)_minmax(150px,0.7fr)_minmax(110px,0.45fr)_minmax(120px,0.5fr)_minmax(170px,0.75fr)] md:items-center md:gap-3 md:px-6"
+                  className="bg-[#0B0F15] hover:bg-[#12161E] border border-white/5 hover:border-[#D4AF37]/20 transition-all duration-300 grid gap-6 p-6 md:grid-cols-[minmax(0,1.4fr)_minmax(130px,0.6fr)_minmax(100px,0.4fr)_minmax(110px,0.4fr)_minmax(150px,0.6fr)] md:items-center md:gap-4 md:px-6 relative group animate-fade-in-up"
+                  style={{ animationDelay: `${250 + i * 50}ms` }}
                 >
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{member.email}</div>
-                    <div className="mt-1 truncate font-mono text-xs text-ink-faint">
-                      {member.user_id}
+                  {/* Decorative line on hover */}
+                  <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#D4AF37] scale-y-0 group-hover:scale-y-100 transition-transform origin-center duration-300" />
+                  
+                  <div className="min-w-0 pr-4">
+                    <div className="text-sm font-light text-white truncate group-hover:text-[#FBE398] transition-colors">{member.email}</div>
+                    <div className="mt-2 text-[10px] tracking-wider text-[#5C6A7A] uppercase">
+                      ID: {member.user_id.split('-')[0]}•••
                     </div>
                   </div>
 
                   <form
                     action={updateMemberRoleAction}
-                    className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] md:block"
+                    className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] md:block"
                   >
                     <input type="hidden" name="workspace_id" value={workspaceId} />
                     <input type="hidden" name="membership_id" value={member.id} />
-                    <label className="sr-only" htmlFor={`role-${member.id}`}>
-                      Member role
-                    </label>
                     <select
-                      id={`role-${member.id}`}
                       name="role"
                       defaultValue={member.role}
-                      className={fieldClass}
+                      className={`${fieldClass} text-[12px] font-light pb-1`}
                       disabled={!isActive}
                     >
                       {roleOptions.map(([value, label]) => (
-                        <option key={value} value={value}>
+                        <option key={value} value={value} className="bg-[#0B0F15] text-white">
                           {label}
                         </option>
                       ))}
                     </select>
                     <button
-                      className={`${quietButtonClass} md:mt-2 md:w-full`}
+                      className={`${quietButtonClass} md:mt-3 md:w-full`}
                       disabled={!isActive}
                     >
-                      Save role
+                      Apply Shift
                     </button>
                   </form>
 
@@ -242,23 +240,24 @@ export default async function MembersPage() {
                     <span
                       className={
                         isActive
-                          ? "inline-flex rounded-full bg-success-soft px-2.5 py-1 text-xs font-medium text-success-soft-ink"
-                          : "inline-flex rounded-full bg-surface-4 px-2.5 py-1 text-xs font-medium text-ink-faint"
+                          ? "inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.1em] text-[#D4AF37]"
+                          : "inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.1em] text-[#5C6A7A]"
                       }
                     >
-                      {isActive ? "Active" : "Inactive"}
+                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.6)]' : 'bg-[#5C6A7A]'}`} />
+                      {isActive ? "Operational" : "Revoked"}
                     </span>
                   </div>
 
-                  <div className="text-sm text-ink-muted">
+                  <div className="text-[11px] font-light text-[#A0AAB2]">
                     {formatDate(member.created_at)}
                   </div>
 
-                  <form action={deactivateMemberAction} className="md:text-right">
+                  <form action={deactivateMemberAction} className="md:flex md:justify-end">
                     <input type="hidden" name="workspace_id" value={workspaceId} />
                     <input type="hidden" name="membership_id" value={member.id} />
-                    <button className={dangerButtonClass} disabled={!isActive}>
-                      Deactivate
+                    <button className={`${dangerButtonClass}`} disabled={!isActive}>
+                      Terminate
                     </button>
                   </form>
                 </div>
@@ -267,155 +266,156 @@ export default async function MembersPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-border-3 bg-surface-4">
-          <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:p-6">
-            <div className="space-y-4">
+        {/* Asset Grants */}
+        <section className="mt-8 border-t border-white/10 pt-16 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+          <div className="grid gap-16 lg:grid-cols-[1fr_1.5fr]">
+            
+            <div className="space-y-8">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                  External access
+                <p className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-3">
+                  External Distribution
                 </p>
-                <h2 className="mt-2 text-lg font-semibold tracking-[-0.02em]">
-                  Asset grants
+                <h2 className="text-3xl font-serif text-white font-light mb-4">
+                  Asset Grants
                 </h2>
-                <p className="mt-2 max-w-[56ch] text-sm leading-6 text-ink-muted">
-                  Grant external clients access to specific dashboards or questions.
-                  Use this after inviting someone as an external client.
+                <p className="text-sm font-light text-[#A0AAB2] leading-relaxed max-w-[40ch]">
+                  Provision specific intelligence assets selectively. Executable only after a partner has been assigned an External clearance level.
                 </p>
               </div>
 
               <form
                 action={createAssetGrantAction}
-                className="space-y-4 rounded-2xl border border-border-2 bg-surface-2 p-4"
+                className="bg-[#0B0F15] p-8 border border-white/5 relative overflow-hidden"
               >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#D4AF37] opacity-[0.02] blur-2xl" />
+                
                 <input type="hidden" name="workspace_id" value={workspaceId} />
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium">External client</span>
-                  <select
-                    name="user_id"
-                    required
-                    className={fieldClass}
-                    defaultValue=""
-                    disabled={externalClients.length === 0}
-                  >
-                    <option value="" disabled>
-                      {externalClients.length === 0
-                        ? "Invite an external client first"
-                        : "Select an external client"}
-                    </option>
-                    {externalClients.map((member) => (
-                      <option key={member.id} value={member.user_id}>
-                        {member.email} ({roleLabel(member.role)})
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium">Asset type</span>
+                
+                <div className="space-y-8">
+                  <label className="block">
+                    <span className="block text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] mb-3">Select Partner</span>
                     <select
-                      name="asset_type"
+                      name="user_id"
+                      required
                       className={fieldClass}
-                      defaultValue="dashboard"
+                      defaultValue=""
+                      disabled={externalClients.length === 0}
                     >
-                      <option value="dashboard">Dashboard</option>
-                      <option value="question">Question</option>
+                      <option value="" disabled className="bg-[#0B0F15]">
+                        {externalClients.length === 0
+                          ? "— Awaiting external partner registration —"
+                          : "Select registered partner"}
+                      </option>
+                      {externalClients.map((member) => (
+                        <option key={member.id} value={member.user_id} className="bg-[#0B0F15] text-[#F0F2F5]">
+                          {member.email} ({roleLabel(member.role)})
+                        </option>
+                      ))}
                     </select>
                   </label>
-                  <label className="block space-y-2">
-                    <span className="text-sm font-medium">Export access</span>
-                    <span className="flex min-h-11 items-center gap-3 rounded-xl border border-border-4 bg-surface-1 px-3 py-2">
-                      <input
-                        name="can_export"
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-border-4 accent-accent"
-                      />
-                      <span className="text-sm text-ink-muted">Allow exports</span>
-                    </span>
+
+                  <div className="grid gap-8 sm:grid-cols-2">
+                    <label className="block">
+                      <span className="block text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] mb-3">Asset Classification</span>
+                      <select
+                        name="asset_type"
+                        className={fieldClass}
+                        defaultValue="dashboard"
+                      >
+                        <option value="dashboard" className="bg-[#0B0F15] text-[#F0F2F5]">Visual Dashboard</option>
+                        <option value="question" className="bg-[#0B0F15] text-[#F0F2F5]">Specific Intelligence</option>
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="block text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] mb-3">Extraction Ability</span>
+                      <div className="flex h-[36px] items-center gap-4">
+                        <label className="relative flex cursor-pointer items-center p-0 gap-4">
+                          <input
+                            name="can_export"
+                            type="checkbox"
+                            className="peer cursor-pointer appearance-none rounded-sm border border-white/30 w-4 h-4 checked:bg-[#D4AF37] checked:border-[#D4AF37] transition-all"
+                          />
+                          <span className="text-sm font-light text-[#A0AAB2]">Authorize download</span>
+                        </label>
+                      </div>
+                    </label>
+                  </div>
+
+                  <label className="block">
+                    <span className="block text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] mb-3">Asset UUID Key</span>
+                    <input
+                      name="asset_id"
+                      required
+                      pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                      title="Enter a UUID like 00000000-0000-4000-8000-000000000000"
+                      className={`${fieldClass} font-mono tracking-widest text-xs`}
+                      placeholder="00000000-0000-4000-8000-000000000000"
+                    />
                   </label>
+
+                  <button
+                    className={`w-full mt-4 ${primaryButtonClass}`}
+                    disabled={externalClients.length === 0}
+                  >
+                    Authorize Distribution
+                  </button>
                 </div>
-
-                <label className="block space-y-2">
-                  <span className="text-sm font-medium">Asset ID</span>
-                  <input
-                    name="asset_id"
-                    required
-                    pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-                    title="Enter a UUID like 00000000-0000-4000-8000-000000000000"
-                    className={`${fieldClass} font-mono`}
-                    placeholder="00000000-0000-4000-8000-000000000000"
-                  />
-                </label>
-
-                <button
-                  className={primaryButtonClass}
-                  disabled={externalClients.length === 0}
-                >
-                  Create grant
-                </button>
               </form>
             </div>
 
-
-            <div className="overflow-hidden rounded-2xl border border-border-2 bg-surface-2">
-              <div className="hidden grid-cols-[minmax(0,1fr)_110px_90px_auto] gap-3 border-b border-border-1 bg-surface-3 px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:grid">
-                <div>Asset</div>
-                <div>Type</div>
-                <div>Export</div>
+            <div className="pt-8 lg:pt-14 relative">
+              <div aria-hidden="true" className="hidden lg:block absolute left-[-2rem] top-14 bottom-4 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
+              
+              <div className="hidden grid-cols-[minmax(0,1.2fr)_100px_90px_auto] gap-4 mb-4 pb-4 border-b border-white/5 text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] md:grid">
+                <div>Asset Signature</div>
+                <div>Class</div>
+                <div>Extraction</div>
                 <div className="text-right">Action</div>
               </div>
 
-              <div className="divide-y divide-border-0">
+              <div className="flex flex-col gap-2">
                 {grants.map((grant) => (
                   <div
                     key={grant.id}
-                    className="grid gap-3 px-4 py-3 md:grid-cols-[minmax(0,1fr)_110px_90px_auto] md:items-center"
+                    className="group bg-[#0B0F15] p-5 border border-white/5 hover:border-white/10 transition-colors grid gap-4 md:grid-cols-[minmax(0,1.2fr)_100px_90px_auto] md:items-center"
                   >
                     <div className="min-w-0">
-                      <div className="mb-1 text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:hidden">
-                        Asset
-                      </div>
-                      <div className="truncate font-mono text-xs text-ink">
-                        {grant.asset_id}
-                      </div>
-                      <div className="mt-1 truncate font-mono text-xs text-ink-muted">
-                        User {grant.user_id}
-                      </div>
+                      <div className="mb-2 text-[9px] uppercase tracking-[0.15em] text-[#5C6A7A] md:hidden">Asset Signature</div>
+                      <div className="font-mono text-xs text-white truncate">{grant.asset_id}</div>
+                      <div className="mt-1 text-[10px] tracking-wider text-[#A0AAB2]">USER REF: {grant.user_id.split('-')[0]}...</div>
                     </div>
-                    <div className="flex items-center justify-between gap-3 text-sm md:block">
-                      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:hidden">
-                        Type
-                      </span>
-                      <span className="capitalize">{grant.asset_type}</span>
+                    <div className="flex justify-between items-center md:block">
+                      <span className="text-[9px] uppercase tracking-[0.15em] text-[#5C6A7A] md:hidden">Class</span>
+                      <span className="text-[11px] font-light text-white capitalize">{grant.asset_type}</span>
                     </div>
-                    <div className="flex items-center justify-between gap-3 text-sm md:block">
-                      <span className="text-xs font-semibold uppercase tracking-[0.08em] text-ink-faint md:hidden">
-                        Export
-                      </span>
-                      <span>{grant.can_export ? "Yes" : "No"}</span>
+                    <div className="flex justify-between items-center md:block">
+                      <span className="text-[9px] uppercase tracking-[0.15em] text-[#5C6A7A] md:hidden">Extraction</span>
+                      <span className="text-[11px] font-light text-[#A0AAB2]">{grant.can_export ? "Auth" : "Deny"}</span>
                     </div>
-                    <form action={deleteAssetGrantAction} className="md:text-right">
+                    <form action={deleteAssetGrantAction} className="mt-2 md:mt-0 md:text-right">
                       <input type="hidden" name="workspace_id" value={workspaceId} />
                       <input type="hidden" name="grant_id" value={grant.id} />
-                      <button className={dangerButtonClass}>Delete</button>
+                      <button className="text-[10px] uppercase tracking-[0.15em] text-[#EF4444] hover:text-[#FF6B6B] transition-colors border-b border-[#EF4444]/30 hover:border-[#FF6B6B] pb-[1px]">
+                        Revoke
+                      </button>
                     </form>
                   </div>
                 ))}
-              </div>
 
-              {grantsLoadSuccess && grants.length === 0 ? (
-                <div className="px-4 py-8 text-center">
-                  <h3 className="text-sm font-semibold">No grants yet</h3>
-                  <p className="mx-auto mt-2 max-w-[42ch] text-sm leading-6 text-ink-muted">
-                    Create a grant when an external client needs access to one
-                    dashboard or question.
-                  </p>
-                </div>
-              ) : null}
+                {grantsLoadSuccess && grants.length === 0 ? (
+                  <div className="py-16 text-center border border-dashed border-white/10">
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">Awaiting Submissions</p>
+                    <p className="mt-4 text-xs text-[#A0AAB2] font-light max-w-[40ch] mx-auto italic">
+                      No external distributions have been authorized at this time. Use the form to assign intelligence access.
+                    </p>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </section>
+
       </div>
-    </main>
+    </div>
   );
 }

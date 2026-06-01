@@ -45,4 +45,3 @@ async def password_reset_complete(
         ) from exc
 
     return None
-

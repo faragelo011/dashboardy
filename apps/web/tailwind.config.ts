@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}"],
@@ -41,9 +42,37 @@ const config: Config = {
         "danger-ink": "oklch(var(--danger-ink))",
         "danger-ink-strong": "oklch(var(--danger-ink-strong))",
       },
+      fontFamily: {
+        sans: ["var(--font-outfit)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-playfair)", "ui-serif", "Georgia", "serif"],
+      },
+      animation: {
+        "fade-in-up": "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "fade-in": "fadeIn 1s ease-out forwards",
+      },
+      keyframes: {
+        fadeInUp: {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        fadeIn: {
+          "0%": { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+      },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(function ({ addUtilities }) {
+      addUtilities({
+        "@media (prefers-reduced-motion: reduce)": {
+          ".animate-fade-in-up, .animate-fade-in": {
+            animation: "none !important",
+          },
+        },
+      });
+    }),
+  ],
 };
 
 export default config;

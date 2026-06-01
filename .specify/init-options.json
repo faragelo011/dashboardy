@@ -1,9 +1,9 @@
 {
-  "ai": "cursor-agent",
+  "ai": "agy",
   "ai_skills": true,
   "branch_numbering": "sequential",
   "here": true,
-  "integration": "cursor-agent",
+  "integration": "agy",
   "preset": null,
   "script": "sh",
   "speckit_version": "0.7.3.dev0"

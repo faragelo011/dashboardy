@@ -22,11 +22,13 @@ from app.models.data_connections import (
     DbConnectionTestStatus,
     DbFailureCategory,
 )
+from app.models.query_engine import CacheEntry, QueryAuditLog
 
 __all__ = [
     "AssetGrant",
     "AssetType",
     "Base",
+    "CacheEntry",
     "CollectionGrant",
     "CollectionPermission",
     "ConnectionManagementAuditRecord",
@@ -40,6 +42,7 @@ __all__ = [
     "Membership",
     "MembershipRole",
     "MembershipStatus",
+    "QueryAuditLog",
     "Tenant",
     "Workspace",
 ]

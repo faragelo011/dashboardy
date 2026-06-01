@@ -159,6 +159,7 @@
 - [x] T073 Run Playwright validation for the connections flow: `pnpm --filter @dashboardy/web exec playwright test tests/data-connections.spec.ts`.
 - [x] T074 Run monorepo validation commands from `package.json`: `pnpm lint` and `pnpm test`.
 - [x] T075 Verify every required assertion in `specs/003-data-connections/quickstart.md` manually or with tests and record any follow-up notes in `specs/003-data-connections/quickstart.md`.
+- [X] T076 Align credential validation with `contracts/data-connections.openapi.yaml` so Snowflake credentials require exactly one of `password` or `private_key_pem`, reject both or neither, and cover this in API contract/schema tests.
 
 ---
 

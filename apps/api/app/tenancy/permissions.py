@@ -126,3 +126,11 @@ def can_access_dashboard_via_grant(
         asset_id=dashboard_id,
         grants=grants,
     )
+
+
+def can_execute_workspace_query(actor_role: MembershipRole) -> PermissionDecision:
+    """Feature 4: ad hoc warehouse execution is limited to authoring roles."""
+
+    if actor_role in (MembershipRole.admin, MembershipRole.analyst):
+        return PermissionDecision(True, PermissionReason.allowed)
+    return PermissionDecision(False, PermissionReason.role_not_allowed)

@@ -178,9 +178,7 @@ async def write_connection_test_result(
     started_at: datetime,
     completed_at: datetime,
 ) -> ConnectionTestResult:
-    safe_error = (
-        None if sanitized_error is None else redact_string(sanitized_error)
-    )
+    safe_error = None if sanitized_error is None else redact_string(sanitized_error)
     row = ConnectionTestResult(
         tenant_id=tenant_id,
         connection_id=connection_id,

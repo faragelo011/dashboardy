@@ -301,6 +301,20 @@ components:
         - account
         - username
         - role
+      oneOf:
+        - required:
+            - password
+          not:
+            anyOf:
+              - required:
+                  - private_key_pem
+              - required:
+                  - private_key_passphrase
+        - required:
+            - private_key_pem
+          not:
+            required:
+              - password
       properties:
         account:
           type: string

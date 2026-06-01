@@ -347,4 +347,3 @@ def get_supabase_admin() -> SupabaseAdmin:
         supabase_url=supabase_url,
         service_role_key=service_key,
     )
-

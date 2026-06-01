@@ -94,6 +94,54 @@ def test_rotate_404_when_not_configured(
     assert r.json()["error_code"] == "connection_not_found"
 
 
+@pytest.mark.parametrize(
+    "credentials",
+    [
+        {
+            "account": "acct",
+            "username": "user",
+            "role": "SYSADMIN",
+        },
+        {
+            "account": "acct",
+            "username": "user",
+            "password": "secret",
+            "private_key_pem": (
+                "-----BEGIN PRIVATE KEY-----\nkey\n-----END PRIVATE KEY-----"
+            ),
+            "role": "SYSADMIN",
+        },
+        {
+            "account": "acct",
+            "username": "user",
+            "private_key_passphrase": "passphrase",
+            "role": "SYSADMIN",
+        },
+    ],
+)
+def test_rotate_400_invalid_credential_auth_shape(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+    credentials: dict[str, str],
+):
+    uid = uuid.uuid4()
+    workspace_id = asyncio.run(_seed_member(user_id=uid, role="admin"))
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {"sub": str(uid), "email": "admin@example.com"},
+    )
+    with TestClient(app) as client:
+        r = client.post(
+            f"/workspaces/{workspace_id}/connection/rotate",
+            headers={"Authorization": "Bearer t"},
+            json={"credentials": credentials},
+        )
+    assert r.status_code == 400
+    body = r.json()
+    assert body["error_code"] == "validation_error"
+    assert "secret" not in str(body).lower()
+
+
 def test_rotate_200_shape(monkeypatch: pytest.MonkeyPatch, use_live_postgres: None):
     uid = uuid.uuid4()
     workspace_id = asyncio.run(_seed_member(user_id=uid, role="admin"))
@@ -129,4 +177,3 @@ def test_rotate_200_shape(monkeypatch: pytest.MonkeyPatch, use_live_postgres: No
     assert r.status_code == 200
     body = r.json()
     assert body["status"] == "pending_test"
-

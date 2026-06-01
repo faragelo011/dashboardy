@@ -22,7 +22,7 @@ An admin configures the tenant's single analytics data connection so analysts an
 
 **Why this priority**: Without a tenant data connection, later query, saved question, and dashboard workflows cannot run.
 
-**Independent Test**: Can be fully tested by signing in as an admin, submitting valid connection details, and confirming the tenant has exactly one connection record with no credentials visible afterward.
+**Independent Test**: Can be fully tested by signing in as an admin, submitting valid connection details, and confirming the tenant has one connection record after setup, no duplicate record can be created, and no credentials are visible afterward.
 
 **Acceptance Scenarios**:
 
@@ -80,7 +80,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ### Functional Requirements
 
 - **FR-001**: The system MUST allow only admins to create, update, test, and rotate tenant data connections.
-- **FR-002**: The system MUST enforce exactly one data connection per tenant.
+- **FR-002**: The system MUST enforce at most one data connection record per tenant; a tenant may have zero records before setup and one record after setup.
 - **FR-003**: The system MUST associate every data connection with exactly one tenant.
 - **FR-004**: The system MUST collect the connection details needed to reach the tenant's approved analytics warehouse, including a human-readable name and non-secret warehouse location metadata.
 - **FR-005**: The system MUST store credential material only in a dedicated secret store and retain only an opaque credential reference with the connection record.
@@ -107,7 +107,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 - **Credential Secret**: Sensitive credential material stored outside normal connection records and referenced only through an opaque identifier.
 - **Connection Test Result**: The latest outcome of a connection validation attempt, including success or failure, completion time, and sanitized error summary when applicable.
 - **Connection Management Audit Record**: A security record of a connection create, metadata update, test, or rotation attempt, including actor, time, action, and sanitized outcome.
-- **Tenant**: The business account boundary that owns exactly one data connection in the MVP.
+- **Tenant**: The business account boundary that owns zero or one data connection record in the MVP; after successful setup, it owns one managed connection.
 - **Admin User**: A tenant member authorized to manage connection metadata, credential setup, testing, and rotation.
 
 ## Success Criteria *(mandatory)*
@@ -115,7 +115,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ### Measurable Outcomes
 
 - **SC-001**: 100% of non-admin attempts to create, update, test, or rotate a connection are denied.
-- **SC-002**: 100% of tenants have exactly one data connection record, and duplicate creation attempts are prevented so no additional records can exist.
+- **SC-002**: 100% of configured tenants have exactly one data connection record, unconfigured tenants return a clear `not_configured` state, and duplicate creation attempts are prevented so no additional records can exist.
 - **SC-003**: 0 plaintext credential values appear in user-facing connection responses, stored connection metadata, test errors, or operational logs during validation.
 - **SC-004**: Admins can complete initial connection setup and run the first connection test in under 5 minutes when they have valid credential information.
 - **SC-005**: Successful credential rotations are reflected in subsequent data access within 60 seconds after the passing test.
@@ -125,7 +125,7 @@ An admin rotates the connection credentials without exposing the old or new secr
 ## Assumptions
 
 - Feature 2 auth and tenancy are already available, including tenant resolution, workspace membership, and admin role checks.
-- The MVP allows exactly one analytics warehouse connection record per tenant; multi-connection routing and shared connections are out of scope.
+- The MVP allows at most one analytics warehouse connection record per tenant; multi-connection routing and shared connections are out of scope.
 - Deleting or disabling a tenant connection is out of scope for MVP; connection changes happen through metadata updates and credential rotation.
 - Credential values are accepted only during create or rotate actions and are not retrievable afterward.
 - Connection metadata may include warehouse, database, and schema labels because they help admins recognize the configured target and are not treated as secrets by default.

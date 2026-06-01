@@ -28,6 +28,7 @@ from app.connections.schemas import (
 from app.connections.snowflake import SnowflakeTester, categorize_snowflake_failure
 from app.connections.vault import VaultClient
 from app.models.data_connections import (
+    DataConnection,
     DbAuditAction,
     DbAuditOutcome,
     DbConnectionStatus,
@@ -190,9 +191,7 @@ class ConnectionService:
                 )
             except DependencyUnavailableError as exc:
                 audit_action = (
-                    DbAuditAction.create
-                    if created
-                    else DbAuditAction.metadata_update
+                    DbAuditAction.create if created else DbAuditAction.metadata_update
                 )
                 await self._repository.write_management_audit(
                     session,
@@ -321,13 +320,29 @@ class ConnectionService:
 
         if pk_pem:
             if not (account and username and role):
-                raise ConnectionValidationError("Stored credentials are incomplete.")
+                return await self._record_failed_test(
+                    session=session,
+                    actor=actor,
+                    row=row,
+                    credential_version=credential_version,
+                    started_at=started_at,
+                    failure_category=FailureCategory.unknown,
+                    safe_error="Stored credentials are incomplete.",
+                )
             pw_arg: str | None = None
             pk_arg = pk_pem
             pp_arg = pk_pp
         else:
             if not (account and username and password and role):
-                raise ConnectionValidationError("Stored credentials are incomplete.")
+                return await self._record_failed_test(
+                    session=session,
+                    actor=actor,
+                    row=row,
+                    credential_version=credential_version,
+                    started_at=started_at,
+                    failure_category=FailureCategory.unknown,
+                    safe_error="Stored credentials are incomplete.",
+                )
             pw_arg = password
             pk_arg = None
             pp_arg = None
@@ -439,6 +454,126 @@ class ConnectionService:
 
         connection = await self.get_connection_metadata(session=session, actor=actor)
         return ConnectionTestResponse(connection=connection, test_status="success")
+
+    async def _record_failed_test(
+        self,
+        *,
+        session,
+        actor: ResolvedTenancy,
+        row: DataConnection,
+        credential_version: int,
+        started_at: datetime,
+        failure_category: FailureCategory,
+        safe_error: str,
+    ) -> ConnectionTestResponse:
+        completed_at = self.now()
+        safe_error = redact_string(safe_error)
+        db_failure_category = DbFailureCategory(failure_category.value)
+        await self._repository.write_connection_test_result(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            attempted_by_membership_id=actor.membership_id,
+            credential_version=credential_version,
+            status=DbConnectionTestStatus.failure,
+            failure_category=db_failure_category,
+            sanitized_error=safe_error,
+            started_at=started_at,
+            completed_at=completed_at,
+        )
+        await self._repository.update_connection_test_state(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            status=DbConnectionStatus.test_failed,
+            last_tested_at=completed_at,
+            last_successful_test_at=row.last_successful_test_at,
+            last_error=safe_error,
+            updated_by_membership_id=actor.membership_id,
+        )
+        await self._repository.write_management_audit(
+            session,
+            tenant_id=actor.tenant_id,
+            connection_id=row.id,
+            actor_membership_id=actor.membership_id,
+            action=DbAuditAction.test,
+            outcome=DbAuditOutcome.failure,
+            failure_category=db_failure_category,
+            sanitized_message=safe_error,
+        )
+
+        connection = await self.get_connection_metadata(session=session, actor=actor)
+        return ConnectionTestResponse(
+            connection=connection,
+            test_status="failure",
+            failure_category=failure_category,
+            sanitized_error=safe_error,
+        )
+
+    async def resolve_active_execution_credentials(
+        self,
+        *,
+        session,
+        tenant_id: UUID,
+    ) -> (
+        tuple[
+            DataConnection,
+            dict[str, str],
+        ]
+        | None
+    ):
+        """Snowflake Vault material for read-only analytic execution paths.
+
+        Reuses Vault HTTP read semantics already implemented for connection testing.
+        Returns ``None`` when no **active**, fully configured connection exists.
+        """
+
+        row = await self._repository.get_connection_for_tenant(
+            session, tenant_id=tenant_id
+        )
+        if row is None or row.status != DbConnectionStatus.active:
+            return None
+        if not row.vault_secret_id:
+            return None
+        secret = await self._vault.read_secret(secret_id=row.vault_secret_id)
+        account = secret.get("account", "").strip()
+        username = secret.get("username", "").strip()
+        password = secret.get("password", "")
+        if not isinstance(password, str):
+            password = str(password)
+        role = secret.get("role", "").strip()
+        pk_pem = secret.get("private_key_pem", "").strip()
+        pk_pp = secret.get("private_key_passphrase")
+        if pk_pp is not None:
+            pk_pp = str(pk_pp)
+            if not pk_pp.strip():
+                pk_pp = None
+
+        if pk_pem:
+            if not (account and username and role):
+                raise ConnectionValidationError("Stored credentials are incomplete.")
+        else:
+            if not (account and username and password and role):
+                raise ConnectionValidationError("Stored credentials are incomplete.")
+        # Downstream callers must avoid logging credential payloads / raw JWT.
+        normalized: dict[str, str] = {
+            "account": account,
+            "username": username,
+            "role": role,
+        }
+        if pk_pem:
+            normalized["private_key_pem"] = pk_pem
+            if pk_pp is not None:
+                normalized["private_key_passphrase"] = pk_pp
+        else:
+            normalized["password"] = password
+        for optional in ("warehouse", "database", "schema"):
+            raw = secret.get(optional)
+            if raw is not None:
+                trimmed = str(raw).strip()
+                if trimmed:
+                    normalized[optional] = trimmed
+        return row, normalized
 
     async def rotate_credentials(
         self,

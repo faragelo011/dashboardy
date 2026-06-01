@@ -7,7 +7,7 @@
 
 Feature 3 adds admin-only management for the tenant's single Snowflake data connection. The implementation stores non-secret connection metadata in Supabase Postgres, stores Snowflake credentials only in Supabase Vault, exposes sanitized status and test results to admins, activates new or rotated credentials only after a successful test, and records a secret-free audit trail for create, metadata update, test, and rotation attempts.
 
-The technical approach follows [docs/implementation-plan.md](../../docs/implementation-plan.md) Feature 3 and constitution v1.2.0: FastAPI owns all connection management and secret access, the web app receives metadata only, one active connection per tenant is enforced, shared connections across tenants are forbidden, and Snowflake remains the source of truth for warehouse data access. The clarification session recorded in [spec.md](spec.md) resolved the open lifecycle, status, and audit questions.
+The technical approach follows [docs/implementation-plan.md](../../docs/implementation-plan.md) Feature 3 and constitution v1.2.0: FastAPI owns all connection management and secret access, the web app receives metadata only, at most one connection record per tenant is enforced, shared connections across tenants are forbidden, and Snowflake remains the source of truth for warehouse data access. The clarification session recorded in [spec.md](spec.md) resolved the open lifecycle, status, and audit questions.
 
 ## Technical Context
 
@@ -18,7 +18,7 @@ The technical approach follows [docs/implementation-plan.md](../../docs/implemen
 **Target Platform**: Linux containers on Bunny Magic Containers, with staging and production environments inherited from Feature 1  
 **Project Type**: Web application monorepo with `apps/api`, `apps/web`, and shared `packages/`  
 **Performance Goals**: Admins can complete setup and first test in under 5 minutes; successful rotations become effective for new downstream data access within 60 seconds after the passing test; connection metadata reads should remain normal protected-page latency  
-**Constraints**: Admin-only management; one active connection per tenant; no delete or disable in MVP; credentials never returned or logged; credentials activate only after a successful test; failed create/rotation tests preserve the previous active state; audit all management attempts without secrets  
+**Constraints**: Admin-only management; zero or one connection record per tenant before setup and exactly one managed connection after setup; no delete or disable in MVP; credentials never returned or logged; credentials activate only after a successful test; failed create/rotation tests preserve the previous active state; audit all management attempts without secrets
 **Scale/Scope**: Feature 3 covers data connection metadata, Vault-backed credential create/rotate, connection testing, status vocabulary, admin UI surface, audit records, and cache-holder invalidation signaling for later query execution; excludes query execution, saved questions, dashboards, multiple tenant connections, non-Snowflake connectors, and connection delete/disable
 
 ## Constitution Check
@@ -35,7 +35,7 @@ Constitution v1.2.0 - [.specify/memory/constitution.md](../../.specify/memory/co
 | 4 | Raw SQL constrained | N/A: query execution arrives in Feature 4; this feature only validates connectivity |
 | 5 | Query execution logged | N/A: no BI query execution in this feature; connection management actions have their own audit records |
 | 6 | No BI data in app DB | **Pass**: stores only metadata, secret references, status, sanitized errors, and audit records |
-| 7 | No shared connections across tenants | **Pass**: one connection per tenant; no cross-tenant sharing or reuse |
+| 7 | No shared connections across tenants | **Pass**: at most one connection record per tenant; no cross-tenant sharing or reuse |
 | 8 | Authors vs consumers | **Pass**: admins manage connections; analysts/viewers/external clients cannot manage credentials |
 | 9 | Scope creep rejected | **Pass**: no delete/disable, multiple connections, non-Snowflake connectors, query execution, or dashboard work |
 
@@ -124,7 +124,7 @@ After producing Phase 1 artifacts, all design decisions remain within constituti
 - Connection metadata and audits are tenant-bound.
 - FastAPI remains the only actor with secret-store access and Snowflake credential handling.
 - Supabase Vault is the only credential store; app database keeps opaque references only.
-- One connection per tenant is enforced by model and contract.
+- At most one connection record per tenant is enforced by model and contract.
 - No BI warehouse data or plaintext credentials are persisted in app tables or logs.
 - Query execution remains deferred to Feature 4; this feature only tests connectivity and prepares connection resolution.
 

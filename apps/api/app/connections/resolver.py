@@ -82,4 +82,3 @@ def _row_to_effective(
         schema=row.schema_,
         resolved_at=now,
     )
-

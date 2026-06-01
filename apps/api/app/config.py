@@ -30,6 +30,43 @@ class Settings(BaseSettings):
     SUPABASE_JWT_ISSUER: str = Field(min_length=1)
     SUPABASE_JWT_AUDIENCE: str | None = None
 
+    # Query engine (Feature 004): defaults match locked table in
+    # ``specs/004-query-engine/tasks.md``; override via env.
+    QUERY_ENGINE_SNOWFLAKE_STATEMENT_TIMEOUT_SECONDS: int = Field(
+        default=30, ge=1, le=3_600
+    )
+    QUERY_ENGINE_DEFAULT_MAX_ROWS: int = Field(default=5_000, ge=1)
+    QUERY_ENGINE_HARD_MAX_ROWS: int = Field(default=10_000, ge=1)
+    QUERY_ENGINE_CONCURRENT_SNOWFLAKE_EXECUTIONS: int = Field(default=10, ge=1)
+    QUERY_ENGINE_WAITING_REQUESTS_QUEUE_DEPTH: int = Field(default=50, ge=1)
+    QUERY_ENGINE_EXECUTION_SLOT_WAIT_SECONDS: int = Field(default=25, ge=1)
+    QUERY_ENGINE_CACHE_TTL_KPI_SECONDS: int = Field(default=600, ge=1)
+    QUERY_ENGINE_CACHE_TTL_CHART_SECONDS: int = Field(default=300, ge=1)
+    QUERY_ENGINE_CACHE_TTL_TABLE_SECONDS: int = Field(default=120, ge=1)
+    QUERY_ENGINE_CACHE_GLOBAL_TTL_CEILING_SECONDS: int = Field(default=900, ge=1)
+    QUERY_ENGINE_AUDIT_RETENTION_DAYS: int = Field(default=90, ge=1)
+
+    @model_validator(mode="after")
+    def _validate_query_engine_constraints(self) -> "Settings":
+        if self.QUERY_ENGINE_DEFAULT_MAX_ROWS > self.QUERY_ENGINE_HARD_MAX_ROWS:
+            raise ValueError(
+                "QUERY_ENGINE_DEFAULT_MAX_ROWS must be less than or equal to "
+                "QUERY_ENGINE_HARD_MAX_ROWS"
+            )
+        ceiling = self.QUERY_ENGINE_CACHE_GLOBAL_TTL_CEILING_SECONDS
+        for field_name in (
+            "QUERY_ENGINE_CACHE_TTL_KPI_SECONDS",
+            "QUERY_ENGINE_CACHE_TTL_CHART_SECONDS",
+            "QUERY_ENGINE_CACHE_TTL_TABLE_SECONDS",
+        ):
+            ttl = getattr(self, field_name)
+            if ttl > ceiling:
+                raise ValueError(
+                    f"{field_name} ({ttl}s) must be less than or equal to "
+                    f"QUERY_ENGINE_CACHE_GLOBAL_TTL_CEILING_SECONDS ({ceiling}s)"
+                )
+        return self
+
     @model_validator(mode="after")
     def _validate_supabase_jwt_config(self) -> "Settings":
         if not (self.SUPABASE_JWKS_URL and self.SUPABASE_JWKS_URL.strip()) and not (

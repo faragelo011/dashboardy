@@ -43,7 +43,7 @@ def _forbidden(*, error_code: str, message: str) -> NoReturn:
     )
 
 
-async def _require_active_membership(
+async def require_active_membership(
     *,
     session: AsyncSession,
     user_id: UUID,
@@ -110,7 +110,7 @@ async def get_workspace_connection(
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> DataConnectionResponse:
-    actor = await _require_active_membership(
+    actor = await require_active_membership(
         session=session,
         user_id=auth.user_id,
         workspace_id=workspace_id,
@@ -138,7 +138,7 @@ async def upsert_workspace_connection(
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> DataConnectionResponse:
-    actor = await _require_active_membership(
+    actor = await require_active_membership(
         session=session,
         user_id=auth.user_id,
         workspace_id=workspace_id,
@@ -193,7 +193,7 @@ async def test_workspace_connection(
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> ConnectionTestResponse:
-    actor = await _require_active_membership(
+    actor = await require_active_membership(
         session=session,
         user_id=auth.user_id,
         workspace_id=workspace_id,
@@ -204,6 +204,7 @@ async def test_workspace_connection(
     except AuthzDeniedError as exc:
         _forbidden(error_code=exc.error_code, message=str(exc))
     except DependencyUnavailableError as exc:
+        await session.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"error_code": exc.error_code, "message": str(exc)},
@@ -231,7 +232,7 @@ async def rotate_workspace_connection(
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> DataConnectionResponse:
-    actor = await _require_active_membership(
+    actor = await require_active_membership(
         session=session,
         user_id=auth.user_id,
         workspace_id=workspace_id,
@@ -255,6 +256,7 @@ async def rotate_workspace_connection(
             },
         ) from exc
     except DependencyUnavailableError as exc:
+        await session.commit()
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={"error_code": exc.error_code, "message": str(exc)},

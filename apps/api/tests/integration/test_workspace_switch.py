@@ -48,4 +48,3 @@ def test_workspace_switch_unavailable_workspace_denied(
         )
     assert r.status_code == 403
     assert r.json()["error_code"] == "authz_denied"
-

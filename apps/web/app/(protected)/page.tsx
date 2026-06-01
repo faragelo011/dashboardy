@@ -1,28 +1,72 @@
+import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "./data";
 
 export default async function ProtectedHomePage() {
   const me = await getProtectedMe();
+  
   return (
-    <main className="min-h-dvh bg-surface-app p-8 text-ink">
-      <h1 className="text-2xl font-semibold text-ink-strong">Dashboardy</h1>
-      <p className="mt-2 text-sm text-ink-muted">
-        Workspace: <span className="font-medium">{me.current_workspace.workspace_name}</span>
-      </p>
-      <p className="text-sm text-ink-muted">
-        Role: <span className="font-medium">{me.current_workspace.role}</span> — status:{" "}
-        <span className="font-medium">{me.current_workspace.membership_status}</span>
-      </p>
-      <p className="mt-4 text-xs text-ink-faint">Signed in as {me.user.email}</p>
-      <p className="mt-6">
-        <form action="/sign-out" method="post">
-          <button
-            type="submit"
-            className="text-sm font-medium text-accent-soft-ink underline underline-offset-4 disabled:opacity-50"
-          >
-            Sign out
-          </button>
-        </form>
-      </p>
-    </main>
+    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37] relative overflow-hidden">
+      <AdminLuxuryNav />
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 -mr-40 -mt-20 w-[600px] h-[600px] bg-[#D4AF37] opacity-[0.02] blur-[100px] pointer-events-none rounded-full" />
+      
+      <main className="mx-auto flex max-w-7xl flex-col px-4 py-12 sm:px-8 lg:py-24 animate-fade-in relative z-10">
+        
+        <header className="mb-16 border-b border-white/10 pb-12 flex flex-col items-start gap-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+            Command Center
+          </p>
+          <h1 className="text-5xl lg:text-7xl font-serif text-white tracking-tight font-light leading-none">
+            Dashboardy
+          </h1>
+          <p className="text-sm lg:text-base leading-relaxed text-[#A0AAB2] font-light max-w-[50ch] mt-4">
+            Welcome to your executive operational console. Additional analytics and visualization modules will be provisioned here shortly.
+          </p>
+        </header>
+
+        <section className="bg-[#0B0F15] border border-white/5 shadow-2xl p-8 sm:p-12 relative group/card">
+          <div className="absolute top-0 left-0 w-12 h-px bg-gradient-to-r from-[#D4AF37]/50 to-transparent" />
+          
+          <h2 className="text-2xl font-serif text-[#F0F2F5] tracking-wide font-light mb-8">
+            Current Session Context
+          </h2>
+          
+          <dl className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-col gap-2">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">Namespace</dt>
+              <dd className="text-lg font-mono font-light text-white">{me.current_workspace.workspace_name}</dd>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">Clearance Level</dt>
+              <dd className="text-lg font-light text-white capitalize">{me.current_workspace.role}</dd>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">Identity Anchor</dt>
+              <dd className="text-sm font-light text-[#A0AAB2] mt-1 truncate">{me.user.email}</dd>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <dt className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">Authorization Status</dt>
+              <dd className="text-xs uppercase tracking-widest text-[#D4AF37] font-medium mt-1">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_rgba(212,175,55,0.6)] mr-2" />
+                {me.current_workspace.membership_status}
+              </dd>
+            </div>
+          </dl>
+
+          <form action="/sign-out" method="post" className="mt-16 pt-8 border-t border-white/10">
+            <button
+              type="submit"
+              className="text-[#EF4444] hover:text-white transition-colors text-[10px] uppercase tracking-[0.15em] bg-transparent border border-[#EF4444]/30 px-6 py-3 hover:bg-[#EF4444]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Terminate Session
+            </button>
+          </form>
+        </section>
+
+      </main>
+    </div>
   );
 }

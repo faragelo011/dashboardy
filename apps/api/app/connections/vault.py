@@ -90,9 +90,7 @@ class HttpSupabaseVaultClient:
         self._timeout = timeout_seconds
         trimmed = store_secret_path.strip().strip("/")
         self._store_secret_path = (
-            f"/{trimmed}"
-            if trimmed
-            else "/rest/v1/rpc/dashboardy_vault_create_secret"
+            f"/{trimmed}" if trimmed else "/rest/v1/rpc/dashboardy_vault_create_secret"
         )
         read_trimmed = read_secret_path.strip().strip("/")
         self._read_secret_path = (
@@ -132,8 +130,7 @@ class HttpSupabaseVaultClient:
 
         if resp.status_code >= 400:
             raise DependencyUnavailableError(
-                "Supabase Vault rejected secret storage"
-                + _pgrst_error_suffix(resp)
+                "Supabase Vault rejected secret storage" + _pgrst_error_suffix(resp)
             )
 
         secret_id = _extract_secret_id(resp)

@@ -101,8 +101,12 @@ def upgrade() -> None:
         sa.Column("last_tested_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_successful_test_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("last_error", sa.Text(), nullable=True),
-        sa.Column("created_by_membership_id", postgresql.UUID(as_uuid=True), nullable=False),
-        sa.Column("updated_by_membership_id", postgresql.UUID(as_uuid=True), nullable=True),
+        sa.Column(
+            "created_by_membership_id", postgresql.UUID(as_uuid=True), nullable=False
+        ),
+        sa.Column(
+            "updated_by_membership_id", postgresql.UUID(as_uuid=True), nullable=True
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),

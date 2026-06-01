@@ -60,9 +60,7 @@ class SnowflakeCredentialsPayload(BaseModel):
                 "private_key_passphrase is only valid with private_key_pem"
             )
         passphrase = (
-            self.private_key_passphrase.strip()
-            if self.private_key_passphrase
-            else None
+            self.private_key_passphrase.strip() if self.private_key_passphrase else None
         )
         if passphrase is not None and not passphrase:
             passphrase = None

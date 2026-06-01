@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy API - Query Engine (Feature 4)
+  version: 0.4.0
+  description: |
+    Execute read-only parameterized ad hoc SQL against the tenant Snowflake connection with backend
+    structural validation (sqlglot policy), concurrency backpressure (`warehouse_busy`), audit
+    logging (`query_audit_logs`), and tenant-scoped result caching (`cache_entries`) per
+    constitution v1.2.0 §3.3, §7, §8.2.
+
+    Ad hoc callers MUST be authenticated internal authoring members (`admin`, `analyst`);
+    `viewer` and `external_client` principals receive authorization failures before validation.
+
+servers:
+  - url: https://api.staging.dashboardy.app
+    description: Staging
+  - url: https://api.dashboardy.app
+    description: Production
+
+security:
+  - bearerAuth: []
+
+paths:
+  /workspaces/{workspace_id}/query/execute:
+    post:
+      operationId: executeWorkspaceQuery
+      summary: Execute a validated analytics query for a workspace
+      description: |
+        Ad hoc SQL is limited to internal authoring roles (`admin`, `analyst`).
+        The contract reserves future structured modes **saved_question** and **widget**,
+        but Feature 4 implementations MUST NOT execute those modes until owning asset
+        features provide authoritative SQL, parameter declarations, and authorization.
+
+        Disabled future modes return **403** (`authz_denied`) when no asset-scoped
+        authorization allowance exists. Structural rejections (`rejected_by_parser`) and binding mismatches return **422** with
+        a normalized error envelope. Authorization failures return **403**. Queue saturation
+        returns **429** with `error_code: warehouse_busy`. Successful HTTP handling with
+        warehouse outcomes uses **200** and places the execution `status` inside `meta.status`
+        for `ok`, `timeout`, `row_limit_exceeded`, and `warehouse_error`.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueryExecuteRequest"
+            examples:
+              adhoc:
+                summary: Ad hoc parameterized SELECT
+                value:
+                  mode: adhoc
+                  sql_text: "SELECT col FROM t WHERE id = %(id)s"
+                  parameters:
+                    id: "00000000-0000-0000-0000-000000000001"
+                  bypass_cache: false
+      responses:
+        "200":
+          description: Request accepted; warehouse finished or soft-failed inside limits.
+          headers:
+            X-Correlation-ID:
+              $ref: "#/components/headers/CorrelationId"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryExecuteSuccessResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Workspace unknown, membership missing, or tenant connection not usable.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+        "422":
+          description: Structural validation rejection or invalid parameter bindings.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+        "429":
+          description: Queue depth or dwell patience exceeded — typed busy signal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  headers:
+    CorrelationId:
+      description: Correlates structured logs (`X-Correlation-ID`).
+      schema:
+        type: string
+
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    QueryMode:
+      type: string
+      enum:
+        - adhoc
+        - saved_question
+        - widget
+
+    PresentationClass:
+      type: string
+      description: Drives TTL class defaults for cached modalities (constitution §3.3).
+      enum:
+        - kpi
+        - chart
+        - table
+
+    ExecutionStatus:
+      type: string
+      enum:
+        - ok
+        - timeout
+        - row_limit_exceeded
+        - rejected_by_parser
+        - warehouse_error
+        - authz_denied
+        - warehouse_busy
+      description: |
+        Mirrors product glossary. Responses may omit some values depending on HTTP layer:
+        typical JSON 200 payloads use warehouse terminal outcomes; HTTP 422/403/429 carry
+        `error_code` aligned to the same vocabulary.
+
+    QueryExecuteRequest:
+      oneOf:
+        - $ref: "#/components/schemas/AdhocQueryExecuteRequest"
+        - $ref: "#/components/schemas/SavedQuestionQueryExecuteRequest"
+        - $ref: "#/components/schemas/WidgetQueryExecuteRequest"
+      discriminator:
+        propertyName: mode
+        mapping:
+          adhoc: "#/components/schemas/AdhocQueryExecuteRequest"
+          saved_question: "#/components/schemas/SavedQuestionQueryExecuteRequest"
+          widget: "#/components/schemas/WidgetQueryExecuteRequest"
+
+    AdhocQueryExecuteRequest:
+      type: object
+      required:
+        - mode
+        - sql_text
+      properties:
+        mode:
+          type: string
+          const: adhoc
+        sql_text:
+          type: string
+          description: Single SELECT / WITH … SELECT submission; validated before dispatch.
+        parameters:
+          type: object
+          additionalProperties: true
+          description: Named bindings for Snowflake parameterized execution.
+        bypass_cache:
+          type: boolean
+          default: false
+          description: Present for symmetry; implementations MUST ignore for ad hoc caching.
+
+    SavedQuestionQueryExecuteRequest:
+      type: object
+      required:
+        - mode
+        - saved_question_id
+        - presentation_class
+      properties:
+        mode:
+          type: string
+          const: saved_question
+        saved_question_id:
+          type: string
+          format: uuid
+          description: Placeholder tolerated in Feature 4 until saved_questions ships (Feature 5).
+        parameters:
+          type: object
+          additionalProperties: true
+        presentation_class:
+          $ref: "#/components/schemas/PresentationClass"
+        bypass_cache:
+          type: boolean
+          default: false
+        filter_state_hash:
+          type: string
+          nullable: true
+          description: |
+            Caller-supplied digest consolidating filter equivalency until dashboard filter
+            model (§7.7) is authoritative in Feature 6.
+
+    WidgetQueryExecuteRequest:
+      type: object
+      required:
+        - mode
+        - dashboard_id
+        - widget_id
+        - saved_question_id
+        - presentation_class
+      properties:
+        mode:
+          type: string
+          const: widget
+        dashboard_id:
+          type: string
+          format: uuid
+        widget_id:
+          type: string
+          format: uuid
+        saved_question_id:
+          type: string
+          format: uuid
+        parameters:
+          type: object
+          additionalProperties: true
+        presentation_class:
+          $ref: "#/components/schemas/PresentationClass"
+        bypass_cache:
+          type: boolean
+          default: false
+        filter_state_hash:
+          type: string
+          nullable: true
+
+    ColumnDescriptor:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          nullable: true
+          description: Declared or inferred logical type label for clients.
+
+    QueryExecuteMeta:
+      type: object
+      required:
+        - status
+        - duration_ms
+        - row_count
+        - truncated
+        - cache_hit
+      properties:
+        status:
+          $ref: "#/components/schemas/ExecutionStatus"
+        duration_ms:
+          type: integer
+          minimum: 0
+        row_count:
+          type: integer
+          minimum: 0
+        truncated:
+          type: boolean
+        cache_hit:
+          type: boolean
+        error_code:
+          type: string
+          nullable: true
+
+    QueryExecuteSuccessResponse:
+      type: object
+      required:
+        - columns
+        - rows
+        - meta
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ColumnDescriptor"
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+          description: Parallel arrays aligned to `columns` order; JSON-serializable cells.
+        meta:
+          $ref: "#/components/schemas/QueryExecuteMeta"
+
+    NormalizedError:
+      type: object
+      required:
+        - error_code
+        - message
+      properties:
+        error_code:
+          type: string
+          examples:
+            - authz_denied
+            - warehouse_busy
+            - rejected_by_parser
+            - feature_not_available
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    Forbidden:
+      description: Authenticated but not permitted (e.g., `external_client`, failing modality gate).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
