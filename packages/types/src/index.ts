@@ -47,6 +47,7 @@ export type {
   SavedQuestionConsumerDetail,
   SavedQuestionCreateRequest,
   SavedQuestionDetail,
+  SavedQuestionDetailLevel,
   SavedQuestionExecuteRequest,
   SavedQuestionInternalDetail,
   SavedQuestionListResponse,

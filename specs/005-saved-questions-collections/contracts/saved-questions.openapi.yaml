@@ -524,8 +524,11 @@ components:
       allOf:
         - $ref: "#/components/schemas/SavedQuestionSummary"
         - type: object
-          required: [parameters]
+          required: [detail_level, parameters]
           properties:
+            detail_level:
+              type: string
+              enum: [consumer]
             parameters:
               type: array
               items:
@@ -533,10 +536,17 @@ components:
 
     SavedQuestionInternalDetail:
       allOf:
-        - $ref: "#/components/schemas/SavedQuestionConsumerDetail"
+        - $ref: "#/components/schemas/SavedQuestionSummary"
         - type: object
-          required: [sql_text]
+          required: [detail_level, parameters, sql_text]
           properties:
+            detail_level:
+              type: string
+              enum: [internal]
+            parameters:
+              type: array
+              items:
+                $ref: "#/components/schemas/ParameterDefinition"
             sql_text:
               type: string
 

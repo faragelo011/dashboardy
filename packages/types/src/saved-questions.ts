@@ -53,11 +53,16 @@ export type SavedQuestionSummary = {
   updated_at: string;
 };
 
+export type SavedQuestionDetailLevel = "consumer" | "internal";
+
 export type SavedQuestionConsumerDetail = SavedQuestionSummary & {
+  detail_level: "consumer";
   parameters: ParameterDefinition[];
 };
 
-export type SavedQuestionInternalDetail = SavedQuestionConsumerDetail & {
+export type SavedQuestionInternalDetail = SavedQuestionSummary & {
+  detail_level: "internal";
+  parameters: ParameterDefinition[];
   sql_text: string;
 };
 
