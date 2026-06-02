@@ -16,6 +16,7 @@ from app.routes import (
     connections_router,
     me_router,
     query_router,
+    questions_router,
     workspaces_router,
 )
 from app.routes.health import router as health_router
@@ -127,4 +128,5 @@ app.include_router(me_router)
 app.include_router(workspaces_router)
 app.include_router(connections_router)
 app.include_router(query_router)
+app.include_router(questions_router)
 app.include_router(admin_router)

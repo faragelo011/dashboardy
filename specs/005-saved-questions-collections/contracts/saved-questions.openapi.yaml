@@ -1,0 +1,704 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy API - Saved Questions and Collections (Feature 5)
+  version: 0.5.0
+  description: |
+    Workspace-scoped flat collections and saved questions. All operations require
+    authenticated membership context, tenant/workspace authorization, and backend-only
+    permission checks. Saved-question execution delegates to the governed Feature 4
+    query engine; CSV export is synchronous and capped at 10,000 rows.
+
+servers:
+  - url: https://api.staging.dashboardy.app
+    description: Staging
+  - url: https://api.dashboardy.app
+    description: Production
+
+security:
+  - bearerAuth: []
+
+paths:
+  /workspaces/{workspace_id}/collections:
+    get:
+      operationId: listCollections
+      summary: List visible flat collections
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      responses:
+        "200":
+          description: Permission-filtered collections.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [collections]
+                properties:
+                  collections:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Collection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createCollection
+      summary: Create a collection
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionCreateRequest"
+      responses:
+        "201":
+          description: Collection created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Duplicate collection name.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+  /workspaces/{workspace_id}/collections/{collection_id}:
+    get:
+      operationId: getCollection
+      summary: Get collection metadata
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/CollectionId"
+      responses:
+        "200":
+          description: Collection detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateCollection
+      summary: Update collection metadata
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/CollectionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CollectionUpdateRequest"
+      responses:
+        "200":
+          description: Collection updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Collection"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Duplicate name or stale update.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+    delete:
+      operationId: deleteCollection
+      summary: Soft-delete an empty collection
+      description: Refuses deletion while active saved questions remain.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/CollectionId"
+      responses:
+        "204":
+          description: Collection soft-deleted.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Collection contains active saved questions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+  /workspaces/{workspace_id}/questions:
+    get:
+      operationId: listSavedQuestions
+      summary: List visible saved questions
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: collection_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Permission-filtered saved questions.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [questions]
+                properties:
+                  questions:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SavedQuestionSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createSavedQuestion
+      summary: Create a saved question
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedQuestionCreateRequest"
+      responses:
+        "201":
+          description: Saved question created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedQuestionInternalDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid parameter schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+  /workspaces/{workspace_id}/questions/{question_id}:
+    get:
+      operationId: getSavedQuestion
+      summary: Get a saved question
+      description: External-client responses omit `sql_text` and authoring-only metadata.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/QuestionId"
+      responses:
+        "200":
+          description: Saved question detail; shape depends on caller permission.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/SavedQuestionInternalDetail"
+                  - $ref: "#/components/schemas/SavedQuestionConsumerDetail"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateSavedQuestion
+      summary: Update a saved question
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/QuestionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedQuestionUpdateRequest"
+      responses:
+        "200":
+          description: Saved question updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedQuestionInternalDetail"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Stale update or collection name/placement conflict.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+        "422":
+          description: Invalid parameter schema.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+    delete:
+      operationId: deleteSavedQuestion
+      summary: Soft-delete a saved question
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/QuestionId"
+      responses:
+        "204":
+          description: Saved question soft-deleted.
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspace_id}/questions/{question_id}/clone:
+    post:
+      operationId: cloneSavedQuestion
+      summary: Clone a saved question into a target collection
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/QuestionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedQuestionCloneRequest"
+      responses:
+        "201":
+          description: New cloned saved question.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SavedQuestionInternalDetail"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspace_id}/questions/{question_id}/execute:
+    post:
+      operationId: executeSavedQuestion
+      summary: Execute a saved question through the governed query engine
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/QuestionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SavedQuestionExecuteRequest"
+      responses:
+        "200":
+          description: Query engine response with columns, rows, and execution metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryExecuteSuccessResponse"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid saved-question parameters or parser rejection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+        "429":
+          description: Warehouse queue saturated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+  /workspaces/{workspace_id}/questions/{question_id}/export.csv:
+    get:
+      operationId: exportSavedQuestionCsv
+      summary: Export saved question results as CSV
+      description: |
+        Synchronous CSV export using the same permission, parameter validation, execution,
+        row cap, and audit behavior as on-screen saved-question execution. Scalar parameter
+        bindings are sent through the `parameters` deep-object query parameter.
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/QuestionId"
+        - name: bypass_cache
+          in: query
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: parameters
+          in: query
+          required: false
+          style: deepObject
+          explode: true
+          description: |
+            Named scalar parameter bindings serialized as `parameters[name]=value`.
+            Values are validated against the saved question's declared parameter schema
+            before execution/export begins.
+          schema:
+            type: object
+            additionalProperties:
+              oneOf:
+                - type: string
+                - type: number
+                - type: boolean
+      responses:
+        "200":
+          description: CSV file with headers and up to 10,000 rows.
+          content:
+            text/csv:
+              schema:
+                type: string
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          description: Invalid parameters or execution refusal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    CollectionId:
+      name: collection_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    QuestionId:
+      name: question_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    GrantPermission:
+      type: string
+      enum: [view, edit]
+
+    ParameterType:
+      type: string
+      enum: [string, number, boolean, date]
+
+    ParameterDefinition:
+      type: object
+      required: [name, type, required]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: "#/components/schemas/ParameterType"
+        required:
+          type: boolean
+        label:
+          type: string
+          nullable: true
+        default:
+          nullable: true
+
+    Collection:
+      type: object
+      required: [id, workspace_id, name, slug, sort_order, permission, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        sort_order:
+          type: integer
+        permission:
+          $ref: "#/components/schemas/GrantPermission"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CollectionCreateRequest:
+      type: object
+      required: [name]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+        sort_order:
+          type: integer
+          default: 0
+
+    CollectionUpdateRequest:
+      type: object
+      required: [expected_updated_at]
+      additionalProperties: false
+      properties:
+        name:
+          type: string
+          minLength: 1
+        sort_order:
+          type: integer
+        expected_updated_at:
+          type: string
+          format: date-time
+          description: Last-known version used to reject stale updates.
+
+    SavedQuestionSummary:
+      type: object
+      required: [id, collection_id, title, permission, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        permission:
+          $ref: "#/components/schemas/GrantPermission"
+        can_export:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    SavedQuestionConsumerDetail:
+      allOf:
+        - $ref: "#/components/schemas/SavedQuestionSummary"
+        - type: object
+          required: [parameters]
+          properties:
+            parameters:
+              type: array
+              items:
+                $ref: "#/components/schemas/ParameterDefinition"
+
+    SavedQuestionInternalDetail:
+      allOf:
+        - $ref: "#/components/schemas/SavedQuestionConsumerDetail"
+        - type: object
+          required: [sql_text]
+          properties:
+            sql_text:
+              type: string
+
+    SavedQuestionCreateRequest:
+      type: object
+      required: [collection_id, title, sql_text, parameters]
+      additionalProperties: false
+      properties:
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        sql_text:
+          type: string
+          minLength: 1
+        parameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParameterDefinition"
+
+    SavedQuestionUpdateRequest:
+      type: object
+      required: [expected_updated_at]
+      additionalProperties: false
+      properties:
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          nullable: true
+        sql_text:
+          type: string
+          minLength: 1
+        parameters:
+          type: array
+          items:
+            $ref: "#/components/schemas/ParameterDefinition"
+        expected_updated_at:
+          type: string
+          format: date-time
+
+    SavedQuestionCloneRequest:
+      type: object
+      required: [target_collection_id]
+      additionalProperties: false
+      properties:
+        target_collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+
+    SavedQuestionExecuteRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        parameters:
+          type: object
+          additionalProperties: true
+        bypass_cache:
+          type: boolean
+          default: false
+
+    ColumnDescriptor:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          nullable: true
+
+    QueryExecuteMeta:
+      type: object
+      required: [status, duration_ms, row_count, truncated, cache_hit]
+      properties:
+        status:
+          type: string
+          enum: [ok, timeout, row_limit_exceeded, rejected_by_parser, warehouse_error, authz_denied, warehouse_busy]
+        duration_ms:
+          type: integer
+          minimum: 0
+        row_count:
+          type: integer
+          minimum: 0
+        truncated:
+          type: boolean
+        cache_hit:
+          type: boolean
+        error_code:
+          type: string
+          nullable: true
+
+    QueryExecuteSuccessResponse:
+      type: object
+      required: [columns, rows, meta]
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ColumnDescriptor"
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        meta:
+          $ref: "#/components/schemas/QueryExecuteMeta"
+
+    NormalizedError:
+      type: object
+      required: [error_code, message]
+      properties:
+        error_code:
+          type: string
+          examples:
+            - authz_denied
+            - duplicate_collection_name
+            - collection_not_empty
+            - stale_update
+            - invalid_parameters
+            - export_not_permitted
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    Forbidden:
+      description: Authenticated but not permitted.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    NotFound:
+      description: Resource not found or not visible to caller.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    BadRequest:
+      description: Invalid request body.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"

@@ -35,4 +35,23 @@ export type {
   QueryMode,
 } from "./query-execute";
 
-export type { SavedQuestionsContractsScaffold } from "./saved-questions";
+export type {
+  Collection,
+  CollectionCreateRequest,
+  CollectionListResponse,
+  CollectionUpdateRequest,
+  GrantPermission,
+  ParameterDefinition,
+  ParameterType,
+  SavedQuestionCloneRequest,
+  SavedQuestionConsumerDetail,
+  SavedQuestionCreateRequest,
+  SavedQuestionDetail,
+  SavedQuestionExecuteRequest,
+  SavedQuestionInternalDetail,
+  SavedQuestionListResponse,
+  SavedQuestionSummary,
+  SavedQuestionUpdateRequest,
+  SavedQuestionsNormalizedError,
+  SavedQuestionsNormalizedErrorCode,
+} from "./saved-questions";

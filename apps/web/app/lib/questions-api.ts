@@ -4,7 +4,20 @@
  * Implementation lands in Phase 3+; Phase 1 only scaffolds exports.
  */
 
-import type { QueryExecuteSuccessResponse } from "@dashboardy/types";
+import type {
+  Collection,
+  CollectionCreateRequest,
+  CollectionListResponse,
+  CollectionUpdateRequest,
+  QueryExecuteSuccessResponse,
+  SavedQuestionCloneRequest,
+  SavedQuestionCreateRequest,
+  SavedQuestionDetail,
+  SavedQuestionExecuteRequest,
+  SavedQuestionInternalDetail,
+  SavedQuestionListResponse,
+  SavedQuestionUpdateRequest,
+} from "@dashboardy/types";
 
 const notImplemented = (operationId: string): never => {
   throw new Error(`${operationId} is not implemented (Feature 005 Phase 1 scaffold)`);
@@ -13,15 +26,15 @@ const notImplemented = (operationId: string): never => {
 export async function listCollections(
   _accessToken: string,
   _workspaceId: string,
-): Promise<unknown> {
+): Promise<CollectionListResponse> {
   return notImplemented("listCollections");
 }
 
 export async function createCollection(
   _accessToken: string,
   _workspaceId: string,
-  _body: unknown,
-): Promise<unknown> {
+  _body: CollectionCreateRequest,
+): Promise<Collection> {
   return notImplemented("createCollection");
 }
 
@@ -29,7 +42,7 @@ export async function getCollection(
   _accessToken: string,
   _workspaceId: string,
   _collectionId: string,
-): Promise<unknown> {
+): Promise<Collection> {
   return notImplemented("getCollection");
 }
 
@@ -37,8 +50,8 @@ export async function updateCollection(
   _accessToken: string,
   _workspaceId: string,
   _collectionId: string,
-  _body: unknown,
-): Promise<unknown> {
+  _body: CollectionUpdateRequest,
+): Promise<Collection> {
   return notImplemented("updateCollection");
 }
 
@@ -54,15 +67,15 @@ export async function listSavedQuestions(
   _accessToken: string,
   _workspaceId: string,
   _query?: { collection_id?: string },
-): Promise<unknown> {
+): Promise<SavedQuestionListResponse> {
   return notImplemented("listSavedQuestions");
 }
 
 export async function createSavedQuestion(
   _accessToken: string,
   _workspaceId: string,
-  _body: unknown,
-): Promise<unknown> {
+  _body: SavedQuestionCreateRequest,
+): Promise<SavedQuestionInternalDetail> {
   return notImplemented("createSavedQuestion");
 }
 
@@ -70,7 +83,7 @@ export async function getSavedQuestion(
   _accessToken: string,
   _workspaceId: string,
   _questionId: string,
-): Promise<unknown> {
+): Promise<SavedQuestionDetail> {
   return notImplemented("getSavedQuestion");
 }
 
@@ -78,8 +91,8 @@ export async function updateSavedQuestion(
   _accessToken: string,
   _workspaceId: string,
   _questionId: string,
-  _body: unknown,
-): Promise<unknown> {
+  _body: SavedQuestionUpdateRequest,
+): Promise<SavedQuestionInternalDetail> {
   return notImplemented("updateSavedQuestion");
 }
 
@@ -95,8 +108,8 @@ export async function cloneSavedQuestion(
   _accessToken: string,
   _workspaceId: string,
   _questionId: string,
-  _body: unknown,
-): Promise<unknown> {
+  _body: SavedQuestionCloneRequest,
+): Promise<SavedQuestionInternalDetail> {
   return notImplemented("cloneSavedQuestion");
 }
 
@@ -104,7 +117,7 @@ export async function executeSavedQuestion(
   _accessToken: string,
   _workspaceId: string,
   _questionId: string,
-  _body?: { parameters?: Record<string, unknown>; bypass_cache?: boolean },
+  _body?: SavedQuestionExecuteRequest,
 ): Promise<QueryExecuteSuccessResponse> {
   return notImplemented("executeSavedQuestion");
 }
