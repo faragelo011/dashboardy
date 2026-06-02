@@ -24,6 +24,8 @@ from app.models.data_connections import (
 )
 from app.models.query_engine import CacheEntry, QueryAuditLog
 
+from . import saved_questions  # noqa: F401
+
 __all__ = [
     "AssetGrant",
     "AssetType",

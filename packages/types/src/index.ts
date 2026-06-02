@@ -34,3 +34,5 @@ export type {
   QueryExecuteSuccessResponse,
   QueryMode,
 } from "./query-execute";
+
+export type { SavedQuestionsContractsScaffold } from "./saved-questions";
