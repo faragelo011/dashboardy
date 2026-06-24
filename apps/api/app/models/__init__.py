@@ -24,13 +24,14 @@ from app.models.data_connections import (
 )
 from app.models.query_engine import CacheEntry, QueryAuditLog
 
-from . import saved_questions  # noqa: F401
+from app.models.saved_questions import Collection, QuestionGrant, SavedQuestion
 
 __all__ = [
     "AssetGrant",
     "AssetType",
     "Base",
     "CacheEntry",
+    "Collection",
     "CollectionGrant",
     "CollectionPermission",
     "ConnectionManagementAuditRecord",
@@ -45,6 +46,8 @@ __all__ = [
     "MembershipRole",
     "MembershipStatus",
     "QueryAuditLog",
+    "QuestionGrant",
+    "SavedQuestion",
     "Tenant",
     "Workspace",
 ]

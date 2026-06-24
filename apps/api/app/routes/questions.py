@@ -32,4 +32,8 @@ Export route:
 
 from fastapi import APIRouter
 
+from app.questions import (
+    schemas as _question_schemas,  # noqa: F401 — Phase 2 import check
+)
+
 router = APIRouter(tags=["questions"])

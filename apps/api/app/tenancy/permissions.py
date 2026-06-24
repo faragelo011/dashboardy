@@ -9,6 +9,7 @@ from uuid import UUID
 from app.models.auth_tenancy import (
     AssetGrant,
     AssetType,
+    CollectionPermission,
     MembershipRole,
     MembershipStatus,
 )
@@ -133,4 +134,114 @@ def can_execute_workspace_query(actor_role: MembershipRole) -> PermissionDecisio
 
     if actor_role in (MembershipRole.admin, MembershipRole.analyst):
         return PermissionDecision(True, PermissionReason.allowed)
+    return PermissionDecision(False, PermissionReason.role_not_allowed)
+
+
+def widen_grant_permission(
+    *,
+    collection_permission: CollectionPermission | None,
+    question_permission: CollectionPermission | None,
+) -> CollectionPermission | None:
+    """Question grants widen collection inheritance only; never deny."""
+
+    if collection_permission is None and question_permission is None:
+        return None
+    if CollectionPermission.edit in {collection_permission, question_permission}:
+        return CollectionPermission.edit
+    return CollectionPermission.view
+
+
+def internal_author_has_implicit_edit(actor_role: MembershipRole) -> bool:
+    return actor_role in (MembershipRole.admin, MembershipRole.analyst)
+
+
+def resolve_internal_collection_grant_access(
+    *,
+    actor_role: MembershipRole,
+    collection_permission: CollectionPermission | None,
+) -> PermissionDecision:
+    if actor_role == MembershipRole.external_client:
+        return PermissionDecision(False, PermissionReason.grant_required)
+    if internal_author_has_implicit_edit(actor_role):
+        return PermissionDecision(True, PermissionReason.allowed)
+    if collection_permission is None:
+        return PermissionDecision(False, PermissionReason.grant_required)
+    return PermissionDecision(True, PermissionReason.allowed)
+
+
+def resolve_internal_question_grant_access(
+    *,
+    actor_role: MembershipRole,
+    collection_permission: CollectionPermission | None,
+    question_permission: CollectionPermission | None,
+) -> PermissionDecision:
+    if actor_role == MembershipRole.external_client:
+        return PermissionDecision(False, PermissionReason.grant_required)
+    if internal_author_has_implicit_edit(actor_role):
+        return PermissionDecision(True, PermissionReason.allowed)
+    effective = widen_grant_permission(
+        collection_permission=collection_permission,
+        question_permission=question_permission,
+    )
+    if effective is None:
+        return PermissionDecision(False, PermissionReason.grant_required)
+    return PermissionDecision(True, PermissionReason.allowed)
+
+
+def resolve_external_client_question_asset_grant(
+    *,
+    actor_role: MembershipRole,
+    actor_user_id: UUID | None,
+    actor_workspace_id: UUID | None,
+    question_id: UUID,
+    grants: list[AssetGrant],
+) -> PermissionDecision:
+    if actor_role != MembershipRole.external_client:
+        return PermissionDecision(True, PermissionReason.allowed)
+    if actor_user_id is None or actor_workspace_id is None:
+        return PermissionDecision(False, PermissionReason.grant_required)
+    for grant in grants:
+        if (
+            grant.asset_type == AssetType.question
+            and grant.asset_id == question_id
+            and grant.user_id == actor_user_id
+            and grant.workspace_id == actor_workspace_id
+        ):
+            return PermissionDecision(True, PermissionReason.allowed)
+    return PermissionDecision(False, PermissionReason.grant_required)
+
+
+def can_export_saved_question_for_role(
+    *,
+    actor_role: MembershipRole,
+    has_visible_question_access: bool,
+    asset_grants: list[AssetGrant],
+    question_id: UUID,
+    actor_user_id: UUID | None = None,
+    actor_workspace_id: UUID | None = None,
+) -> PermissionDecision:
+    if not has_visible_question_access:
+        return PermissionDecision(False, PermissionReason.grant_required)
+
+    if actor_role == MembershipRole.external_client:
+        if actor_user_id is None or actor_workspace_id is None:
+            return PermissionDecision(False, PermissionReason.grant_required)
+        for grant in asset_grants:
+            if (
+                grant.asset_type == AssetType.question
+                and grant.asset_id == question_id
+                and grant.user_id == actor_user_id
+                and grant.workspace_id == actor_workspace_id
+                and grant.can_export
+            ):
+                return PermissionDecision(True, PermissionReason.allowed)
+        return PermissionDecision(False, PermissionReason.grant_required)
+
+    if actor_role in (
+        MembershipRole.admin,
+        MembershipRole.analyst,
+        MembershipRole.viewer,
+    ):
+        return PermissionDecision(True, PermissionReason.allowed)
+
     return PermissionDecision(False, PermissionReason.role_not_allowed)

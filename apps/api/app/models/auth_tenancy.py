@@ -26,9 +26,8 @@ from app.models.base import Base
 
 
 class CollectionPermission(StrEnum):
-    read = "read"
-    write = "write"
-    admin = "admin"
+    view = "view"
+    edit = "edit"
 
 
 class AssetType(StrEnum):

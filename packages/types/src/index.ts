@@ -39,6 +39,7 @@ export type {
   Collection,
   CollectionCreateRequest,
   CollectionListResponse,
+  CollectionResponse,
   CollectionUpdateRequest,
   GrantPermission,
   ParameterDefinition,

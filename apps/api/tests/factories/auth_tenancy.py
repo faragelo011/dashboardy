@@ -76,7 +76,7 @@ async def create_collection_grant(
     workspace: Workspace,
     membership: Membership,
     collection_id: uuid.UUID,
-    permission: CollectionPermission = CollectionPermission.read,
+    permission: CollectionPermission = CollectionPermission.view,
 ) -> CollectionGrant:
     _require_tenant_matches_workspace(tenant, workspace)
     if membership.tenant_id != tenant.id or membership.workspace_id != workspace.id:
