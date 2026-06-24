@@ -181,6 +181,37 @@ def upgrade() -> None:
         ["tenant_id", "workspace_id", "deleted_at", "updated_at"],
     )
 
+    op.execute(
+        """
+        INSERT INTO collections (
+            id,
+            tenant_id,
+            workspace_id,
+            name,
+            slug,
+            sort_order,
+            created_by_membership_id,
+            created_at,
+            updated_at
+        )
+        SELECT DISTINCT ON (cg.collection_id)
+            cg.collection_id,
+            cg.tenant_id,
+            cg.workspace_id,
+            'Migrated collection ' || left(cg.collection_id::text, 8),
+            'migrated-' || replace(cg.collection_id::text, '-', ''),
+            0,
+            cg.membership_id,
+            now(),
+            now()
+        FROM collection_grants cg
+        WHERE NOT EXISTS (
+            SELECT 1 FROM collections c WHERE c.id = cg.collection_id
+        )
+        ORDER BY cg.collection_id, cg.created_at
+        """
+    )
+
     op.create_foreign_key(
         "fk_collection_grants_collection",
         "collection_grants",

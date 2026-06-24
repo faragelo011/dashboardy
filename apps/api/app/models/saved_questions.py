@@ -53,6 +53,20 @@ class Collection(Base):
             "sort_order",
             "name",
         ),
+        Index(
+            "uq_collections_workspace_active_name",
+            "workspace_id",
+            text("lower(trim(name))"),
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        Index(
+            "uq_collections_workspace_active_slug",
+            "workspace_id",
+            "slug",
+            unique=True,
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(

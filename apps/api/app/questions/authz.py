@@ -58,10 +58,11 @@ def effective_question_permission(
 ) -> GrantPermission | None:
     if internal_author_has_implicit_edit(actor_role):
         return GrantPermission.edit
-    return widen_grant_permission(
-        collection_permission=_collection_perm_to_grant(collection_grant),
-        question_permission=_collection_perm_to_grant(question_grant),
+    widened = widen_grant_permission(
+        collection_permission=collection_grant,
+        question_permission=question_grant,
     )
+    return _collection_perm_to_grant(widened)
 
 
 def can_view_collection(

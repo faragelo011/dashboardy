@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from app.questions.schemas import ParameterDefinition, QuestionParameterType
@@ -29,6 +29,11 @@ def validate_parameter_schema(declarations: list[ParameterDefinition]) -> None:
 
     seen: set[str] = set()
     for decl in declarations:
+        if decl.name != decl.name.strip():
+            raise ParameterValidationError(
+                "Parameter name must not have leading or trailing whitespace.",
+                details={"name": decl.name},
+            )
         name = decl.name.strip()
         if not name:
             raise ParameterValidationError("Parameter name must not be blank.")
@@ -102,6 +107,11 @@ def _coerce_boolean(value: Any, *, name: str) -> bool:
 
 
 def _coerce_date(value: Any, *, name: str) -> str:
+    if isinstance(value, datetime):
+        raise ParameterValidationError(
+            f"Parameter {name!r} must be an ISO date (YYYY-MM-DD).",
+            details={"name": name, "type": "date"},
+        )
     if isinstance(value, date):
         return value.isoformat()
     if isinstance(value, str):
@@ -158,9 +168,6 @@ def validate_runtime_parameters(
             coerced[name] = _coerce_runtime_value(decl, values[name])
             continue
         if decl.required:
-            if decl.default is not None:
-                coerced[name] = _coerce_runtime_value(decl, decl.default)
-                continue
             raise ParameterValidationError(
                 f"Missing required parameter {name!r}.",
                 details={"name": name},

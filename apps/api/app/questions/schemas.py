@@ -149,6 +149,6 @@ class NormalizedQuestionErrorCode(StrEnum):
 class NormalizedQuestionError(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    error_code: str
+    error_code: NormalizedQuestionErrorCode
     message: str
     details: dict[str, Any] | None = None
