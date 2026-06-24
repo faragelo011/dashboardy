@@ -6,6 +6,8 @@ import { usePathname } from "next/navigation";
 type Props = {
   /** Hide ad hoc query link for non-authoring roles and unsigned contexts. */
   showRunQuery: boolean;
+  /** Show collections/questions for internal members (including read-only viewers). */
+  showSavedQuestions: boolean;
 };
 
 const coreItems = [
@@ -14,11 +16,20 @@ const coreItems = [
   { href: "/connections", label: "Connections" },
 ] as const;
 
+const savedQuestionItems = [
+  { href: "/collections", label: "Collections" },
+  { href: "/questions", label: "Questions" },
+] as const;
+
 const runQueryItem = { href: "/query-run", label: "Run query" } as const;
 
-export function AdminLuxuryNavClient({ showRunQuery }: Props) {
+export function AdminLuxuryNavClient({ showRunQuery, showSavedQuestions }: Props) {
   const pathname = usePathname();
-  const items = showRunQuery ? [...coreItems, runQueryItem] : [...coreItems];
+  const items = [
+    ...coreItems,
+    ...(showSavedQuestions ? savedQuestionItems : []),
+    ...(showRunQuery ? [runQueryItem] : []),
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#06080A]/85 backdrop-blur-md">

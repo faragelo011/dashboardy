@@ -82,9 +82,21 @@ async def delete_by_identity_prefix(
     tenant_id: UUID,
     cache_key_prefix: str,
 ) -> int:
-    """Bulk invalidations are not wired yet — keep stable signature."""
-
-    _ = session
-    _ = tenant_id
     _ = cache_key_prefix
     return 0
+
+
+async def invalidate_saved_question_cache(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    saved_question_id: UUID,
+) -> int:
+    """Delete cache rows tagged with a saved question id in the JSON payload."""
+
+    stmt = delete(CacheEntry).where(
+        CacheEntry.tenant_id == tenant_id,
+        CacheEntry.payload["saved_question_id"].as_string() == str(saved_question_id),
+    )
+    result = await session.execute(stmt)
+    return result.rowcount or 0

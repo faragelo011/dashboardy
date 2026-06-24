@@ -1,7 +1,5 @@
 /**
  * Web API client for Feature 005 saved questions and collections.
- * Function names match OpenAPI operationIds in saved-questions.openapi.yaml.
- * Implementation lands in Phase 3+; Phase 1 only scaffolds exports.
  */
 
 import type {
@@ -19,90 +17,194 @@ import type {
   SavedQuestionUpdateRequest,
 } from "@dashboardy/types";
 
-const notImplemented = (operationId: string): never => {
-  throw new Error(`${operationId} is not implemented (Feature 005 Phase 1 scaffold)`);
+import { ApiError, parseApiErrorBody } from "@/app/lib/connections-api";
+
+const apiBase = () => {
+  const base = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_PUBLIC_URL;
+  if (!base) {
+    throw new Error("API_PUBLIC_URL or NEXT_PUBLIC_API_PUBLIC_URL must be set");
+  }
+  return base.replace(/\/$/, "");
 };
 
+async function apiFetch(
+  path: string,
+  accessToken: string,
+  init?: RequestInit,
+): Promise<Response> {
+  return fetch(`${apiBase()}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+}
+
+async function readJsonOrThrow<T>(
+  res: Response,
+  fallbackMessage: string,
+): Promise<T> {
+  if (res.ok) {
+    return (await res.json()) as T;
+  }
+  const text = await res.text().catch(() => "");
+  const parsed = parseApiErrorBody(text, fallbackMessage);
+  throw new ApiError(res.status, parsed.message, parsed.error_code);
+}
+
+function workspacePath(workspaceId: string, suffix: string): string {
+  const ws = encodeURIComponent(workspaceId);
+  return `/workspaces/${ws}${suffix}`;
+}
+
 export async function listCollections(
-  _accessToken: string,
-  _workspaceId: string,
+  accessToken: string,
+  workspaceId: string,
 ): Promise<CollectionListResponse> {
-  return notImplemented("listCollections");
+  const res = await apiFetch(workspacePath(workspaceId, "/collections"), accessToken);
+  return readJsonOrThrow(res, "Failed to list collections");
 }
 
 export async function createCollection(
-  _accessToken: string,
-  _workspaceId: string,
-  _body: CollectionCreateRequest,
+  accessToken: string,
+  workspaceId: string,
+  body: CollectionCreateRequest,
 ): Promise<Collection> {
-  return notImplemented("createCollection");
+  const res = await apiFetch(workspacePath(workspaceId, "/collections"), accessToken, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return readJsonOrThrow(res, "Failed to create collection");
 }
 
 export async function getCollection(
-  _accessToken: string,
-  _workspaceId: string,
-  _collectionId: string,
+  accessToken: string,
+  workspaceId: string,
+  collectionId: string,
 ): Promise<Collection> {
-  return notImplemented("getCollection");
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/collections/${encodeURIComponent(collectionId)}`),
+    accessToken,
+  );
+  return readJsonOrThrow(res, "Failed to load collection");
 }
 
 export async function updateCollection(
-  _accessToken: string,
-  _workspaceId: string,
-  _collectionId: string,
-  _body: CollectionUpdateRequest,
+  accessToken: string,
+  workspaceId: string,
+  collectionId: string,
+  body: CollectionUpdateRequest,
 ): Promise<Collection> {
-  return notImplemented("updateCollection");
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/collections/${encodeURIComponent(collectionId)}`),
+    accessToken,
+    {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to update collection");
 }
 
 export async function deleteCollection(
-  _accessToken: string,
-  _workspaceId: string,
-  _collectionId: string,
+  accessToken: string,
+  workspaceId: string,
+  collectionId: string,
 ): Promise<void> {
-  return notImplemented("deleteCollection");
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/collections/${encodeURIComponent(collectionId)}`),
+    accessToken,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to delete collection");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
 }
 
 export async function listSavedQuestions(
-  _accessToken: string,
-  _workspaceId: string,
-  _query?: { collection_id?: string },
+  accessToken: string,
+  workspaceId: string,
+  query?: { collection_id?: string },
 ): Promise<SavedQuestionListResponse> {
-  return notImplemented("listSavedQuestions");
+  const params = new URLSearchParams();
+  if (query?.collection_id) {
+    params.set("collection_id", query.collection_id);
+  }
+  const qs = params.toString();
+  const path = workspacePath(
+    workspaceId,
+    qs ? `/questions?${qs}` : "/questions",
+  );
+  const res = await apiFetch(path, accessToken);
+  return readJsonOrThrow(res, "Failed to list saved questions");
 }
 
 export async function createSavedQuestion(
-  _accessToken: string,
-  _workspaceId: string,
-  _body: SavedQuestionCreateRequest,
+  accessToken: string,
+  workspaceId: string,
+  body: SavedQuestionCreateRequest,
 ): Promise<SavedQuestionInternalDetail> {
-  return notImplemented("createSavedQuestion");
+  const res = await apiFetch(workspacePath(workspaceId, "/questions"), accessToken, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return readJsonOrThrow(res, "Failed to create saved question");
 }
 
 export async function getSavedQuestion(
-  _accessToken: string,
-  _workspaceId: string,
-  _questionId: string,
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
 ): Promise<SavedQuestionDetail> {
-  return notImplemented("getSavedQuestion");
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/questions/${encodeURIComponent(questionId)}`),
+    accessToken,
+  );
+  return readJsonOrThrow(res, "Failed to load saved question");
 }
 
 export async function updateSavedQuestion(
-  _accessToken: string,
-  _workspaceId: string,
-  _questionId: string,
-  _body: SavedQuestionUpdateRequest,
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
+  body: SavedQuestionUpdateRequest,
 ): Promise<SavedQuestionInternalDetail> {
-  return notImplemented("updateSavedQuestion");
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/questions/${encodeURIComponent(questionId)}`),
+    accessToken,
+    {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to update saved question");
 }
 
 export async function deleteSavedQuestion(
-  _accessToken: string,
-  _workspaceId: string,
-  _questionId: string,
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
 ): Promise<void> {
-  return notImplemented("deleteSavedQuestion");
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/questions/${encodeURIComponent(questionId)}`),
+    accessToken,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to delete saved question");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
 }
+
+const notImplemented = (operationId: string): never => {
+  throw new Error(`${operationId} is not implemented (Feature 005 Phase 4+)`);
+};
 
 export async function cloneSavedQuestion(
   _accessToken: string,
@@ -133,3 +235,5 @@ export async function exportSavedQuestionCsv(
 ): Promise<Blob> {
   return notImplemented("exportSavedQuestionCsv");
 }
+
+export { ApiError };

@@ -21,12 +21,18 @@ function SkeletonBlock({ className }: { className?: string }) {
 
 export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props) {
   const me = await getProtectedMe();
+  const role = me.current_workspace.role;
   const showRunQuery =
-    me.current_workspace.role === "admin" || me.current_workspace.role === "analyst";
+    role === "admin" || role === "analyst";
+  const showSavedQuestions =
+    role === "admin" || role === "analyst" || role === "viewer";
 
   return (
     <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
-      <AdminLuxuryNavClient showRunQuery={showRunQuery} />
+      <AdminLuxuryNavClient
+        showRunQuery={showRunQuery}
+        showSavedQuestions={showSavedQuestions}
+      />
       <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
         <header className="flex flex-col gap-12 border-b border-white/10 pb-12 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-6">
