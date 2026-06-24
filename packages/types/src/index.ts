@@ -34,3 +34,25 @@ export type {
   QueryExecuteSuccessResponse,
   QueryMode,
 } from "./query-execute";
+
+export type {
+  Collection,
+  CollectionCreateRequest,
+  CollectionListResponse,
+  CollectionUpdateRequest,
+  GrantPermission,
+  ParameterDefinition,
+  ParameterType,
+  SavedQuestionCloneRequest,
+  SavedQuestionConsumerDetail,
+  SavedQuestionCreateRequest,
+  SavedQuestionDetail,
+  SavedQuestionDetailLevel,
+  SavedQuestionExecuteRequest,
+  SavedQuestionInternalDetail,
+  SavedQuestionListResponse,
+  SavedQuestionSummary,
+  SavedQuestionUpdateRequest,
+  SavedQuestionsNormalizedError,
+  SavedQuestionsNormalizedErrorCode,
+} from "./saved-questions";
