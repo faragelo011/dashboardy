@@ -38,6 +38,8 @@ export type CollectionUpdateRequest = {
   sort_order?: number;
 };
 
+export type CollectionResponse = Collection;
+
 export type CollectionListResponse = {
   collections: Collection[];
 };
