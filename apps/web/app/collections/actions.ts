@@ -29,8 +29,7 @@ export type CollectionActionState =
 
 function parseSortOrder(
   raw: string,
-  *,
-  required: boolean,
+  { required }: { required: boolean },
 ): { ok: true; value: number } | { ok: false; message: string } {
   const trimmed = raw.trim();
   if (!trimmed) {

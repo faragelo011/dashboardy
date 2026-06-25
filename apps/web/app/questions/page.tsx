@@ -14,8 +14,16 @@ import type { SavedQuestionDetail } from "@dashboardy/types";
 
 import { QuestionEditor } from "./question-editor";
 
+function firstSearchParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() || undefined;
+  }
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+}
+
 type PageProps = {
-  searchParams: Promise<{ id?: string; new?: string }>;
+  searchParams: Promise<{ id?: string | string[]; new?: string | string[] }>;
 };
 
 export default async function QuestionsPage({ searchParams }: PageProps) {
@@ -27,8 +35,8 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
 
   const roleCanAuthor = role === "admin" || role === "analyst";
   const params = await searchParams;
-  const editingId = params.id?.trim();
-  const isNew = params.new === "1";
+  const editingId = firstSearchParam(params.id);
+  const isNew = firstSearchParam(params.new) === "1";
 
   const supabase = await createServerSupabase();
   const {

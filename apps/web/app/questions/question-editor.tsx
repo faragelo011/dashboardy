@@ -60,7 +60,12 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
 
   useEffect(() => {
     setParameters(detail?.parameters ?? []);
+    setSaveState(null);
+    setDeleteState(null);
   }, [detail]);
+
+  const savedUpdatedAt =
+    saveState?.ok === true ? saveState.updatedAt : undefined;
 
   useEffect(() => {
     if (!saveState?.ok) {
@@ -118,7 +123,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
             <input
               type="hidden"
               name="expected_updated_at"
-              value={saveState?.updatedAt ?? detail.updated_at}
+              value={savedUpdatedAt ?? detail.updated_at}
             />
           </>
         ) : null}
