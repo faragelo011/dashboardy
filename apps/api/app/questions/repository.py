@@ -241,10 +241,12 @@ async def get_active_saved_question_by_id(
     session: AsyncSession,
     *,
     tenant_id: UUID,
+    workspace_id: UUID,
     question_id: UUID,
 ) -> SavedQuestion | None:
     stmt = select(SavedQuestion).where(
         SavedQuestion.tenant_id == tenant_id,
+        SavedQuestion.workspace_id == workspace_id,
         SavedQuestion.id == question_id,
         _active_question_clause(),
     )

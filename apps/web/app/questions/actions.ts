@@ -118,7 +118,15 @@ export async function executeQuestionAction(
 
   let parameters: Record<string, string | number | boolean> = {};
   try {
-    parameters = JSON.parse(parametersRaw) as Record<string, string | number | boolean>;
+    const parsed: unknown = JSON.parse(parametersRaw);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return { ok: false, message: "Runtime parameters are invalid." };
+    }
+    parameters = parsed as Record<string, string | number | boolean>;
   } catch {
     return { ok: false, message: "Runtime parameters are invalid." };
   }

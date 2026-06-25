@@ -276,6 +276,7 @@ async def execute_workspace_query(
         resolved = await resolve_modal_sql(
             session,
             tenant_id=tenancy.tenant_id,
+            workspace_id=tenancy.workspace_id,
             payload=payload,
         )
         if resolved is None:
@@ -311,6 +312,7 @@ async def execute_workspace_query(
         resolved = await resolve_modal_sql(
             session,
             tenant_id=tenancy.tenant_id,
+            workspace_id=tenancy.workspace_id,
             payload=payload,
         )
         if resolved is None:

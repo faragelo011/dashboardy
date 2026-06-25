@@ -18,6 +18,7 @@ async def resolve_modal_sql(
     session: AsyncSession,
     *,
     tenant_id: UUID,
+    workspace_id: UUID,
     payload: SavedQuestionQueryExecuteRequest | WidgetQueryExecuteRequest,
 ) -> tuple[str, dict[str, Any]] | None:
     if isinstance(payload, WidgetQueryExecuteRequest):
@@ -26,6 +27,7 @@ async def resolve_modal_sql(
     row = await repository.get_active_saved_question_by_id(
         session,
         tenant_id=tenant_id,
+        workspace_id=workspace_id,
         question_id=payload.saved_question_id,
     )
     if row is None:

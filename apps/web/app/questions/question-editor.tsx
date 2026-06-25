@@ -120,7 +120,7 @@ function buildRuntimePayload(
       continue;
     }
     if (param.type === "number") {
-      payload[param.name] = raw.includes(".") ? Number.parseFloat(raw) : Number.parseInt(raw, 10);
+      payload[param.name] = Number(raw);
       continue;
     }
     if (param.type === "boolean") {
