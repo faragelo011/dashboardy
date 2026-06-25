@@ -20,6 +20,7 @@ from app.questions.schemas import (
     CollectionUpdateRequest,
     GrantPermission,
     ParameterDefinition,
+    SavedQuestionConsumerDetail,
     SavedQuestionCreateRequest,
     SavedQuestionInternalDetail,
     SavedQuestionListResponse,
@@ -258,6 +259,26 @@ class QuestionService:
             detail_level="internal",
             parameters=_parameters_from_json(row.parameter_schema),
             sql_text=row.sql_text,
+        )
+
+    def _question_consumer_detail(
+        self,
+        row: SavedQuestion,
+        *,
+        permission: GrantPermission,
+        can_export: bool,
+    ) -> SavedQuestionConsumerDetail:
+        return SavedQuestionConsumerDetail(
+            id=row.id,
+            collection_id=row.collection_id,
+            title=row.title,
+            description=row.description,
+            permission=permission,
+            can_export=can_export,
+            created_at=row.created_at,
+            updated_at=row.updated_at,
+            detail_level="consumer",
+            parameters=_parameters_from_json(row.parameter_schema),
         )
 
     async def _require_collection_edit(
@@ -577,7 +598,7 @@ class QuestionService:
         session: AsyncSession,
         *,
         question_id: UUID,
-    ) -> SavedQuestionInternalDetail:
+    ) -> SavedQuestionInternalDetail | SavedQuestionConsumerDetail:
         row = await self._require_question_view(session, question_id=question_id)
         collection_grants = await self._collection_grant_map(session)
         question_grants = await self._question_grant_map(session)
@@ -592,7 +613,13 @@ class QuestionService:
             asset_grants=asset_grants,
         )
         assert view.effective_permission is not None
-        return self._question_internal_detail(
+        if view.effective_permission == GrantPermission.edit:
+            return self._question_internal_detail(
+                row,
+                permission=view.effective_permission,
+                can_export=view.can_export,
+            )
+        return self._question_consumer_detail(
             row,
             permission=view.effective_permission,
             can_export=view.can_export,

@@ -16,6 +16,7 @@ from app.questions.schemas import (
     CollectionListResponse,
     CollectionResponse,
     CollectionUpdateRequest,
+    SavedQuestionConsumerDetail,
     SavedQuestionCreateRequest,
     SavedQuestionInternalDetail,
     SavedQuestionListResponse,
@@ -233,13 +234,16 @@ async def create_saved_question(
     return result
 
 
-@router.get("/questions/{question_id}", response_model=SavedQuestionInternalDetail)
+@router.get(
+    "/questions/{question_id}",
+    response_model=SavedQuestionInternalDetail | SavedQuestionConsumerDetail,
+)
 async def get_saved_question(
     workspace_id: UUID,
     question_id: UUID,
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
-) -> SavedQuestionInternalDetail:
+) -> SavedQuestionInternalDetail | SavedQuestionConsumerDetail:
     actor = await require_active_membership(
         session=session,
         user_id=auth.user_id,

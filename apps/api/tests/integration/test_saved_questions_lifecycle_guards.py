@@ -223,3 +223,30 @@ def test_cache_invalidated_on_sql_or_schema_change(
         assert patched.status_code == 200
 
     assert asyncio.run(_count_cache()) == 0
+
+    asyncio.run(_seed_cache())
+    assert asyncio.run(_count_cache()) == 1
+
+    with TestClient(app) as client:
+        detail = client.get(
+            f"/workspaces/{seeded.workspace_id}/questions/{question_id}",
+            headers=headers,
+        )
+        assert detail.status_code == 200
+        schema_patch = client.patch(
+            f"/workspaces/{seeded.workspace_id}/questions/{question_id}",
+            json={
+                "expected_updated_at": detail.json()["updated_at"],
+                "parameters": [
+                    {
+                        "name": "region",
+                        "type": "string",
+                        "required": True,
+                    }
+                ],
+            },
+            headers=headers,
+        )
+        assert schema_patch.status_code == 200
+
+    assert asyncio.run(_count_cache()) == 0

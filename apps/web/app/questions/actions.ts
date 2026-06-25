@@ -36,7 +36,7 @@ function parseParameters(raw: string): ParameterDefinition[] {
 }
 
 export type QuestionActionState =
-  | { ok: true; questionId?: string }
+  | { ok: true; questionId?: string; updatedAt?: string }
   | { ok: false; message: string; errorCode?: string };
 
 export async function saveQuestionAction(
@@ -69,7 +69,7 @@ export async function saveQuestionAction(
       if (!expectedUpdatedAt) {
         return { ok: false, message: "Missing expected update timestamp." };
       }
-      await updateSavedQuestion(token, workspaceId, questionId, {
+      const updated = await updateSavedQuestion(token, workspaceId, questionId, {
         expected_updated_at: expectedUpdatedAt,
         collection_id: collectionId,
         title,
@@ -78,7 +78,7 @@ export async function saveQuestionAction(
         parameters,
       });
       revalidatePath("/questions");
-      return { ok: true, questionId };
+      return { ok: true, questionId, updatedAt: updated.updated_at };
     }
 
     const created = await createSavedQuestion(token, workspaceId, {
@@ -89,7 +89,7 @@ export async function saveQuestionAction(
       parameters,
     });
     revalidatePath("/questions");
-    return { ok: true, questionId: created.id };
+    return { ok: true, questionId: created.id, updatedAt: created.updated_at };
   } catch (err) {
     if (err instanceof ApiError) {
       return { ok: false, message: err.message, errorCode: err.errorCode };

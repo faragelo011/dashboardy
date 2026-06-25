@@ -4,12 +4,13 @@ import { redirect } from "next/navigation";
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
 import {
+  ApiError,
   getSavedQuestion,
   listCollections,
   listSavedQuestions,
 } from "@/app/lib/questions-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
-import type { SavedQuestionInternalDetail } from "@dashboardy/types";
+import type { SavedQuestionDetail } from "@dashboardy/types";
 
 import { QuestionEditor } from "./question-editor";
 
@@ -24,7 +25,7 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
     redirect("/");
   }
 
-  const canEdit = role === "admin" || role === "analyst";
+  const roleCanAuthor = role === "admin" || role === "analyst";
   const params = await searchParams;
   const editingId = params.id?.trim();
   const isNew = params.new === "1";
@@ -41,8 +42,9 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
   const workspaceId = me.current_workspace.workspace_id;
   let collections: Awaited<ReturnType<typeof listCollections>>["collections"] = [];
   let questions: Awaited<ReturnType<typeof listSavedQuestions>>["questions"] = [];
-  let question: SavedQuestionInternalDetail | null = null;
-  let loadError: string | null = null;
+  let loadedDetail: SavedQuestionDetail | null = null;
+  let listLoadError: string | null = null;
+  let questionLoadError: string | null = null;
 
   try {
     const [collectionsResp, questionsResp] = await Promise.all([
@@ -51,19 +53,30 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
     ]);
     collections = collectionsResp.collections;
     questions = questionsResp.questions;
-
-    if (editingId) {
-      const detail = await getSavedQuestion(token, workspaceId, editingId);
-      if (detail.detail_level === "internal") {
-        question = detail;
-      }
-    }
   } catch (err) {
-    console.error("failed to load questions", { workspaceId, err });
-    loadError = "Failed to load saved questions. Please refresh and try again.";
+    console.error("failed to load questions list", { workspaceId, err });
+    listLoadError = "Failed to load saved questions. Please refresh and try again.";
   }
 
-  const showEditor = Boolean(isNew || editingId);
+  if (editingId) {
+    try {
+      loadedDetail = await getSavedQuestion(token, workspaceId, editingId);
+    } catch (err) {
+      console.error("failed to load saved question", { workspaceId, editingId, err });
+      if (err instanceof ApiError) {
+        questionLoadError = err.message;
+      } else {
+        questionLoadError = "Failed to load this question. Please try again.";
+      }
+    }
+  }
+
+  const showNewEditor = isNew && roleCanAuthor;
+  const showEditEditor = Boolean(editingId && loadedDetail);
+  const showEditor = showNewEditor || showEditEditor;
+  const editorCanEdit = showNewEditor
+    ? true
+    : loadedDetail?.permission === "edit";
 
   return (
     <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
@@ -81,26 +94,39 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
           </p>
         </header>
 
-        {loadError ? (
+        {listLoadError ? (
           <p className="text-sm text-[#EF4444]" role="alert">
-            {loadError}
+            {listLoadError}
           </p>
+        ) : null}
+
+        {editingId && questionLoadError ? (
+          <div className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-5" role="alert">
+            <p className="text-sm text-[#A0AAB2]">{questionLoadError}</p>
+            <Link
+              href="/questions"
+              className="mt-4 inline-block text-[10px] uppercase tracking-[0.15em] text-[#D4AF37] hover:text-[#FBE398]"
+            >
+              Back to list
+            </Link>
+          </div>
         ) : null}
 
         {showEditor ? (
           <QuestionEditor
             workspaceId={workspaceId}
             collections={collections}
-            question={isNew ? null : question}
-            canEdit={canEdit}
+            detail={showNewEditor ? null : loadedDetail}
+            isNew={showNewEditor}
+            canEdit={editorCanEdit}
           />
-        ) : (
+        ) : editingId && questionLoadError ? null : (
           <section className="flex flex-col gap-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">
                 Active questions ({questions.length})
               </h2>
-              {canEdit ? (
+              {roleCanAuthor ? (
                 <Link
                   href="/questions?new=1"
                   className="bg-[#D4AF37] text-black px-5 py-2 text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398]"

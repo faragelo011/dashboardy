@@ -27,6 +27,24 @@ export type CollectionActionState =
   | { ok: true }
   | { ok: false; message: string; errorCode?: string };
 
+function parseSortOrder(
+  raw: string,
+  *,
+  required: boolean,
+): { ok: true; value: number } | { ok: false; message: string } {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    if (required) {
+      return { ok: false, message: "Sort order must be a whole number." };
+    }
+    return { ok: true, value: 0 };
+  }
+  if (!/^-?\d+$/.test(trimmed)) {
+    return { ok: false, message: "Sort order must be a whole number." };
+  }
+  return { ok: true, value: Number.parseInt(trimmed, 10) };
+}
+
 export async function createCollectionAction(
   _prev: CollectionActionState | null,
   formData: FormData,
@@ -34,17 +52,21 @@ export async function createCollectionAction(
   const workspaceId = String(formData.get("workspace_id") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const sortOrderRaw = String(formData.get("sort_order") ?? "0").trim();
-  const sortOrder = Number.parseInt(sortOrderRaw, 10);
 
   if (!workspaceId || !name) {
     return { ok: false, message: "Collection name is required." };
+  }
+
+  const sortOrder = parseSortOrder(sortOrderRaw, { required: false });
+  if (!sortOrder.ok) {
+    return { ok: false, message: sortOrder.message };
   }
 
   const token = await requireToken();
   try {
     await createCollection(token, workspaceId, {
       name,
-      sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
+      sort_order: sortOrder.value,
     });
     revalidatePath("/collections");
     return { ok: true };
@@ -70,13 +92,21 @@ export async function updateCollectionAction(
     return { ok: false, message: "Missing collection update fields." };
   }
 
-  const sortOrder = sortOrderRaw ? Number.parseInt(sortOrderRaw, 10) : undefined;
+  let sortOrderValue: number | undefined;
+  if (sortOrderRaw) {
+    const sortOrder = parseSortOrder(sortOrderRaw, { required: true });
+    if (!sortOrder.ok) {
+      return { ok: false, message: sortOrder.message };
+    }
+    sortOrderValue = sortOrder.value;
+  }
+
   const token = await requireToken();
   try {
     await updateCollection(token, workspaceId, collectionId, {
       expected_updated_at: expectedUpdatedAt,
       name,
-      sort_order: Number.isFinite(sortOrder) ? sortOrder : undefined,
+      sort_order: sortOrderValue,
     });
     revalidatePath("/collections");
     return { ok: true };

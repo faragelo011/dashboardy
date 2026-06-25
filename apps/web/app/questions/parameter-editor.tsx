@@ -29,6 +29,34 @@ function duplicateNames(rows: ParameterDefinition[]): Set<string> {
   return dupes;
 }
 
+function coerceDefaultValue(
+  type: ParameterType,
+  raw: string,
+): string | number | boolean | null {
+  if (raw === "") {
+    return null;
+  }
+  if (type === "boolean") {
+    if (raw === "true") {
+      return true;
+    }
+    if (raw === "false") {
+      return false;
+    }
+    return raw;
+  }
+  if (type === "number") {
+    if (/^-?\d+$/.test(raw)) {
+      return Number.parseInt(raw, 10);
+    }
+    if (/^-?\d+\.\d+$/.test(raw)) {
+      return Number.parseFloat(raw);
+    }
+    return raw;
+  }
+  return raw;
+}
+
 export function ParameterEditor({ value, onChange, disabled = false }: Props) {
   const dupes = duplicateNames(value);
 
@@ -123,15 +151,44 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
             </label>
             <label className="flex flex-col gap-1">
               <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Default</span>
-              <input
-                className={fieldClass}
-                value={row.default === null || row.default === undefined ? "" : String(row.default)}
-                disabled={disabled}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  updateRow(index, { default: raw === "" ? null : raw });
-                }}
-              />
+              {row.type === "boolean" ? (
+                <select
+                  className={fieldClass}
+                  value={
+                    row.default === true
+                      ? "true"
+                      : row.default === false
+                        ? "false"
+                        : ""
+                  }
+                  disabled={disabled}
+                  onChange={(e) =>
+                    updateRow(index, {
+                      default: coerceDefaultValue(row.type, e.target.value),
+                    })
+                  }
+                >
+                  <option value="">No default</option>
+                  <option value="true">true</option>
+                  <option value="false">false</option>
+                </select>
+              ) : (
+                <input
+                  className={fieldClass}
+                  type={row.type === "number" ? "number" : "text"}
+                  value={
+                    row.default === null || row.default === undefined
+                      ? ""
+                      : String(row.default)
+                  }
+                  disabled={disabled}
+                  onChange={(e) => {
+                    updateRow(index, {
+                      default: coerceDefaultValue(row.type, e.target.value),
+                    });
+                  }}
+                />
+              )}
             </label>
             <div className="sm:col-span-2">
               <button
