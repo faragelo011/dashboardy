@@ -603,6 +603,8 @@ async def execute_workspace_query(
                 rows=sf_out.rows,
                 truncated=sf_out.truncated,
             )
+            if saved_question_id is not None:
+                blob["saved_question_id"] = str(saved_question_id)
             await upsert_entry(
                 session,
                 CacheEntryUpsertDTO(

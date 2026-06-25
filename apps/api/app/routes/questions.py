@@ -1,39 +1,305 @@
-"""Saved questions and collections routes (Feature 005).
+"""Saved questions and collections routes (Feature 005)."""
 
-Route handlers delegate to `app.questions.service`; authorization lives in
-`app.questions.authz` / tenancy helpers - not in this module.
+from __future__ import annotations
 
-TODO (wire in Phase 2+ per saved-questions.openapi.yaml; paths are relative
-to the `/workspaces/{workspace_id}` router prefix registered in main.py):
+from typing import Annotated, NoReturn
+from uuid import UUID
 
-Collection routes:
-  - listCollections: GET /collections
-  - createCollection: POST /collections
-  - getCollection: GET /collections/{collection_id}
-  - updateCollection: PATCH /collections/{collection_id}
-  - deleteCollection: DELETE /collections/{collection_id}
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-Saved question routes:
-  - listSavedQuestions: GET /questions
-  - createSavedQuestion: POST /questions
-  - getSavedQuestion: GET /questions/{question_id}
-  - updateSavedQuestion: PATCH /questions/{question_id}
-  - deleteSavedQuestion: DELETE /questions/{question_id}
-
-Clone route:
-  - cloneSavedQuestion: POST /questions/{question_id}/clone
-
-Execute route:
-  - executeSavedQuestion: POST /questions/{question_id}/execute
-
-Export route:
-  - exportSavedQuestionCsv: GET /questions/{question_id}/export.csv
-"""
-
-from fastapi import APIRouter
-
-from app.questions import (
-    schemas as _question_schemas,  # noqa: F401 — Phase 2 import check
+from app.auth_context.context import VerifiedSupabaseUser
+from app.auth_context.dependencies import get_verified_supabase_user
+from app.db.deps import get_db
+from app.questions.schemas import (
+    CollectionCreateRequest,
+    CollectionListResponse,
+    CollectionResponse,
+    CollectionUpdateRequest,
+    SavedQuestionConsumerDetail,
+    SavedQuestionCreateRequest,
+    SavedQuestionInternalDetail,
+    SavedQuestionListResponse,
+    SavedQuestionUpdateRequest,
 )
+from app.questions.service import QuestionService, QuestionServiceError
+from app.routes.connections import require_active_membership
 
 router = APIRouter(tags=["questions"])
+
+
+def _forbidden(*, error_code: str, message: str) -> NoReturn:
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={"error_code": error_code, "message": message},
+    )
+
+
+def _map_service_error(exc: QuestionServiceError) -> NoReturn:
+    code = exc.error_code
+    if code == "authz_denied":
+        _forbidden(error_code=code, message=str(exc))
+    if code in {"collection_not_found", "question_not_found"}:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    if code in {"duplicate_collection_name", "stale_update", "collection_not_empty"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    if code == "invalid_parameters":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={"error_code": code, "message": str(exc), "details": exc.details},
+    ) from exc
+
+
+@router.get("/collections", response_model=CollectionListResponse)
+async def list_collections(
+    workspace_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> CollectionListResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.list_collections(session)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.post(
+    "/collections",
+    response_model=CollectionResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_collection(
+    workspace_id: UUID,
+    payload: CollectionCreateRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> CollectionResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.create_collection(session, payload=payload)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.get("/collections/{collection_id}", response_model=CollectionResponse)
+async def get_collection(
+    workspace_id: UUID,
+    collection_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> CollectionResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.get_collection(session, collection_id=collection_id)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.patch("/collections/{collection_id}", response_model=CollectionResponse)
+async def update_collection(
+    workspace_id: UUID,
+    collection_id: UUID,
+    payload: CollectionUpdateRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> CollectionResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.update_collection(
+            session,
+            collection_id=collection_id,
+            payload=payload,
+        )
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.delete("/collections/{collection_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_collection(
+    workspace_id: UUID,
+    collection_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        await service.delete_collection(session, collection_id=collection_id)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/questions", response_model=SavedQuestionListResponse)
+async def list_saved_questions(
+    workspace_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    collection_id: Annotated[UUID | None, Query()] = None,
+) -> SavedQuestionListResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.list_questions(
+            session,
+            collection_id=collection_id,
+        )
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.post(
+    "/questions",
+    response_model=SavedQuestionInternalDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_saved_question(
+    workspace_id: UUID,
+    payload: SavedQuestionCreateRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SavedQuestionInternalDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.create_question(session, payload=payload)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.get(
+    "/questions/{question_id}",
+    response_model=SavedQuestionInternalDetail | SavedQuestionConsumerDetail,
+)
+async def get_saved_question(
+    workspace_id: UUID,
+    question_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SavedQuestionInternalDetail | SavedQuestionConsumerDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.get_question(session, question_id=question_id)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.patch("/questions/{question_id}", response_model=SavedQuestionInternalDetail)
+async def update_saved_question(
+    workspace_id: UUID,
+    question_id: UUID,
+    payload: SavedQuestionUpdateRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SavedQuestionInternalDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.update_question(
+            session,
+            question_id=question_id,
+            payload=payload,
+        )
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.delete("/questions/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_saved_question(
+    workspace_id: UUID,
+    question_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        await service.delete_question(session, question_id=question_id)
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

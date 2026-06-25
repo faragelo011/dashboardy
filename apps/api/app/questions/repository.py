@@ -96,6 +96,25 @@ async def find_active_collection_by_trimmed_name(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def find_active_collection_by_slug(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    workspace_id: UUID,
+    slug: str,
+    exclude_collection_id: UUID | None = None,
+) -> Collection | None:
+    stmt = select(Collection).where(
+        Collection.tenant_id == tenant_id,
+        Collection.workspace_id == workspace_id,
+        Collection.slug == slug,
+        _active_collection_clause(),
+    )
+    if exclude_collection_id is not None:
+        stmt = stmt.where(Collection.id != exclude_collection_id)
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
 async def create_collection(
     session: AsyncSession,
     *,
