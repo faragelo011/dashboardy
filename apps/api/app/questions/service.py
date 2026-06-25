@@ -30,6 +30,7 @@ from app.questions.schemas import (
     CollectionUpdateRequest,
     GrantPermission,
     ParameterDefinition,
+    SavedQuestionCloneRequest,
     SavedQuestionConsumerDetail,
     SavedQuestionCreateRequest,
     SavedQuestionExecuteRequest,
@@ -768,6 +769,51 @@ class QuestionService:
         )
         if not deleted:
             raise QuestionNotFoundError()
+
+    async def clone_question(
+        self,
+        session: AsyncSession,
+        *,
+        question_id: UUID,
+        payload: SavedQuestionCloneRequest,
+    ) -> SavedQuestionInternalDetail:
+        source = await self._require_question_view(session, question_id=question_id)
+        target = await repository.get_active_collection(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            collection_id=payload.target_collection_id,
+        )
+        if target is None:
+            raise CollectionNotFoundError()
+
+        collection_grants = await self._collection_grant_map(session)
+        question_grants = await self._question_grant_map(session)
+        decision = authz.can_clone_question(
+            actor_role=self._actor.role,
+            source_collection_grant=collection_grants.get(source.collection_id),
+            source_question_grant=question_grants.get(question_id),
+            target_collection_grant=collection_grants.get(payload.target_collection_id),
+        )
+        if not decision.allowed:
+            raise QuestionsAuthzDeniedError()
+
+        title = (payload.title if payload.title is not None else source.title).strip()
+        if not title:
+            raise InvalidParametersError("Title must not be blank.")
+
+        clone = await repository.clone_saved_question(
+            session,
+            source=source,
+            target_collection_id=payload.target_collection_id,
+            title=title,
+            created_by_membership_id=self._actor.membership_id,
+        )
+        return self._question_internal_detail(
+            clone,
+            permission=GrantPermission.edit,
+            can_export=self._actor.role != MembershipRole.external_client,
+        )
 
     async def execute_question(
         self,

@@ -159,8 +159,8 @@ Implementation detail for US2:
 
 ### Tests for User Story 3
 
-- [ ] T048 [P] [US3] Add contract tests for `POST /workspaces/{workspace_id}/questions/{question_id}/clone` success, forbidden target collection, and missing source in `apps/api/tests/contract/test_saved_question_clone_contract.py`
-- [ ] T049 [P] [US3] Add integration tests for clone ownership, copied content, unchanged source, target collection permissions, and no copied source question grants in `apps/api/tests/integration/test_saved_question_clone.py`
+- [X] T048 [P] [US3] Add contract tests for `POST /workspaces/{workspace_id}/questions/{question_id}/clone` success, forbidden target collection, and missing source in `apps/api/tests/contract/test_saved_question_clone_contract.py`
+- [X] T049 [P] [US3] Add integration tests for clone ownership, copied content, unchanged source, target collection permissions, and no copied source question grants in `apps/api/tests/integration/test_saved_question_clone.py`
 
 ### Implementation for User Story 3
 
@@ -172,11 +172,11 @@ Implementation detail for US3:
 - Clone must not copy any source `question_grants`.
 - Clone effective permissions come from the target collection plus any future grants added to the clone.
 
-- [ ] T050 [US3] Add repository clone helper in `apps/api/app/questions/repository.py` that inserts a new `saved_questions` row with copied title/description/sql_text/parameter_schema, target collection, cloner membership IDs, and no copied `question_grants`
-- [ ] T051 [US3] Implement clone service method in `apps/api/app/questions/service.py` that re-checks source `view` permission, target collection `edit` permission, target collection active state, optional override title validation, and returns internal detail for the clone
-- [ ] T052 [US3] Implement clone route in `apps/api/app/routes/questions.py` for `POST /workspaces/{workspace_id}/questions/{question_id}/clone` with 201 success, 403 for missing source/target permission, and 404 for hidden source/target collection
-- [ ] T053 [US3] Implement clone client method in `apps/web/app/lib/questions-api.ts` and add clone action UI to `apps/web/app/questions/question-editor.tsx` with target collection selector, optional title override, success navigation, and forbidden-target error
-- [ ] T054 [US3] Run clone tests with `cd apps/api && uv run pytest tests/contract/test_saved_question_clone_contract.py tests/integration/test_saved_question_clone.py`
+- [X] T050 [US3] Add repository clone helper in `apps/api/app/questions/repository.py` that inserts a new `saved_questions` row with copied title/description/sql_text/parameter_schema, target collection, cloner membership IDs, and no copied `question_grants`
+- [X] T051 [US3] Implement clone service method in `apps/api/app/questions/service.py` that re-checks source `view` permission, target collection `edit` permission, target collection active state, optional override title validation, and returns internal detail for the clone
+- [X] T052 [US3] Implement clone route in `apps/api/app/routes/questions.py` for `POST /workspaces/{workspace_id}/questions/{question_id}/clone` with 201 success, 403 for missing source/target permission, and 404 for hidden source/target collection
+- [X] T053 [US3] Implement clone client method in `apps/web/app/lib/questions-api.ts` and add clone action UI to `apps/web/app/questions/question-editor.tsx` with target collection selector, optional title override, success navigation, and forbidden-target error
+- [X] T054 [US3] Run clone tests with `cd apps/api && uv run pytest tests/contract/test_saved_question_clone_contract.py tests/integration/test_saved_question_clone.py`
 
 **Checkpoint**: US3 supports safe reuse-by-cloning without permission leakage.
 

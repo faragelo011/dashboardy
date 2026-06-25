@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 import {
   ApiError,
+  cloneSavedQuestion,
   createSavedQuestion,
   deleteSavedQuestion,
   executeSavedQuestion,
@@ -143,6 +144,36 @@ export async function executeQuestionAction(
       return { ok: false, message: err.message, errorCode: err.errorCode };
     }
     return { ok: false, message: "Failed to execute saved question." };
+  }
+}
+
+export async function cloneQuestionAction(
+  formData: FormData,
+): Promise<QuestionActionState> {
+  const workspaceId = String(formData.get("workspace_id") ?? "").trim();
+  const questionId = String(formData.get("question_id") ?? "").trim();
+  const targetCollectionId = String(
+    formData.get("target_collection_id") ?? "",
+  ).trim();
+  const titleOverride = String(formData.get("clone_title") ?? "").trim();
+
+  if (!workspaceId || !questionId || !targetCollectionId) {
+    return { ok: false, message: "Missing clone target." };
+  }
+
+  const token = await requireToken();
+  try {
+    const cloned = await cloneSavedQuestion(token, workspaceId, questionId, {
+      target_collection_id: targetCollectionId,
+      title: titleOverride || null,
+    });
+    revalidatePath("/questions");
+    return { ok: true, questionId: cloned.id, updatedAt: cloned.updated_at };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return { ok: false, message: err.message, errorCode: err.errorCode };
+    }
+    return { ok: false, message: "Failed to clone question." };
   }
 }
 

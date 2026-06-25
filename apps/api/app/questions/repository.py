@@ -312,6 +312,42 @@ async def create_saved_question(
     return row
 
 
+async def clone_saved_question(
+    session: AsyncSession,
+    *,
+    source: SavedQuestion,
+    target_collection_id: UUID,
+    title: str,
+    created_by_membership_id: UUID,
+) -> SavedQuestion:
+    return await create_saved_question(
+        session,
+        tenant_id=source.tenant_id,
+        workspace_id=source.workspace_id,
+        collection_id=target_collection_id,
+        title=title,
+        description=source.description,
+        sql_text=source.sql_text,
+        parameter_schema=list(source.parameter_schema),
+        created_by_membership_id=created_by_membership_id,
+    )
+
+
+async def list_question_grants_for_saved_question(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    workspace_id: UUID,
+    saved_question_id: UUID,
+) -> list[QuestionGrant]:
+    stmt = select(QuestionGrant).where(
+        QuestionGrant.tenant_id == tenant_id,
+        QuestionGrant.workspace_id == workspace_id,
+        QuestionGrant.saved_question_id == saved_question_id,
+    )
+    return list((await session.execute(stmt)).scalars().all())
+
+
 async def update_saved_question_if_current(
     session: AsyncSession,
     *,

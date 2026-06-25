@@ -207,12 +207,23 @@ const notImplemented = (operationId: string): never => {
 };
 
 export async function cloneSavedQuestion(
-  _accessToken: string,
-  _workspaceId: string,
-  _questionId: string,
-  _body: SavedQuestionCloneRequest,
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
+  body: SavedQuestionCloneRequest,
 ): Promise<SavedQuestionInternalDetail> {
-  return notImplemented("cloneSavedQuestion");
+  const res = await apiFetch(
+    workspacePath(
+      workspaceId,
+      `/questions/${encodeURIComponent(questionId)}/clone`,
+    ),
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to clone saved question");
 }
 
 export async function executeSavedQuestion(

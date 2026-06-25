@@ -226,7 +226,7 @@ def can_clone_question(
     question_id: UUID | None = None,
     asset_grants: list[AssetGrant] | None = None,
 ) -> QuestionsAuthzDecision:
-    if actor_role == MembershipRole.external_client:
+    if not internal_author_has_implicit_edit(actor_role):
         return QuestionsAuthzDecision(False, PermissionReason.grant_required)
 
     source_view = resolve_internal_question_grant_access(
