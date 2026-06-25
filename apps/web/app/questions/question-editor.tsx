@@ -29,6 +29,9 @@ const primaryButtonClass =
 const quietButtonClass =
   "text-[#94A3B8] hover:text-[#6366F1] transition-colors text-[10px] uppercase tracking-[0.15em] border border-white/10 px-4 py-3";
 
+const labelClass =
+  "text-[10px] uppercase tracking-[0.15em] text-[#94A3B8]";
+
 type Props = {
   workspaceId: string;
   collections: Collection[];
@@ -71,14 +74,14 @@ function RuntimeParameterInputs({
   onChange: (next: Record<string, string>) => void;
 }) {
   if (parameters.length === 0) {
-    return <p className="text-xs text-[#374151]">No runtime parameters required.</p>;
+    return <p className="text-xs text-[#94A3B8]">No runtime parameters required.</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       {parameters.map((param) => (
         <label key={param.name} className="flex flex-col gap-2">
-          <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
+          <span className={labelClass}>
             {param.label ?? param.name}
             {param.required ? " *" : ""}
           </span>
@@ -146,16 +149,16 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
   const [executeState, setExecuteState] =
     useState<ExecuteQuestionActionState | null>(null);
   const [cloneState, setCloneState] = useState<QuestionActionState | null>(null);
+  const [clonePending, setClonePending] = useState(false);
   const [savePending, startSaveTransition] = useTransition();
   const [deletePending, startDeleteTransition] = useTransition();
   const [executePending, startExecuteTransition] = useTransition();
-  const [clonePending, startCloneTransition] = useTransition();
 
   const formKey = detail?.updated_at ?? (isNew ? "new" : "missing");
   const sqlText = detail?.detail_level === "internal" ? detail.sql_text : "";
   const schemaParameters = canEdit ? parameters : (detail?.parameters ?? []);
   const canRun = Boolean(detail && !isNew);
-  const canClone = canRun && editableCollections.length > 0;
+  const canClone = canEdit && canRun && editableCollections.length > 0;
 
   useEffect(() => {
     setParameters(detail?.parameters ?? []);
@@ -229,9 +232,10 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
   const submitClone = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    startCloneTransition(() => {
-      void cloneQuestionAction(formData).then(setCloneState);
-    });
+    setClonePending(true);
+    void cloneQuestionAction(formData)
+      .then(setCloneState)
+      .finally(() => setClonePending(false));
   };
 
   return (
@@ -260,7 +264,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
         <input type="hidden" name="parameters_json" value={JSON.stringify(parameters)} />
 
         <label className="flex flex-col gap-2">
-          <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Collection</span>
+          <span className={labelClass}>Collection</span>
           <select
             name="collection_id"
             defaultValue={defaultCollectionId}
@@ -277,7 +281,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Title</span>
+          <span className={labelClass}>Title</span>
           <input
             name="title"
             defaultValue={detail?.title ?? ""}
@@ -288,7 +292,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Description</span>
+          <span className={labelClass}>Description</span>
           <textarea
             name="description"
             defaultValue={detail?.description ?? ""}
@@ -304,7 +308,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
           </p>
         ) : (
           <label className="flex flex-col gap-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">SQL</span>
+            <span className={labelClass}>SQL</span>
             <textarea
               name="sql_text"
               defaultValue={sqlText}
@@ -381,7 +385,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
             <input type="hidden" name="workspace_id" value={workspaceId} />
             <input type="hidden" name="question_id" value={detail?.id ?? ""} />
             <label className="flex flex-col gap-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
+              <span className={labelClass}>
                 Target collection
               </span>
               <select
@@ -398,7 +402,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
               </select>
             </label>
             <label className="flex flex-col gap-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
+              <span className={labelClass}>
                 Title override (optional)
               </span>
               <input

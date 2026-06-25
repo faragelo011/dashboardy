@@ -134,6 +134,31 @@ def test_clone_forbidden_target_collection(
     assert forbidden.json()["error_code"] == "authz_denied"
 
 
+def test_clone_denied_for_viewer_with_question_edit_grant(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seeded = asyncio.run(seed_clone_scenario())
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {
+            "sub": str(seeded.source_widened_user_id),
+            "email": "widened@example.com",
+        },
+    )
+    headers = {"Authorization": "Bearer fake"}
+
+    with TestClient(app) as client:
+        forbidden = client.post(
+            f"/workspaces/{seeded.workspace_id}/questions/{seeded.source_question_id}/clone",
+            json={"target_collection_id": str(seeded.target_collection_id)},
+            headers=headers,
+        )
+
+    assert forbidden.status_code == 403
+    assert forbidden.json()["error_code"] == "authz_denied"
+
+
 def test_clone_missing_source_question(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,

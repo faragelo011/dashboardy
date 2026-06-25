@@ -101,6 +101,7 @@ class SeededCloneWorkspace:
     target_viewer_user_id: uuid.UUID
     grant_editor_user_id: uuid.UUID
     restricted_user_id: uuid.UUID
+    source_widened_user_id: uuid.UUID
     source_widened_membership_id: uuid.UUID
 
 
@@ -130,11 +131,12 @@ async def seed_clone_scenario() -> SeededCloneWorkspace:
                 role=MembershipRole.analyst,
                 status=MembershipStatus.active,
             )
+            widened_viewer_user_id = uuid.uuid4()
             widened_viewer = await factories.create_membership(
                 session,
                 tenant=tenant,
                 workspace=workspace,
-                user_id=uuid.uuid4(),
+                user_id=widened_viewer_user_id,
                 role=MembershipRole.viewer,
                 status=MembershipStatus.active,
             )
@@ -258,6 +260,14 @@ async def seed_clone_scenario() -> SeededCloneWorkspace:
                 collection_id=target_collection.id,
                 permission=CollectionPermission.view,
             )
+            await factories.create_collection_grant(
+                session,
+                tenant=tenant,
+                workspace=workspace,
+                membership=widened_viewer,
+                collection_id=target_collection.id,
+                permission=CollectionPermission.edit,
+            )
 
             session.add(
                 QuestionGrant(
@@ -282,6 +292,7 @@ async def seed_clone_scenario() -> SeededCloneWorkspace:
                 target_viewer_user_id=target_viewer_user_id,
                 grant_editor_user_id=grant_editor_user_id,
                 restricted_user_id=restricted_user_id,
+                source_widened_user_id=widened_viewer_user_id,
                 source_widened_membership_id=widened_viewer.id,
             )
     finally:

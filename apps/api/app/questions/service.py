@@ -778,15 +778,6 @@ class QuestionService:
         payload: SavedQuestionCloneRequest,
     ) -> SavedQuestionInternalDetail:
         source = await self._require_question_view(session, question_id=question_id)
-        target = await repository.get_active_collection(
-            session,
-            tenant_id=self._actor.tenant_id,
-            workspace_id=self._actor.workspace_id,
-            collection_id=payload.target_collection_id,
-        )
-        if target is None:
-            raise CollectionNotFoundError()
-
         collection_grants = await self._collection_grant_map(session)
         question_grants = await self._question_grant_map(session)
         decision = authz.can_clone_question(
@@ -797,6 +788,15 @@ class QuestionService:
         )
         if not decision.allowed:
             raise QuestionsAuthzDeniedError()
+
+        target = await repository.get_active_collection(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            collection_id=payload.target_collection_id,
+        )
+        if target is None:
+            raise CollectionNotFoundError()
 
         title = (payload.title if payload.title is not None else source.title).strip()
         if not title:
