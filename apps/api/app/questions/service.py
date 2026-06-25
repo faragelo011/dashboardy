@@ -11,8 +11,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auth_tenancy import CollectionPermission, MembershipRole
 from app.models.saved_questions import Collection, SavedQuestion
 from app.query_engine.cache_repo import invalidate_saved_question_cache
+from app.query_engine.enums import PresentationClass
+from app.query_engine.pipeline import execute_workspace_query
+from app.query_engine.schemas import (
+    QueryExecuteSuccessResponse,
+    SavedQuestionQueryExecuteRequest,
+)
 from app.questions import authz, repository
-from app.questions.parameters import ParameterValidationError, validate_parameter_schema
+from app.questions.parameters import (
+    ParameterValidationError,
+    validate_parameter_schema,
+    validate_runtime_parameters,
+)
 from app.questions.schemas import (
     CollectionCreateRequest,
     CollectionListResponse,
@@ -22,6 +32,7 @@ from app.questions.schemas import (
     ParameterDefinition,
     SavedQuestionConsumerDetail,
     SavedQuestionCreateRequest,
+    SavedQuestionExecuteRequest,
     SavedQuestionInternalDetail,
     SavedQuestionListResponse,
     SavedQuestionSummary,
@@ -757,3 +768,48 @@ class QuestionService:
         )
         if not deleted:
             raise QuestionNotFoundError()
+
+    async def execute_question(
+        self,
+        session: AsyncSession,
+        *,
+        question_id: UUID,
+        payload: SavedQuestionExecuteRequest,
+        connection_service: object,
+    ) -> QueryExecuteSuccessResponse:
+        row = await self._require_question_view(session, question_id=question_id)
+        collection_grants = await self._collection_grant_map(session)
+        question_grants = await self._question_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+        execute = authz.can_execute_question(
+            actor_role=self._actor.role,
+            actor_user_id=self._user_id,
+            actor_workspace_id=self._actor.workspace_id,
+            question_id=question_id,
+            collection_grant=collection_grants.get(row.collection_id),
+            question_grant=question_grants.get(question_id),
+            asset_grants=asset_grants,
+        )
+        if not execute.allowed:
+            raise QuestionsAuthzDeniedError()
+
+        declarations = _parameters_from_json(row.parameter_schema)
+        try:
+            coerced = validate_runtime_parameters(declarations, payload.parameters)
+        except ParameterValidationError as exc:
+            raise InvalidParametersError(str(exc), details=exc.details) from exc
+
+        engine_payload = SavedQuestionQueryExecuteRequest(
+            saved_question_id=question_id,
+            parameters=coerced,
+            presentation_class=PresentationClass.table,
+            bypass_cache=payload.bypass_cache,
+        )
+        return await execute_workspace_query(
+            session,
+            tenancy=self._actor,
+            auth_user_id=self._user_id,
+            payload=engine_payload,
+            connection_service=connection_service,
+            allow_saved_question_execution=True,
+        )

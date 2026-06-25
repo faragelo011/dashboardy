@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth_context.context import VerifiedSupabaseUser
 from app.auth_context.dependencies import get_verified_supabase_user
 from app.db.deps import get_db
+from app.query_engine.schemas import QueryExecuteSuccessResponse
 from app.questions.schemas import (
     CollectionCreateRequest,
     CollectionListResponse,
@@ -18,12 +19,13 @@ from app.questions.schemas import (
     CollectionUpdateRequest,
     SavedQuestionConsumerDetail,
     SavedQuestionCreateRequest,
+    SavedQuestionExecuteRequest,
     SavedQuestionInternalDetail,
     SavedQuestionListResponse,
     SavedQuestionUpdateRequest,
 )
 from app.questions.service import QuestionService, QuestionServiceError
-from app.routes.connections import require_active_membership
+from app.routes.connections import get_connection_service, require_active_membership
 
 router = APIRouter(tags=["questions"])
 
@@ -303,3 +305,37 @@ async def delete_saved_question(
         _map_service_error(exc)
     await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/questions/{question_id}/execute",
+    response_model=QueryExecuteSuccessResponse,
+)
+async def execute_saved_question(
+    workspace_id: UUID,
+    question_id: UUID,
+    payload: SavedQuestionExecuteRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> QueryExecuteSuccessResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    connection_service = get_connection_service(vault_required=True)
+    try:
+        result = await service.execute_question(
+            session,
+            question_id=question_id,
+            payload=payload,
+            connection_service=connection_service,
+        )
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    except HTTPException:
+        await session.commit()
+        raise
+    await session.commit()
+    return result

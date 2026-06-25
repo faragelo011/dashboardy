@@ -120,10 +120,10 @@ Implementation detail for US1:
 
 ### Tests for User Story 2
 
-- [ ] T034 [P] [US2] Add integration tests for permission-filtered collection/question lists across `admin`, `analyst`, `viewer`, and `external_client` in `apps/api/tests/integration/test_saved_questions_visibility.py`
-- [ ] T035 [P] [US2] Add integration tests for external-client consumer detail omitting `sql_text`, connection metadata, and collection admin fields in `apps/api/tests/integration/test_saved_questions_external_client.py`
-- [ ] T036 [P] [US2] Add contract tests for `POST /workspaces/{workspace_id}/questions/{question_id}/execute` success, invalid-parameter errors, and `bypass_cache: true` request handling in `apps/api/tests/contract/test_saved_question_execute_contract.py`
-- [ ] T037 [P] [US2] Add integration tests for saved-question execute authorization, parameter validation, Feature 4 delegation, and `query_audit_logs.saved_question_id` in `apps/api/tests/integration/test_saved_question_execute.py`
+- [X] T034 [P] [US2] Add integration tests for permission-filtered collection/question lists across `admin`, `analyst`, `viewer`, and `external_client` in `apps/api/tests/integration/test_saved_questions_visibility.py`
+- [X] T035 [P] [US2] Add integration tests for external-client consumer detail omitting `sql_text`, connection metadata, and collection admin fields in `apps/api/tests/integration/test_saved_questions_external_client.py`
+- [X] T036 [P] [US2] Add contract tests for `POST /workspaces/{workspace_id}/questions/{question_id}/execute` success, invalid-parameter errors, and `bypass_cache: true` request handling in `apps/api/tests/contract/test_saved_question_execute_contract.py`
+- [X] T037 [P] [US2] Add integration tests for saved-question execute authorization, parameter validation, Feature 4 delegation, and `query_audit_logs.saved_question_id` in `apps/api/tests/integration/test_saved_question_execute.py`
 
 ### Implementation for User Story 2
 
@@ -136,16 +136,16 @@ Implementation detail for US2:
 - Force-fresh execution must pass `bypass_cache: true` to the Feature 4 saved-question execution path.
 - Results UI must render `cache_hit` so force-fresh behavior can be verified.
 
-- [ ] T038 [US2] Implement effective permission resolution in `apps/api/app/questions/authz.py` so collection `view`/`edit` grants apply to internal members, `question_grants` widen only, and external clients require `asset_grants(asset_type='question')`
-- [ ] T039 [US2] Update repository list/detail queries in `apps/api/app/questions/repository.py` to return only visible collections/questions for the caller and to omit soft-deleted records by default
-- [ ] T040 [US2] Update `get_question` service in `apps/api/app/questions/service.py` to return `SavedQuestionInternalDetail` for permitted internal authoring/edit users and `SavedQuestionConsumerDetail` without `sql_text` for viewers/external clients
-- [ ] T041 [US2] Implement runtime parameter validation in `apps/api/app/questions/parameters.py` that coerces or rejects `string`, `number`, `boolean`, and ISO `date` values before execute/export service calls
-- [ ] T042 [US2] Implement saved-question execute service method in `apps/api/app/questions/service.py` that loads the question, re-checks execute permission at action time, validates runtime parameters, and calls the Feature 4 query engine with `mode='saved_question'`, `saved_question_id`, `parameters`, and `bypass_cache` so force-fresh runs bypass reusable cached results
-- [ ] T043 [US2] Implement execute route in `apps/api/app/routes/questions.py` for `POST /workspaces/{workspace_id}/questions/{question_id}/execute`, mapping invalid parameters to 422, authorization failures to 403, missing/hidden questions to 404, and warehouse busy to 429
-- [ ] T044 [US2] Implement saved-question execute client method in `apps/web/app/lib/questions-api.ts` returning `QueryExecuteSuccessResponse` from `packages/types/src/query-execute.ts` and accepting a `bypass_cache` option for force-fresh runs
-- [ ] T045 [P] [US2] Implement results table component in `apps/web/app/questions/results-table.tsx` that renders columns, rows, `meta.status`, `duration_ms`, `row_count`, `truncated`, `cache_hit`, empty results, and typed refusal messages
-- [ ] T046 [US2] Extend `apps/web/app/questions/question-editor.tsx` to support read-only consumer mode, runtime parameter inputs, normal execute button, force-fresh execute button wired to `bypass_cache: true`, execute loading state, invalid-parameter messages, and hidden `sql_text` for external-client responses
-- [ ] T047 [US2] Run API tests for US2 with `cd apps/api && uv run pytest tests/contract/test_saved_question_execute_contract.py tests/integration/test_saved_questions_visibility.py tests/integration/test_saved_questions_external_client.py tests/integration/test_saved_question_execute.py`
+- [X] T038 [US2] Implement effective permission resolution in `apps/api/app/questions/authz.py` so collection `view`/`edit` grants apply to internal members, `question_grants` widen only, and external clients require `asset_grants(asset_type='question')`
+- [X] T039 [US2] Update repository list/detail queries in `apps/api/app/questions/repository.py` to return only visible collections/questions for the caller and to omit soft-deleted records by default
+- [X] T040 [US2] Update `get_question` service in `apps/api/app/questions/service.py` to return `SavedQuestionInternalDetail` for permitted internal authoring/edit users and `SavedQuestionConsumerDetail` without `sql_text` for viewers/external clients
+- [X] T041 [US2] Implement runtime parameter validation in `apps/api/app/questions/parameters.py` that coerces or rejects `string`, `number`, `boolean`, and ISO `date` values before execute/export service calls
+- [X] T042 [US2] Implement saved-question execute service method in `apps/api/app/questions/service.py` that loads the question, re-checks execute permission at action time, validates runtime parameters, and calls the Feature 4 query engine with `mode='saved_question'`, `saved_question_id`, `parameters`, and `bypass_cache` so force-fresh runs bypass reusable cached results
+- [X] T043 [US2] Implement execute route in `apps/api/app/routes/questions.py` for `POST /workspaces/{workspace_id}/questions/{question_id}/execute`, mapping invalid parameters to 422, authorization failures to 403, missing/hidden questions to 404, and warehouse busy to 429
+- [X] T044 [US2] Implement saved-question execute client method in `apps/web/app/lib/questions-api.ts` returning `QueryExecuteSuccessResponse` from `packages/types/src/query-execute.ts` and accepting a `bypass_cache` option for force-fresh runs
+- [X] T045 [P] [US2] Implement results table component in `apps/web/app/questions/results-table.tsx` that renders columns, rows, `meta.status`, `duration_ms`, `row_count`, `truncated`, `cache_hit`, empty results, and typed refusal messages
+- [X] T046 [US2] Extend `apps/web/app/questions/question-editor.tsx` to support read-only consumer mode, runtime parameter inputs, normal execute button, force-fresh execute button wired to `bypass_cache: true`, execute loading state, invalid-parameter messages, and hidden `sql_text` for external-client responses
+- [X] T047 [US2] Run API tests for US2 with `cd apps/api && uv run pytest tests/contract/test_saved_question_execute_contract.py tests/integration/test_saved_questions_visibility.py tests/integration/test_saved_questions_external_client.py tests/integration/test_saved_question_execute.py`
 
 **Checkpoint**: US2 lets permitted users consume and run saved questions safely without authoring access.
 

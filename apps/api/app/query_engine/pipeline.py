@@ -136,6 +136,7 @@ async def execute_workspace_query(
     payload: QueryExecuteRequest,
     connection_service: ConnectionService,
     settings: Settings | None = None,
+    allow_saved_question_execution: bool = False,
 ) -> QueryExecuteSuccessResponse:
     cfg = settings or get_settings()
     t0 = time.perf_counter()
@@ -186,7 +187,30 @@ async def execute_workspace_query(
         )
 
     perm = can_execute_workspace_query(tenancy.role)
-    if not perm.allowed:
+    if (
+        isinstance(payload, SavedQuestionQueryExecuteRequest)
+        and not allow_saved_question_execution
+    ):
+        await _audit(
+            connection_id=None,
+            sql_hash=_STRUCTURAL_SQL_HASH,
+            bound_hash=bound_parameters_projection_hash(payload.parameters),
+            row_count=0,
+            bytes_scanned=None,
+            exec_status=ExecutionStatus.authz_denied,
+            error_code="authz_denied",
+            cache_hit=False,
+            audit_sq_id=None,
+            audit_dash_id=None,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error_code": "authz_denied",
+                "message": "Saved question execution must use the questions API.",
+            },
+        )
+    if not perm.allowed and not isinstance(payload, SavedQuestionQueryExecuteRequest):
         await _audit(
             connection_id=None,
             sql_hash=_STRUCTURAL_SQL_HASH,
@@ -234,7 +258,7 @@ async def execute_workspace_query(
             exec_status=ExecutionStatus.authz_denied,
             error_code=error_code,
             cache_hit=False,
-            audit_sq_id=getattr(payload, "saved_question_id", None),
+            audit_sq_id=None,
             audit_dash_id=getattr(payload, "dashboard_id", None),
         )
         raise HTTPException(
@@ -252,6 +276,7 @@ async def execute_workspace_query(
         resolved = await resolve_modal_sql(
             session,
             tenant_id=tenancy.tenant_id,
+            workspace_id=tenancy.workspace_id,
             payload=payload,
         )
         if resolved is None:
@@ -263,16 +288,16 @@ async def execute_workspace_query(
                 row_count=0,
                 bytes_scanned=None,
                 exec_status=ExecutionStatus.authz_denied,
-                error_code="saved_question_not_implemented",
+                error_code="question_not_found",
                 cache_hit=False,
                 audit_sq_id=payload.saved_question_id,
                 audit_dash_id=None,
             )
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail={
-                    "error_code": "saved_question_not_implemented",
-                    "message": "Saved question execution is not available yet.",
+                    "error_code": "question_not_found",
+                    "message": "Saved question not found.",
                 },
             )
         mode_for_cache = QueryMode.saved_question.value
@@ -287,6 +312,7 @@ async def execute_workspace_query(
         resolved = await resolve_modal_sql(
             session,
             tenant_id=tenancy.tenant_id,
+            workspace_id=tenancy.workspace_id,
             payload=payload,
         )
         if resolved is None:
@@ -452,7 +478,14 @@ async def execute_workspace_query(
                 tenancy,
                 payload.model_dump(mode="python"),
             )
-            if not perm_hit.allowed or not mod_hit.allowed:
+            saved_question_hit_allowed = (
+                isinstance(payload, SavedQuestionQueryExecuteRequest)
+                and allow_saved_question_execution
+            )
+            cache_reuse_denied = (
+                not saved_question_hit_allowed and not perm_hit.allowed
+            ) or not mod_hit.allowed
+            if cache_reuse_denied:
                 await _audit(
                     connection_id=connection_row.id,
                     sql_hash=sql_hash,

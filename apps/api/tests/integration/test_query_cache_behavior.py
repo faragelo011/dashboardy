@@ -17,8 +17,10 @@ from app.query_engine.schemas import (
     WidgetQueryExecuteRequest,
 )
 from app.query_engine.snowflake_run import SnowflakeSelectOutcome
+from app.questions import repository as questions_repository
 from app.tenancy.permissions import PermissionDecision, PermissionReason
 from app.tenancy.resolver import ResolvedTenancy
+from fastapi import HTTPException
 from sqlalchemy import func, select
 
 from tests.factories import auth_tenancy as auth_factories
@@ -117,11 +119,41 @@ async def _count_cache(session, tenant_id: uuid.UUID) -> int:
     return int((await session.execute(stmt)).scalar_one())
 
 
+async def _seed_saved_question_id(tenancy: ResolvedTenancy) -> uuid.UUID:
+    from app.db.session import get_async_session_maker
+
+    maker = get_async_session_maker()
+    async with maker() as session:
+        suffix = uuid.uuid4().hex
+        collection = await questions_repository.create_collection(
+            session,
+            tenant_id=tenancy.tenant_id,
+            workspace_id=tenancy.workspace_id,
+            name=f"Cache {suffix}",
+            slug=f"cache-{suffix}",
+            sort_order=0,
+            created_by_membership_id=tenancy.membership_id,
+        )
+        question = await questions_repository.create_saved_question(
+            session,
+            tenant_id=tenancy.tenant_id,
+            workspace_id=tenancy.workspace_id,
+            collection_id=collection.id,
+            title=f"Question {suffix}",
+            description=None,
+            sql_text="SELECT 1",
+            parameter_schema=[],
+            created_by_membership_id=tenancy.membership_id,
+        )
+        await session.commit()
+        return question.id
+
+
 @pytest.mark.asyncio
 async def test_saved_question_second_call_is_cache_hit(
     use_live_postgres: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    sq_id = uuid.uuid4()
+    sq_id: uuid.UUID | None = None
 
     async def _resolve(_s, *, tenant_id, payload):  # noqa: ARG001
         _ = tenant_id
@@ -143,6 +175,7 @@ async def test_saved_question_second_call_is_cache_hit(
     monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
 
     user_id, tenancy, svc = await _seed_workspace_connection()
+    sq_id = await _seed_saved_question_id(tenancy)
     payload = SavedQuestionQueryExecuteRequest(
         saved_question_id=sq_id,
         presentation_class=PresentationClass.kpi,
@@ -160,6 +193,7 @@ async def test_saved_question_second_call_is_cache_hit(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r1.meta.cache_hit is False
@@ -173,6 +207,7 @@ async def test_saved_question_second_call_is_cache_hit(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r2.meta.cache_hit is True
@@ -183,7 +218,7 @@ async def test_saved_question_second_call_is_cache_hit(
 async def test_bypass_cache_skips_read_and_write(
     use_live_postgres: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    sq_id = uuid.uuid4()
+    sq_id: uuid.UUID | None = None
     calls = {"sf": 0}
 
     async def _resolve(_s, *, tenant_id, payload):  # noqa: ARG001
@@ -204,6 +239,7 @@ async def test_bypass_cache_skips_read_and_write(
     monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
 
     user_id, tenancy, svc = await _seed_workspace_connection()
+    sq_id = await _seed_saved_question_id(tenancy)
 
     from app.db.session import get_async_session_maker
 
@@ -219,6 +255,7 @@ async def test_bypass_cache_skips_read_and_write(
                 bypass_cache=True,
             ),
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
 
@@ -236,6 +273,7 @@ async def test_bypass_cache_skips_read_and_write(
                 bypass_cache=False,
             ),
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r.meta.cache_hit is False
@@ -253,6 +291,7 @@ async def test_bypass_cache_skips_read_and_write(
                 bypass_cache=False,
             ),
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r2.meta.cache_hit is True
@@ -293,7 +332,7 @@ async def test_widget_mode_second_call_is_cache_hit(
 ) -> None:
     dash_id = uuid.uuid4()
     wid = uuid.uuid4()
-    sq_id = uuid.uuid4()
+    sq_id: uuid.UUID | None = None
 
     async def _resolve(_s, *, tenant_id, payload):  # noqa: ARG001
         _ = tenant_id
@@ -316,6 +355,7 @@ async def test_widget_mode_second_call_is_cache_hit(
     )
 
     user_id, tenancy, svc = await _seed_workspace_connection()
+    sq_id = await _seed_saved_question_id(tenancy)
     payload = WidgetQueryExecuteRequest(
         dashboard_id=dash_id,
         widget_id=wid,
@@ -333,6 +373,7 @@ async def test_widget_mode_second_call_is_cache_hit(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r1.meta.cache_hit is False
@@ -343,6 +384,7 @@ async def test_widget_mode_second_call_is_cache_hit(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r2.meta.cache_hit is True
@@ -352,7 +394,7 @@ async def test_widget_mode_second_call_is_cache_hit(
 async def test_cache_hit_rechecks_modality_auth_before_serving(
     use_live_postgres: None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    sq_id = uuid.uuid4()
+    sq_id: uuid.UUID | None = None
 
     async def _resolve(_s, *, tenant_id, payload):  # noqa: ARG001
         _ = tenant_id
@@ -389,6 +431,7 @@ async def test_cache_hit_rechecks_modality_auth_before_serving(
     )
 
     user_id, tenancy, svc = await _seed_workspace_connection()
+    sq_id = await _seed_saved_question_id(tenancy)
     payload = SavedQuestionQueryExecuteRequest(
         saved_question_id=sq_id,
         presentation_class=PresentationClass.kpi,
@@ -404,19 +447,22 @@ async def test_cache_hit_rechecks_modality_auth_before_serving(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
+            allow_saved_question_execution=True,
         )
         await s.commit()
         assert r1.meta.cache_hit is False
 
     async with maker() as s:
-        r2 = await execute_workspace_query(
-            s,
-            tenancy=tenancy,
-            auth_user_id=user_id,
-            payload=payload,
-            connection_service=svc,
-        )
+        with pytest.raises(HTTPException) as excinfo:
+            await execute_workspace_query(
+                s,
+                tenancy=tenancy,
+                auth_user_id=user_id,
+                payload=payload,
+                connection_service=svc,
+                allow_saved_question_execution=True,
+            )
         await s.commit()
-        assert r2.meta.cache_hit is False
+        assert excinfo.value.status_code == 403
 
-    assert sf_calls["n"] == 2
+    assert sf_calls["n"] == 1

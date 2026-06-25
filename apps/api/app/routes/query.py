@@ -12,7 +12,10 @@ from app.auth_context.context import VerifiedSupabaseUser
 from app.auth_context.dependencies import get_verified_supabase_user
 from app.db.deps import get_db
 from app.query_engine.pipeline import execute_workspace_query
-from app.query_engine.schemas import QueryExecuteRequest, QueryExecuteSuccessResponse
+from app.query_engine.schemas import (
+    AdhocQueryExecuteRequest,
+    QueryExecuteSuccessResponse,
+)
 from app.routes import connections as connections_routes
 
 router = APIRouter(tags=["query"])
@@ -24,7 +27,7 @@ router = APIRouter(tags=["query"])
 )
 async def post_workspace_query_execute(
     workspace_id: UUID,
-    payload: QueryExecuteRequest,
+    payload: AdhocQueryExecuteRequest,
     auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> QueryExecuteSuccessResponse:

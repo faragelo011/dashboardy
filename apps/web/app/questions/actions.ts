@@ -8,9 +8,10 @@ import {
   ApiError,
   createSavedQuestion,
   deleteSavedQuestion,
+  executeSavedQuestion,
   updateSavedQuestion,
 } from "@/app/lib/questions-api";
-import type { ParameterDefinition } from "@dashboardy/types";
+import type { ParameterDefinition, QueryExecuteSuccessResponse } from "@dashboardy/types";
 
 async function requireToken(): Promise<string> {
   const supabase = await createServerSupabase();
@@ -95,6 +96,53 @@ export async function saveQuestionAction(
       return { ok: false, message: err.message, errorCode: err.errorCode };
     }
     return { ok: false, message: "Failed to save question." };
+  }
+}
+
+export type ExecuteQuestionActionState =
+  | { ok: true; result: QueryExecuteSuccessResponse }
+  | { ok: false; message: string; errorCode?: string };
+
+export async function executeQuestionAction(
+  _prev: ExecuteQuestionActionState | null,
+  formData: FormData,
+): Promise<ExecuteQuestionActionState> {
+  const workspaceId = String(formData.get("workspace_id") ?? "").trim();
+  const questionId = String(formData.get("question_id") ?? "").trim();
+  const bypassCache = String(formData.get("bypass_cache") ?? "") === "true";
+  const parametersRaw = String(formData.get("runtime_parameters_json") ?? "{}");
+
+  if (!workspaceId || !questionId) {
+    return { ok: false, message: "Missing question identifier." };
+  }
+
+  let parameters: Record<string, string | number | boolean> = {};
+  try {
+    const parsed: unknown = JSON.parse(parametersRaw);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return { ok: false, message: "Runtime parameters are invalid." };
+    }
+    parameters = parsed as Record<string, string | number | boolean>;
+  } catch {
+    return { ok: false, message: "Runtime parameters are invalid." };
+  }
+
+  const token = await requireToken();
+  try {
+    const result = await executeSavedQuestion(token, workspaceId, questionId, {
+      parameters,
+      bypass_cache: bypassCache,
+    });
+    return { ok: true, result };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return { ok: false, message: err.message, errorCode: err.errorCode };
+    }
+    return { ok: false, message: "Failed to execute saved question." };
   }
 }
 

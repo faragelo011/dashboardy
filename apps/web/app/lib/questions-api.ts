@@ -216,12 +216,23 @@ export async function cloneSavedQuestion(
 }
 
 export async function executeSavedQuestion(
-  _accessToken: string,
-  _workspaceId: string,
-  _questionId: string,
-  _body?: SavedQuestionExecuteRequest,
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
+  body?: SavedQuestionExecuteRequest,
 ): Promise<QueryExecuteSuccessResponse> {
-  return notImplemented("executeSavedQuestion");
+  const res = await apiFetch(
+    workspacePath(
+      workspaceId,
+      `/questions/${encodeURIComponent(questionId)}/execute`,
+    ),
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify(body ?? { parameters: {}, bypass_cache: false }),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to execute saved question");
 }
 
 export async function exportSavedQuestionCsv(
