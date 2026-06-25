@@ -237,6 +237,20 @@ async def list_active_saved_questions(
     return list((await session.execute(stmt)).scalars().all())
 
 
+async def get_active_saved_question_by_id(
+    session: AsyncSession,
+    *,
+    tenant_id: UUID,
+    question_id: UUID,
+) -> SavedQuestion | None:
+    stmt = select(SavedQuestion).where(
+        SavedQuestion.tenant_id == tenant_id,
+        SavedQuestion.id == question_id,
+        _active_question_clause(),
+    )
+    return (await session.execute(stmt)).scalar_one_or_none()
+
+
 async def get_active_saved_question(
     session: AsyncSession,
     *,

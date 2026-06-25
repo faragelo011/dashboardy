@@ -1,8 +1,4 @@
-"""Resolve SQL for cacheable modes until Feature 5–6 assets exist.
-
-Return ``None`` when rows are unavailable so the pipeline returns **422**.
-Tests may monkeypatch this module.
-"""
+"""Resolve SQL for cacheable saved-question execution (Feature 005)."""
 
 from __future__ import annotations
 
@@ -15,14 +11,23 @@ from app.query_engine.schemas import (
     SavedQuestionQueryExecuteRequest,
     WidgetQueryExecuteRequest,
 )
+from app.questions import repository
 
 
 async def resolve_modal_sql(
-    _session: AsyncSession,
+    session: AsyncSession,
     *,
     tenant_id: UUID,
     payload: SavedQuestionQueryExecuteRequest | WidgetQueryExecuteRequest,
 ) -> tuple[str, dict[str, Any]] | None:
-    _ = tenant_id
-    _ = payload
-    return None
+    if isinstance(payload, WidgetQueryExecuteRequest):
+        return None
+
+    row = await repository.get_active_saved_question_by_id(
+        session,
+        tenant_id=tenant_id,
+        question_id=payload.saved_question_id,
+    )
+    if row is None:
+        return None
+    return row.sql_text, dict(payload.parameters)

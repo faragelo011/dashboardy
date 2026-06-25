@@ -106,7 +106,7 @@ async def test_viewer_and_external_client_denied_before_parser_or_snowflake(
 
 
 @pytest.mark.asyncio
-async def test_saved_question_disabled_before_parser_or_snowflake(
+async def test_saved_question_mode_denied_without_asset_context(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -133,10 +133,10 @@ async def test_saved_question_disabled_before_parser_or_snowflake(
             )
 
         assert excinfo.value.status_code == 403
-        assert excinfo.value.detail["error_code"] == "saved_question_not_implemented"
+        assert excinfo.value.detail["error_code"] == "authz_denied"
         audit = await _latest_audit(session, tenancy.tenant_id)
         assert audit.status == ExecutionStatus.authz_denied
-        assert audit.error_code == "saved_question_not_implemented"
+        assert audit.error_code == "authz_denied"
 
 
 @pytest.mark.asyncio
