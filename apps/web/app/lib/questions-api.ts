@@ -272,7 +272,7 @@ export async function exportSavedQuestionCsv(
   workspaceId: string,
   questionId: string,
   query?: SavedQuestionExportQuery,
-): Promise<Blob> {
+): Promise<Response> {
   const qs = buildSavedQuestionExportQueryString(query);
   const path = workspacePath(
     workspaceId,
@@ -287,7 +287,7 @@ export async function exportSavedQuestionCsv(
     const parsed = parseApiErrorBody(text, "Failed to export saved question");
     throw new ApiError(res.status, parsed.message, parsed.error_code);
   }
-  return res.blob();
+  return res;
 }
 
 export { ApiError };

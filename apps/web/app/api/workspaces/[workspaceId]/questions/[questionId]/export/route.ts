@@ -36,13 +36,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
   });
 
   try {
-    const blob = await exportSavedQuestionCsv(token, workspaceId, questionId, {
+    const upstream = await exportSavedQuestionCsv(token, workspaceId, questionId, {
       parameters,
       bypass_cache: request.nextUrl.searchParams.get("bypass_cache") === "true",
     });
-    return new NextResponse(blob, {
+    return new NextResponse(upstream.body, {
       headers: {
-        "Content-Type": "text/csv",
+        "Content-Type": upstream.headers.get("Content-Type") ?? "text/csv",
         "Content-Disposition": `attachment; filename="${questionId}.csv"`,
       },
     });

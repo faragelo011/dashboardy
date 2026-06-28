@@ -263,25 +263,35 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
         if (!state.ok) {
           return;
         }
-        const response = await fetch(state.downloadUrl);
-        if (!response.ok) {
-          const body = (await response.json().catch(() => null)) as
-            | { message?: string; error_code?: string }
-            | null;
+        try {
+          const response = await fetch(state.downloadUrl);
+          if (!response.ok) {
+            const body = (await response.json().catch(() => null)) as
+              | { message?: string; error_code?: string }
+              | null;
+            setExportState({
+              ok: false,
+              message: body?.message ?? "Failed to export saved question.",
+              errorCode: body?.error_code,
+            });
+            return;
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = `${state.questionId}.csv`;
+          anchor.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+        } catch (err) {
           setExportState({
             ok: false,
-            message: body?.message ?? "Failed to export saved question.",
-            errorCode: body?.error_code,
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to export saved question.",
           });
-          return;
         }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement("a");
-        anchor.href = url;
-        anchor.download = `${state.questionId}.csv`;
-        anchor.click();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
       })
       .finally(() => setExportPending(false));
   };
