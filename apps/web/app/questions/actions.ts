@@ -10,6 +10,7 @@ import {
   createSavedQuestion,
   deleteSavedQuestion,
   executeSavedQuestion,
+  buildSavedQuestionExportDownloadUrl,
   updateSavedQuestion,
 } from "@/app/lib/questions-api";
 import type { ParameterDefinition, QueryExecuteSuccessResponse } from "@dashboardy/types";
@@ -175,6 +176,57 @@ export async function cloneQuestionAction(
     }
     return { ok: false, message: "Failed to clone question." };
   }
+}
+
+export type ExportQuestionActionState =
+  | { ok: true; questionId: string; downloadUrl: string }
+  | { ok: false; message: string; errorCode?: string };
+
+export async function exportQuestionAction(
+  formData: FormData,
+): Promise<ExportQuestionActionState> {
+  const workspaceId = String(formData.get("workspace_id") ?? "").trim();
+  const questionId = String(formData.get("question_id") ?? "").trim();
+  const parametersRaw = String(formData.get("runtime_parameters_json") ?? "{}");
+
+  if (!workspaceId || !questionId) {
+    return { ok: false, message: "Missing question identifier." };
+  }
+
+  let parameters: Record<string, string | number | boolean> = {};
+  try {
+    const parsed: unknown = JSON.parse(parametersRaw);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return { ok: false, message: "Runtime parameters are invalid." };
+    }
+    for (const value of Object.values(parsed as Record<string, unknown>)) {
+      if (
+        value === null ||
+        typeof value === "object" ||
+        (typeof value !== "string" &&
+          typeof value !== "number" &&
+          typeof value !== "boolean")
+      ) {
+        return { ok: false, message: "Runtime parameters are invalid." };
+      }
+    }
+    parameters = parsed as Record<string, string | number | boolean>;
+  } catch {
+    return { ok: false, message: "Runtime parameters are invalid." };
+  }
+
+  return {
+    ok: true,
+    questionId,
+    downloadUrl: buildSavedQuestionExportDownloadUrl(workspaceId, questionId, {
+      parameters,
+      bypass_cache: false,
+    }),
+  };
 }
 
 export async function deleteQuestionAction(formData: FormData): Promise<QuestionActionState> {

@@ -190,9 +190,9 @@ Implementation detail for US3:
 
 ### Tests for User Story 4
 
-- [ ] T055 [P] [US4] Add contract tests for `GET /workspaces/{workspace_id}/questions/{question_id}/export.csv` success, forbidden export, invalid parameters, and `parameters[name]=value` deep-object query serialization in `apps/api/tests/contract/test_saved_question_export_contract.py`
-- [ ] T056 [P] [US4] Add unit tests for CSV rendering with headers, zero rows, escaping, null cells, and 10,000-row cap in `apps/api/tests/unit/test_saved_question_csv_export.py`
-- [ ] T057 [P] [US4] Add integration tests for export permission covering internal `admin`/`analyst`/`viewer` visible-question export, external `can_export=false`, external `can_export=true`, shared execution/audit path, and no CSV on invalid parameters in `apps/api/tests/integration/test_saved_question_export.py`
+- [X] T055 [P] [US4] Add contract tests for `GET /workspaces/{workspace_id}/questions/{question_id}/export.csv` success, forbidden export, invalid parameters, and `parameters[name]=value` deep-object query serialization in `apps/api/tests/contract/test_saved_question_export_contract.py`
+- [X] T056 [P] [US4] Add unit tests for CSV rendering with headers, zero rows, escaping, null cells, and 10,000-row cap in `apps/api/tests/unit/test_saved_question_csv_export.py`
+- [X] T057 [P] [US4] Add integration tests for export permission covering internal `admin`/`analyst`/`viewer` visible-question export, external `can_export=false`, external `can_export=true`, shared execution/audit path, and no CSV on invalid parameters in `apps/api/tests/integration/test_saved_question_export.py`
 
 ### Implementation for User Story 4
 
@@ -205,12 +205,12 @@ Implementation detail for US4:
 - If execution returns a refusal outcome, return normalized JSON error instead of CSV.
 - CSV output must include headers even for zero rows and must never exceed 10,000 data rows.
 
-- [ ] T058 [US4] Implement CSV rendering helper in `apps/api/app/questions/csv_export.py` that accepts query-engine columns/rows, writes RFC-compatible CSV with headers, escapes cells, preserves zero-row headers, and enforces the 10,000-row hard cap
-- [ ] T059 [US4] Implement export service method in `apps/api/app/questions/service.py` that re-checks separate export permission, validates runtime parameters, delegates to saved-question execution path, converts successful results to CSV, and converts execution refusals to normalized JSON errors
-- [ ] T060 [US4] Implement export route in `apps/api/app/routes/questions.py` for `GET /workspaces/{workspace_id}/questions/{question_id}/export.csv`, reading scalar parameters from `parameters[name]=value` deep-object query string plus `bypass_cache`, returning `text/csv`, and returning 403/404/422 JSON errors when CSV is not produced
-- [ ] T061 [US4] Implement export client method in `apps/web/app/lib/questions-api.ts` that downloads CSV blobs and preserves normalized JSON error handling for non-200 responses
-- [ ] T062 [US4] Add export button and export error/loading states to `apps/web/app/questions/question-editor.tsx`, visible when an internal `admin`/`analyst`/`viewer` can see the saved question or when an external-client response has `can_export: true`
-- [ ] T063 [US4] Run export tests with `cd apps/api && uv run pytest tests/unit/test_saved_question_csv_export.py tests/contract/test_saved_question_export_contract.py tests/integration/test_saved_question_export.py`
+- [X] T058 [US4] Implement CSV rendering helper in `apps/api/app/questions/csv_export.py` that accepts query-engine columns/rows, writes RFC-compatible CSV with headers, escapes cells, preserves zero-row headers, and enforces the 10,000-row hard cap
+- [X] T059 [US4] Implement export service method in `apps/api/app/questions/service.py` that re-checks separate export permission, validates runtime parameters, delegates to saved-question execution path, converts successful results to CSV, and converts execution refusals to normalized JSON errors
+- [X] T060 [US4] Implement export route in `apps/api/app/routes/questions.py` for `GET /workspaces/{workspace_id}/questions/{question_id}/export.csv`, reading scalar parameters from `parameters[name]=value` deep-object query string plus `bypass_cache`, returning `text/csv`, and returning 403/404/422 JSON errors when CSV is not produced
+- [X] T061 [US4] Implement export client method in `apps/web/app/lib/questions-api.ts` that downloads CSV blobs and preserves normalized JSON error handling for non-200 responses
+- [X] T062 [US4] Add export button and export error/loading states to `apps/web/app/questions/question-editor.tsx`, visible when an internal `admin`/`analyst`/`viewer` can see the saved question or when an external-client response has `can_export: true`
+- [X] T063 [US4] Run export tests with `cd apps/api && uv run pytest tests/unit/test_saved_question_csv_export.py tests/contract/test_saved_question_export_contract.py tests/integration/test_saved_question_export.py`
 
 **Checkpoint**: US4 completes controlled CSV export without async jobs or non-CSV formats.
 

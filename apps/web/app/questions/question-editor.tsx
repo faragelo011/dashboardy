@@ -10,8 +10,10 @@ import {
   cloneQuestionAction,
   deleteQuestionAction,
   executeQuestionAction,
+  exportQuestionAction,
   saveQuestionAction,
   type ExecuteQuestionActionState,
+  type ExportQuestionActionState,
   type QuestionActionState,
 } from "./actions";
 import { ParameterEditor } from "./parameter-editor";
@@ -47,6 +49,7 @@ function ErrorBanner({
   state:
     | QuestionActionState
     | ExecuteQuestionActionState
+    | ExportQuestionActionState
     | null
     | undefined;
   title?: string;
@@ -149,7 +152,9 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
   const [executeState, setExecuteState] =
     useState<ExecuteQuestionActionState | null>(null);
   const [cloneState, setCloneState] = useState<QuestionActionState | null>(null);
+  const [exportState, setExportState] = useState<ExportQuestionActionState | null>(null);
   const [clonePending, setClonePending] = useState(false);
+  const [exportPending, setExportPending] = useState(false);
   const [savePending, startSaveTransition] = useTransition();
   const [deletePending, startDeleteTransition] = useTransition();
   const [executePending, startExecuteTransition] = useTransition();
@@ -159,6 +164,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
   const schemaParameters = canEdit ? parameters : (detail?.parameters ?? []);
   const canRun = Boolean(detail && !isNew);
   const canClone = canEdit && canRun && editableCollections.length > 0;
+  const canExport = canRun && Boolean(detail?.can_export);
 
   useEffect(() => {
     setParameters(detail?.parameters ?? []);
@@ -167,6 +173,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     setDeleteState(null);
     setExecuteState(null);
     setCloneState(null);
+    setExportState(null);
   }, [detail]);
 
   const savedUpdatedAt =
@@ -236,6 +243,57 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     void cloneQuestionAction(formData)
       .then(setCloneState)
       .finally(() => setClonePending(false));
+  };
+
+  const submitExport = () => {
+    if (!detail) {
+      return;
+    }
+    const formData = new FormData();
+    formData.set("workspace_id", workspaceId);
+    formData.set("question_id", detail.id);
+    formData.set(
+      "runtime_parameters_json",
+      JSON.stringify(buildRuntimePayload(schemaParameters, runtimeValues)),
+    );
+    setExportPending(true);
+    void exportQuestionAction(formData)
+      .then(async (state) => {
+        setExportState(state);
+        if (!state.ok) {
+          return;
+        }
+        try {
+          const response = await fetch(state.downloadUrl);
+          if (!response.ok) {
+            const body = (await response.json().catch(() => null)) as
+              | { message?: string; error_code?: string }
+              | null;
+            setExportState({
+              ok: false,
+              message: body?.message ?? "Failed to export saved question.",
+              errorCode: body?.error_code,
+            });
+            return;
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement("a");
+          anchor.href = url;
+          anchor.download = `${state.questionId}.csv`;
+          anchor.click();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
+        } catch (err) {
+          setExportState({
+            ok: false,
+            message:
+              err instanceof Error
+                ? err.message
+                : "Failed to export saved question.",
+          });
+        }
+      })
+      .finally(() => setExportPending(false));
   };
 
   return (
@@ -371,6 +429,19 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
                 {executePending ? "Running..." : "Force fresh"}
               </button>
             </div>
+            {canExport ? (
+              <div className="flex flex-col gap-3 pt-2">
+                <ErrorBanner state={exportState} title="Export failed" />
+                <button
+                  type="button"
+                  onClick={submitExport}
+                  disabled={exportPending}
+                  className={quietButtonClass}
+                >
+                  {exportPending ? "Exporting..." : "Export CSV"}
+                </button>
+              </div>
+            ) : null}
           </form>
           {executeState?.ok ? <ResultsTable result={executeState.result} /> : null}
         </section>

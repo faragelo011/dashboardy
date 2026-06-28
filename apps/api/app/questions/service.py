@@ -11,13 +11,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auth_tenancy import CollectionPermission, MembershipRole
 from app.models.saved_questions import Collection, SavedQuestion
 from app.query_engine.cache_repo import invalidate_saved_question_cache
-from app.query_engine.enums import PresentationClass
+from app.query_engine.enums import ExecutionStatus, PresentationClass
 from app.query_engine.pipeline import execute_workspace_query
 from app.query_engine.schemas import (
     QueryExecuteSuccessResponse,
     SavedQuestionQueryExecuteRequest,
 )
 from app.questions import authz, repository
+from app.questions.csv_export import render_query_result_csv
 from app.questions.parameters import (
     ParameterValidationError,
     validate_parameter_schema,
@@ -125,6 +126,17 @@ class ExportNotPermittedError(QuestionServiceError):
             error_code="export_not_permitted",
             details=details,
         )
+
+
+class ExportExecutionRefusedError(QuestionServiceError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        error_code: str,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message, error_code=error_code, details=details)
 
 
 class QuestionNotFoundError(QuestionServiceError):
@@ -859,3 +871,49 @@ class QuestionService:
             connection_service=connection_service,
             allow_saved_question_execution=True,
         )
+
+    async def export_question(
+        self,
+        session: AsyncSession,
+        *,
+        question_id: UUID,
+        parameters: dict[str, Any],
+        bypass_cache: bool,
+        connection_service: object,
+    ) -> str:
+        row = await self._require_question_view(session, question_id=question_id)
+        collection_grants = await self._collection_grant_map(session)
+        question_grants = await self._question_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+        export = authz.can_export_question(
+            actor_role=self._actor.role,
+            actor_user_id=self._user_id,
+            actor_workspace_id=self._actor.workspace_id,
+            question_id=question_id,
+            collection_grant=collection_grants.get(row.collection_id),
+            question_grant=question_grants.get(question_id),
+            asset_grants=asset_grants,
+        )
+        if not export.allowed:
+            raise ExportNotPermittedError()
+
+        result = await self.execute_question(
+            session,
+            question_id=question_id,
+            payload=SavedQuestionExecuteRequest(
+                parameters=parameters,
+                bypass_cache=bypass_cache,
+            ),
+            connection_service=connection_service,
+        )
+        if result.meta.status != ExecutionStatus.ok:
+            error_code = result.meta.error_code or result.meta.status.value
+            raise ExportExecutionRefusedError(
+                "Saved question execution did not succeed; CSV was not produced.",
+                error_code=error_code,
+                details={
+                    "status": result.meta.status.value,
+                    "error_code": result.meta.error_code,
+                },
+            )
+        return render_query_result_csv(columns=result.columns, rows=result.rows)

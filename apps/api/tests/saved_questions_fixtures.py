@@ -305,6 +305,7 @@ async def seed_question_catalog(
     *,
     grant_viewer_collection_access: bool = True,
     grant_external_asset: bool = True,
+    grant_external_export: bool = False,
 ) -> SeededQuestionCatalog:
     maker = get_async_session_maker()
     try:
@@ -407,6 +408,7 @@ async def seed_question_catalog(
                     asset_id=question.id,
                     asset_type=AssetType.question,
                     created_by=admin,
+                    can_export=grant_external_export,
                 )
 
             await session.commit()
