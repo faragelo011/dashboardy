@@ -10,6 +10,7 @@ import {
   createSavedQuestion,
   deleteSavedQuestion,
   executeSavedQuestion,
+  exportSavedQuestionCsv,
   updateSavedQuestion,
 } from "@/app/lib/questions-api";
 import type { ParameterDefinition, QueryExecuteSuccessResponse } from "@dashboardy/types";
@@ -174,6 +175,56 @@ export async function cloneQuestionAction(
       return { ok: false, message: err.message, errorCode: err.errorCode };
     }
     return { ok: false, message: "Failed to clone question." };
+  }
+}
+
+export type ExportQuestionActionState =
+  | { ok: true; questionId: string; exportDataBase64: string }
+  | { ok: false; message: string; errorCode?: string };
+
+export async function exportQuestionAction(
+  formData: FormData,
+): Promise<ExportQuestionActionState> {
+  const workspaceId = String(formData.get("workspace_id") ?? "").trim();
+  const questionId = String(formData.get("question_id") ?? "").trim();
+  const parametersRaw = String(formData.get("runtime_parameters_json") ?? "{}");
+
+  if (!workspaceId || !questionId) {
+    return { ok: false, message: "Missing question identifier." };
+  }
+
+  let parameters: Record<string, string | number | boolean> = {};
+  try {
+    const parsed: unknown = JSON.parse(parametersRaw);
+    if (
+      typeof parsed !== "object" ||
+      parsed === null ||
+      Array.isArray(parsed)
+    ) {
+      return { ok: false, message: "Runtime parameters are invalid." };
+    }
+    parameters = parsed as Record<string, string | number | boolean>;
+  } catch {
+    return { ok: false, message: "Runtime parameters are invalid." };
+  }
+
+  const token = await requireToken();
+  try {
+    const blob = await exportSavedQuestionCsv(token, workspaceId, questionId, {
+      parameters,
+      bypass_cache: false,
+    });
+    const arrayBuffer = await blob.arrayBuffer();
+    return {
+      ok: true,
+      questionId,
+      exportDataBase64: Buffer.from(arrayBuffer).toString("base64"),
+    };
+  } catch (err) {
+    if (err instanceof ApiError) {
+      return { ok: false, message: err.message, errorCode: err.errorCode };
+    }
+    return { ok: false, message: "Failed to export saved question." };
   }
 }
 

@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Annotated, NoReturn
+from collections.abc import Mapping
+from typing import Annotated, Any, NoReturn
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth_context.context import VerifiedSupabaseUser
@@ -30,6 +31,20 @@ from app.routes.connections import get_connection_service, require_active_member
 
 router = APIRouter(tags=["questions"])
 
+_PARAMETERS_QUERY_PREFIX = "parameters["
+
+
+def _parse_deep_object_parameters(query_params: Mapping[str, str]) -> dict[str, Any]:
+    """Deserialize `parameters[name]=value` query keys into a flat dict."""
+    parsed: dict[str, Any] = {}
+    for key, value in query_params.items():
+        if not key.startswith(_PARAMETERS_QUERY_PREFIX) or not key.endswith("]"):
+            continue
+        name = key[len(_PARAMETERS_QUERY_PREFIX) : -1]
+        if name:
+            parsed[name] = value
+    return parsed
+
 
 def _forbidden(*, error_code: str, message: str) -> NoReturn:
     raise HTTPException(
@@ -41,6 +56,8 @@ def _forbidden(*, error_code: str, message: str) -> NoReturn:
 def _map_service_error(exc: QuestionServiceError) -> NoReturn:
     code = exc.error_code
     if code == "authz_denied":
+        _forbidden(error_code=code, message=str(exc))
+    if code == "export_not_permitted":
         _forbidden(error_code=code, message=str(exc))
     if code in {"collection_not_found", "question_not_found"}:
         raise HTTPException(
@@ -61,6 +78,20 @@ def _map_service_error(exc: QuestionServiceError) -> NoReturn:
             },
         ) from exc
     if code == "invalid_parameters":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    if code in {
+        "warehouse_timeout",
+        "row_limit_exceeded",
+        "warehouse_query_failed",
+        "rejected_by_parser",
+    }:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
@@ -370,3 +401,42 @@ async def clone_saved_question(
         _map_service_error(exc)
     await session.commit()
     return result
+
+
+@router.get("/questions/{question_id}/export.csv")
+async def export_saved_question_csv(
+    workspace_id: UUID,
+    question_id: UUID,
+    request: Request,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    bypass_cache: Annotated[bool, Query()] = False,
+) -> Response:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    connection_service = get_connection_service(vault_required=True)
+    try:
+        csv_text = await service.export_question(
+            session,
+            question_id=question_id,
+            parameters=_parse_deep_object_parameters(request.query_params),
+            bypass_cache=bypass_cache,
+            connection_service=connection_service,
+        )
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
+    except HTTPException:
+        await session.commit()
+        raise
+    await session.commit()
+    return Response(
+        content=csv_text,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="{question_id}.csv"',
+        },
+    )

@@ -202,10 +202,6 @@ export async function deleteSavedQuestion(
   }
 }
 
-const notImplemented = (operationId: string): never => {
-  throw new Error(`${operationId} is not implemented (Feature 005 Phase 4+)`);
-};
-
 export async function cloneSavedQuestion(
   accessToken: string,
   workspaceId: string,
@@ -247,15 +243,38 @@ export async function executeSavedQuestion(
 }
 
 export async function exportSavedQuestionCsv(
-  _accessToken: string,
-  _workspaceId: string,
-  _questionId: string,
-  _query?: {
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
+  query?: {
     parameters?: Record<string, string | number | boolean>;
     bypass_cache?: boolean;
   },
 ): Promise<Blob> {
-  return notImplemented("exportSavedQuestionCsv");
+  const params = new URLSearchParams();
+  if (query?.bypass_cache) {
+    params.set("bypass_cache", "true");
+  }
+  if (query?.parameters) {
+    for (const [name, value] of Object.entries(query.parameters)) {
+      params.set(`parameters[${name}]`, String(value));
+    }
+  }
+  const qs = params.toString();
+  const path = workspacePath(
+    workspaceId,
+    `/questions/${encodeURIComponent(questionId)}/export.csv${qs ? `?${qs}` : ""}`,
+  );
+  const res = await fetch(`${apiBase()}${path}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to export saved question");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
+  return res.blob();
 }
 
 export { ApiError };
