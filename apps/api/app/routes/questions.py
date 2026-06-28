@@ -17,6 +17,7 @@ from app.questions.schemas import (
     CollectionListResponse,
     CollectionResponse,
     CollectionUpdateRequest,
+    SavedQuestionCloneRequest,
     SavedQuestionConsumerDetail,
     SavedQuestionCreateRequest,
     SavedQuestionExecuteRequest,
@@ -337,5 +338,35 @@ async def execute_saved_question(
     except HTTPException:
         await session.commit()
         raise
+    await session.commit()
+    return result
+
+
+@router.post(
+    "/questions/{question_id}/clone",
+    response_model=SavedQuestionInternalDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+async def clone_saved_question(
+    workspace_id: UUID,
+    question_id: UUID,
+    payload: SavedQuestionCloneRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> SavedQuestionInternalDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = QuestionService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.clone_question(
+            session,
+            question_id=question_id,
+            payload=payload,
+        )
+    except QuestionServiceError as exc:
+        _map_service_error(exc)
     await session.commit()
     return result
