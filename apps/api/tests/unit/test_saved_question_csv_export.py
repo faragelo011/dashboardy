@@ -41,6 +41,14 @@ def test_render_csv_renders_null_cells_as_empty() -> None:
     assert csv_text == "value\n\n"
 
 
+def test_render_csv_neutralizes_formula_injection() -> None:
+    csv_text = render_query_result_csv(
+        columns=[ColumnDescriptor(name="=cmd")],
+        rows=[["=1+1", "+sum(A1)", "-2", "@evil"]],
+    )
+    assert csv_text == "'=cmd\n'=1+1,'+sum(A1),'-2,'@evil\n"
+
+
 def test_render_csv_caps_output_at_ten_thousand_rows() -> None:
     rows = [[index] for index in range(MAX_CSV_DATA_ROWS + 25)]
     csv_text = render_query_result_csv(

@@ -26,7 +26,11 @@ from app.questions.schemas import (
     SavedQuestionListResponse,
     SavedQuestionUpdateRequest,
 )
-from app.questions.service import QuestionService, QuestionServiceError
+from app.questions.service import (
+    ExportExecutionRefusedError,
+    QuestionService,
+    QuestionServiceError,
+)
 from app.routes.connections import get_connection_service, require_active_membership
 
 router = APIRouter(tags=["questions"])
@@ -78,6 +82,15 @@ def _map_service_error(exc: QuestionServiceError) -> NoReturn:
             },
         ) from exc
     if code == "invalid_parameters":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    if isinstance(exc, ExportExecutionRefusedError):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={

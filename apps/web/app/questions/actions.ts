@@ -10,7 +10,7 @@ import {
   createSavedQuestion,
   deleteSavedQuestion,
   executeSavedQuestion,
-  exportSavedQuestionCsv,
+  buildSavedQuestionExportDownloadUrl,
   updateSavedQuestion,
 } from "@/app/lib/questions-api";
 import type { ParameterDefinition, QueryExecuteSuccessResponse } from "@dashboardy/types";
@@ -179,7 +179,7 @@ export async function cloneQuestionAction(
 }
 
 export type ExportQuestionActionState =
-  | { ok: true; questionId: string; exportDataBase64: string }
+  | { ok: true; questionId: string; downloadUrl: string }
   | { ok: false; message: string; errorCode?: string };
 
 export async function exportQuestionAction(
@@ -203,29 +203,30 @@ export async function exportQuestionAction(
     ) {
       return { ok: false, message: "Runtime parameters are invalid." };
     }
+    for (const value of Object.values(parsed as Record<string, unknown>)) {
+      if (
+        value === null ||
+        typeof value === "object" ||
+        (typeof value !== "string" &&
+          typeof value !== "number" &&
+          typeof value !== "boolean")
+      ) {
+        return { ok: false, message: "Runtime parameters are invalid." };
+      }
+    }
     parameters = parsed as Record<string, string | number | boolean>;
   } catch {
     return { ok: false, message: "Runtime parameters are invalid." };
   }
 
-  const token = await requireToken();
-  try {
-    const blob = await exportSavedQuestionCsv(token, workspaceId, questionId, {
+  return {
+    ok: true,
+    questionId,
+    downloadUrl: buildSavedQuestionExportDownloadUrl(workspaceId, questionId, {
       parameters,
       bypass_cache: false,
-    });
-    const arrayBuffer = await blob.arrayBuffer();
-    return {
-      ok: true,
-      questionId,
-      exportDataBase64: Buffer.from(arrayBuffer).toString("base64"),
-    };
-  } catch (err) {
-    if (err instanceof ApiError) {
-      return { ok: false, message: err.message, errorCode: err.errorCode };
-    }
-    return { ok: false, message: "Failed to export saved question." };
-  }
+    }),
+  };
 }
 
 export async function deleteQuestionAction(formData: FormData): Promise<QuestionActionState> {

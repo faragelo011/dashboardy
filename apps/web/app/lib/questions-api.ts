@@ -12,6 +12,7 @@ import type {
   SavedQuestionCreateRequest,
   SavedQuestionDetail,
   SavedQuestionExecuteRequest,
+  SavedQuestionExportQuery,
   SavedQuestionInternalDetail,
   SavedQuestionListResponse,
   SavedQuestionUpdateRequest,
@@ -242,15 +243,9 @@ export async function executeSavedQuestion(
   return readJsonOrThrow(res, "Failed to execute saved question");
 }
 
-export async function exportSavedQuestionCsv(
-  accessToken: string,
-  workspaceId: string,
-  questionId: string,
-  query?: {
-    parameters?: Record<string, string | number | boolean>;
-    bypass_cache?: boolean;
-  },
-): Promise<Blob> {
+function buildSavedQuestionExportQueryString(
+  query?: SavedQuestionExportQuery,
+): string {
   const params = new URLSearchParams();
   if (query?.bypass_cache) {
     params.set("bypass_cache", "true");
@@ -260,7 +255,25 @@ export async function exportSavedQuestionCsv(
       params.set(`parameters[${name}]`, String(value));
     }
   }
-  const qs = params.toString();
+  return params.toString();
+}
+
+export function buildSavedQuestionExportDownloadUrl(
+  workspaceId: string,
+  questionId: string,
+  query?: SavedQuestionExportQuery,
+): string {
+  const qs = buildSavedQuestionExportQueryString(query);
+  return `/api/workspaces/${encodeURIComponent(workspaceId)}/questions/${encodeURIComponent(questionId)}/export${qs ? `?${qs}` : ""}`;
+}
+
+export async function exportSavedQuestionCsv(
+  accessToken: string,
+  workspaceId: string,
+  questionId: string,
+  query?: SavedQuestionExportQuery,
+): Promise<Blob> {
+  const qs = buildSavedQuestionExportQueryString(query);
   const path = workspacePath(
     workspaceId,
     `/questions/${encodeURIComponent(questionId)}/export.csv${qs ? `?${qs}` : ""}`,

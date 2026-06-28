@@ -99,6 +99,11 @@ export type SavedQuestionExecuteRequest = {
   bypass_cache?: boolean;
 };
 
+export type SavedQuestionExportQuery = {
+  parameters?: Record<string, string | number | boolean>;
+  bypass_cache?: boolean;
+};
+
 export type SavedQuestionListResponse = {
   questions: SavedQuestionSummary[];
 };

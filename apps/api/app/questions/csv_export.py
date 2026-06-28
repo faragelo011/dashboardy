@@ -9,13 +9,21 @@ from typing import Any
 from app.query_engine.schemas import ColumnDescriptor
 
 MAX_CSV_DATA_ROWS = 10_000
+_FORMULA_PREFIX_CHARS = ("=", "+", "-", "@")
+
+
+def _neutralize_formula_injection(value: Any) -> Any:
+    if isinstance(value, str) and value[:1] in _FORMULA_PREFIX_CHARS:
+        return f"'{value}"
+    return value
 
 
 def _format_csv_field(value: Any) -> str:
     if value is None:
         return ""
     buffer = io.StringIO()
-    csv.writer(buffer, lineterminator="").writerow([value])
+    safe_value = _neutralize_formula_injection(value)
+    csv.writer(buffer, lineterminator="").writerow([safe_value])
     return buffer.getvalue()
 
 

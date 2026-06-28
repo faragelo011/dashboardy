@@ -258,20 +258,30 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     );
     setExportPending(true);
     void exportQuestionAction(formData)
-      .then((state) => {
+      .then(async (state) => {
         setExportState(state);
-        if (state.ok) {
-          const bytes = Uint8Array.from(atob(state.exportDataBase64), (char) =>
-            char.charCodeAt(0),
-          );
-          const blob = new Blob([bytes], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const anchor = document.createElement("a");
-          anchor.href = url;
-          anchor.download = `${state.questionId}.csv`;
-          anchor.click();
-          URL.revokeObjectURL(url);
+        if (!state.ok) {
+          return;
         }
+        const response = await fetch(state.downloadUrl);
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as
+            | { message?: string; error_code?: string }
+            | null;
+          setExportState({
+            ok: false,
+            message: body?.message ?? "Failed to export saved question.",
+            errorCode: body?.error_code,
+          });
+          return;
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `${state.questionId}.csv`;
+        anchor.click();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
       })
       .finally(() => setExportPending(false));
   };
