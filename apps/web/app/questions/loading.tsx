@@ -9,7 +9,7 @@ export default async function QuestionsLoading() {
           Saved <span className="italic opacity-80">Questions</span>
         </>
       }
-      subtitle="Loading governed questions and parameter definitions."
+      subtitle="Loading question lists, parameter schemas, and the editor shell."
     />
   );
 }

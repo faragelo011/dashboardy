@@ -104,6 +104,10 @@ export type SavedQuestionExportQuery = {
   bypass_cache?: boolean;
 };
 
+export type SavedQuestionListQuery = {
+  collection_id?: string;
+};
+
 export type SavedQuestionListResponse = {
   questions: SavedQuestionSummary[];
 };

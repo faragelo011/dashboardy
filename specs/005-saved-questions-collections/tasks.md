@@ -220,14 +220,14 @@ Implementation detail for US4:
 
 **Purpose**: Verification, docs, generated types, and regression checks across all completed stories.
 
-- [ ] T064 [P] Update `packages/types/src/saved-questions.ts` and `packages/types/src/index.ts` after implementation so exported types exactly match `specs/005-saved-questions-collections/contracts/saved-questions.openapi.yaml`
-- [ ] T065 [P] Add or update UI loading skeletons in `apps/web/app/collections/loading.tsx` and `apps/web/app/questions/loading.tsx` for collection/question lists and detail editor loading states
-- [ ] T066 [P] Add Playwright smoke test for authoring loop in `apps/web/tests/saved-questions.spec.ts` covering create collection, create question, normal run, force-fresh run, clone, export-button visibility, and timing assertion that the authoring loop completes in under 3 minutes with mocked or test API data
-- [ ] T067 Add Feature 5 quickstart validation notes to `specs/005-saved-questions-collections/quickstart.md` if implementation discovers required env or fixture setup not already documented
-- [ ] T068 Run full API regression for Feature 5 with `cd apps/api && uv run pytest tests/unit tests/contract tests/integration`
-- [ ] T069 Run web validation for Feature 5 with `cd apps/web && pnpm lint && pnpm test` or the nearest existing web lint/test commands in `apps/web/package.json`
-- [ ] T070 Verify no Feature 5 implementation exposes `sql_text`, connection metadata, or collection admin actions to external-client responses by reviewing `apps/api/app/questions/schemas.py`, `apps/api/app/questions/service.py`, and `apps/api/tests/integration/test_saved_questions_external_client.py`
-- [ ] T071 Verify Feature 5 scope boundaries remain intact by checking no dashboard/widget/nested collection/comment/version-history/public-link/XLSX/async-export files or routes were added outside `apps/api/app/questions/`, `apps/api/app/routes/questions.py`, and `apps/web/app/collections/` / `apps/web/app/questions/`
+- [X] T064 [P] Update `packages/types/src/saved-questions.ts` and `packages/types/src/index.ts` after implementation so exported types exactly match `specs/005-saved-questions-collections/contracts/saved-questions.openapi.yaml`
+- [X] T065 [P] Add or update UI loading skeletons in `apps/web/app/collections/loading.tsx` and `apps/web/app/questions/loading.tsx` for collection/question lists and detail editor loading states
+- [X] T066 [P] Add Playwright smoke test for authoring loop in `apps/web/tests/saved-questions.spec.ts` covering create collection, create question, normal run, force-fresh run, clone, export-button visibility, and timing assertion that the authoring loop completes in under 3 minutes with mocked or test API data
+- [X] T067 Add Feature 5 quickstart validation notes to `specs/005-saved-questions-collections/quickstart.md` if implementation discovers required env or fixture setup not already documented
+- [X] T068 Run full API regression for Feature 5 with `cd apps/api && uv run pytest tests/unit tests/contract tests/integration`
+- [X] T069 Run web validation for Feature 5 with `cd apps/web && pnpm lint && pnpm test` or the nearest existing web lint/test commands in `apps/web/package.json`
+- [X] T070 Verify no Feature 5 implementation exposes `sql_text`, connection metadata, or collection admin actions to external-client responses by reviewing `apps/api/app/questions/schemas.py`, `apps/api/app/questions/service.py`, and `apps/api/tests/integration/test_saved_questions_external_client.py`
+- [X] T071 Verify Feature 5 scope boundaries remain intact by checking no dashboard/widget/nested collection/comment/version-history/public-link/XLSX/async-export files or routes were added outside `apps/api/app/questions/`, `apps/api/app/routes/questions.py`, and `apps/web/app/collections/` / `apps/web/app/questions/`
 
 ---
 

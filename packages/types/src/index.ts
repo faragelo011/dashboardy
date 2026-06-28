@@ -52,6 +52,7 @@ export type {
   SavedQuestionExecuteRequest,
   SavedQuestionExportQuery,
   SavedQuestionInternalDetail,
+  SavedQuestionListQuery,
   SavedQuestionListResponse,
   SavedQuestionSummary,
   SavedQuestionUpdateRequest,
