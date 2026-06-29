@@ -28,7 +28,7 @@ export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props
     role === "admin" || role === "analyst" || role === "viewer";
 
   return (
-    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+    <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#6366F1]/30 selection:text-[#6366F1]">
       <AdminLuxuryNavClient
         showRunQuery={showRunQuery}
         showSavedQuestions={showSavedQuestions}
@@ -36,14 +36,14 @@ export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props
       <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
         <header className="flex flex-col gap-12 border-b border-white/10 pb-12 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-6">
-            <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+            <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#6366F1]">
               {kicker}
             </p>
             <div className="space-y-4">
               <h1 className="font-serif text-5xl font-light leading-none tracking-tight text-white lg:text-7xl">
                 {title}
               </h1>
-              <p className="max-w-[55ch] text-sm font-light leading-relaxed text-[#A0AAB2] lg:text-base">
+              <p className="max-w-[55ch] text-sm font-light leading-relaxed text-[#94A3B8] lg:text-base">
                 {subtitle}
               </p>
             </div>
@@ -56,9 +56,9 @@ export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props
 
         <section className="grid animate-fade-in-up gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:gap-24">
           <div className="flex flex-col gap-8">
-            <SkeletonBlock className="h-64 w-full border border-white/5 bg-[#0B0F15]" />
-            <SkeletonBlock className="h-48 w-full border border-white/5 bg-[#0B0F15]" />
-            <SkeletonBlock className="h-40 w-full border border-white/5 bg-[#0B0F15]" />
+            <SkeletonBlock className="h-64 w-full border border-white/5 bg-[#111827]" />
+            <SkeletonBlock className="h-48 w-full border border-white/5 bg-[#111827]" />
+            <SkeletonBlock className="h-40 w-full border border-white/5 bg-[#111827]" />
           </div>
           <aside className="relative flex flex-col justify-start px-2 py-8 lg:py-12">
             <div

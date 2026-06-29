@@ -25,7 +25,7 @@ Read this block before every task:
 6. Widget warehouse execution must delegate to the existing Feature 4 query engine with `mode='widget'`. Do **not** create a second Snowflake execution path in `apps/api/app/dashboards/`.
 7. Filter merge and `filter_state_hash` live in `apps/api/app/dashboards/filters.py`. Use `apps/api/app/questions/parameters.py` for runtime scalar validation after merge.
 8. Never return `sql_text`, raw SQL, or connection metadata in dashboard/widget responses for `viewer` or `external_client` roles.
-9. Use normalized error codes from T016 exactly: `duplicate_dashboard_title`, `dashboard_not_found`, `widget_not_found`, `stale_update`, `invalid_filter_bindings`, `widget_local_filter_forbidden`, `invalid_parameters`, `export_not_permitted`, `collection_not_empty`, `unsupported_widget_type`.
+9. Use normalized error codes from T016 exactly: `duplicate_dashboard_title`, `dashboard_not_found`, `widget_not_found`, `stale_update`, `invalid_filter_bindings`, `widget_local_filter_forbidden` (reject override keys that are not declared global filters — widget-local-only filters are out of scope), `invalid_parameters`, `export_not_permitted`, `collection_not_empty`, `unsupported_widget_type`.
 10. `dashboard_grants` widen-only rows have no public CRUD API in Feature 6 (same as Feature 5 `question_grants`); seed grants in integration tests via repository helpers or SQL fixtures.
 11. When a task says "run tests", run only the pytest command in that task — do not skip to later phases.
 
@@ -74,9 +74,9 @@ Implementation notes for this phase:
 - [ ] T017 Wire `apps/api/app/routes/dashboards.py` into `apps/api/app/main.py` under prefix `/workspaces/{workspace_id}` while preserving existing health/auth/connections/query/questions routes
 - [ ] T018 Extend `execute_workspace_query` in `apps/api/app/query_engine/pipeline.py` with `allow_widget_execution: bool = False` (mirror `allow_saved_question_execution`); when True, accept `WidgetQueryExecuteRequest`, populate audit `dashboard_id`/`widget_id`, and include `filter_state_hash` in cache identity
 - [ ] T019 Update `apps/api/app/query_engine/authz_modalities.py` and `execute_workspace_query` so `mode='widget'` is permitted when `allow_widget_execution=True` from the dashboards service; keep public `POST /query/execute` blocked for widget mode without dashboard authz
-- [ ] T020 Implement widget SQL resolution in `apps/api/app/query_engine/modal_sql_resolve.py` for `WidgetQueryExecuteRequest`: load active saved question by `saved_question_id` and return `(sql_text, parameters)`; return `None` when question missing
+- [ ] T020 Implement widget SQL resolution in `apps/api/app/query_engine/modal_sql_resolve.py` for `WidgetQueryExecuteRequest`: load active saved question by `saved_question_id` and return `(sql_text, parameters)`; raise a domain error (`question_not_found` or `widget_configuration_invalid`) when the saved question is missing — do not return `None` and defer failure downstream
 - [ ] T021 Add `widget_type_to_presentation_class(widget_type: str) -> PresentationClass` and `clamp_widget_ttl_seconds(widget_config, presentation_class)` in `apps/api/app/dashboards/schemas.py` mapping `kpi`→`kpi`, `bar`/`line`→`chart`, `table`→`table` for FR-029 TTL lowering
-- [ ] T022 [P] Add shared TypeScript types in `packages/types/src/dashboards.ts` matching OpenAPI schemas and export them from `packages/types/src/index.ts`
+- [ ] T022 [P] Add initial shared TypeScript types in `packages/types/src/dashboards.ts` aligned with OpenAPI schemas and export them from `packages/types/src/index.ts` (scaffold pass; T080 verifies exact contract match)
 
 **Checkpoint**: Schema, DTOs, filter merge utilities, permissions, query-engine widget path, and route skeleton are ready. User stories may start.
 
@@ -247,6 +247,7 @@ Implementation notes for US5:
 - Clone creates new `dashboards.id` and new widget rows with new ids.
 - Clone sets `created_by_membership_id` to cloner.
 - Clone copies `title` (with optional suffix), `definition`, widget configs/layouts/bindings/overrides.
+- After resolving the final clone title (explicit `title` or copied title + suffix), validate uniqueness in the target collection; append an incrementing counter until unique or return `duplicate_dashboard_title` (409) if no safe title can be assigned.
 - Clone must not copy `dashboard_grants` from source.
 - Viewers/external clients attempting clone receive 403.
 
@@ -264,7 +265,7 @@ Implementation notes for US5:
 
 **Purpose**: Types sync, loading states, collection-delete guard, Playwright smoke, quickstart validation, and full regression.
 
-- [ ] T080 [P] Update `packages/types/src/dashboards.ts` and `packages/types/src/index.ts` so exported types exactly match `specs/006-dashboard-builder/contracts/dashboards.openapi.yaml`, then run `cd packages/types && pnpm build`
+- [ ] T080 [P] Final types sync: verify `packages/types/src/dashboards.ts` and `packages/types/src/index.ts` exactly match `specs/006-dashboard-builder/contracts/dashboards.openapi.yaml`, then run `cd packages/types && pnpm build`
 - [ ] T081 [P] Implement loading skeleton in `apps/web/app/dashboards/loading.tsx` for dashboard list and detail loading states
 - [ ] T082 [P] Update collection delete path in `apps/api/app/questions/service.py` to call `count_active_dashboards_by_collection` from T011 and return `collection_not_empty` when active dashboards remain
 - [ ] T083 [P] Add Playwright smoke test `apps/web/tests/dashboards.spec.ts` covering create dashboard, add widget, change global filter auto-refresh, override indicator visibility, viewer read-only mode, and soft timing assertion that dashboard shell is interactive within 5s with mocked fast execute responses (SC-007) using mocked API on port 4010 per `apps/web/playwright.config.ts`
@@ -379,6 +380,6 @@ apps/web/app/dashboards/[dashboardId]/widgets/kpi-widget.tsx
 - If stuck on a task, read the matching section in `specs/006-dashboard-builder/data-model.md` and the OpenAPI schema for that endpoint.
 - Copy patterns from Feature 5 files explicitly named in tasks (`questions/service.py`, `questions/csv_export.py`, `questions/authz.py`) — adapt names to `dashboards/` but keep the same layering.
 - Do not implement `POST /dashboards/{id}/execute` batch endpoint unless a task explicitly asks for it; per-widget execute is the MVP contract.
-- `filter_state` for CSV export is a URL-encoded JSON string of `FilterStateExport` (`global_filter_values` required); server merges the widget's stored `filter_overrides` during export — see `contracts/dashboards.openapi.yaml` and implement in T068.
+- `filter_state` for CSV export is a URL-encoded JSON string of `FilterStateExport` (`global_filter_values` required, max 2048 characters per contract); server merges the widget's stored `filter_overrides` during export — see `contracts/dashboards.openapi.yaml` and implement in T068.
 - Recharts is already a dependency; do not add Chart.js or D3.
 - Widget auto-refresh means: when `globalFilterValues` changes, each widget component checks its `filter_bindings` and calls execute only if the changed key is bound.

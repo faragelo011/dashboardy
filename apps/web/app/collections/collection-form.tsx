@@ -12,20 +12,20 @@ import {
 } from "./actions";
 
 const fieldClass =
-  "w-full bg-transparent border-b border-white/20 px-0 py-2 text-[#F0F2F5] text-sm focus:outline-none focus:border-[#D4AF37] focus:ring-0 transition-colors rounded-none placeholder:text-[#5C6A7A]";
+  "w-full bg-transparent border-b border-white/20 px-0 py-2 text-[#F8FAFC] text-sm focus:outline-none focus:border-[#6366F1] focus:ring-0 transition-colors rounded-none placeholder:text-[#374151]";
 
 const primaryButtonClass =
-  "bg-[#D4AF37] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398] transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
+  "bg-[#6366F1] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
 const quietButtonClass =
-  "text-[#A0AAB2] hover:text-[#D4AF37] transition-colors text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 px-4 py-3 hover:border-[#D4AF37]/50 disabled:opacity-50";
+  "text-[#94A3B8] hover:text-[#6366F1] transition-colors text-[10px] uppercase tracking-[0.15em] bg-transparent border border-white/10 px-4 py-3 hover:border-[#6366F1]/50 disabled:opacity-50";
 
 function ErrorBanner({ state }: { state: CollectionActionState | null }) {
   if (!state || state.ok) {
     return null;
   }
   return (
-    <div className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-sm text-[#A0AAB2]" role="alert">
+    <div className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-sm text-[#94A3B8]" role="alert">
       <span className="block text-[10px] uppercase tracking-[0.2em] text-[#EF4444] mb-1">
         {state.errorCode?.replace(/_/g, " ") ?? "Error"}
       </span>
@@ -56,11 +56,11 @@ export function CollectionCreateForm({ workspaceId, canEdit }: CreateProps) {
     <form onSubmit={submit} className="flex flex-col gap-4 border border-white/10 p-6">
       <input type="hidden" name="workspace_id" value={workspaceId} />
       <label className="flex flex-col gap-2">
-        <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">New collection</span>
+        <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">New collection</span>
         <input name="name" required className={fieldClass} placeholder="Revenue" />
       </label>
       <label className="flex flex-col gap-2">
-        <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Sort order</span>
+        <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Sort order</span>
         <input name="sort_order" type="number" defaultValue={0} className={fieldClass} />
       </label>
       <ErrorBanner state={state} />
@@ -107,11 +107,11 @@ export function CollectionRow({ collection, workspaceId, canEdit }: RowProps) {
           <input type="hidden" name="collection_id" value={collection.id} />
           <input type="hidden" name="expected_updated_at" value={collection.updated_at} />
           <label className="flex flex-col gap-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Name</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Name</span>
             <input name="name" defaultValue={collection.name} required className={fieldClass} />
           </label>
           <label className="flex flex-col gap-2">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Sort order</span>
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Sort order</span>
             <input
               name="sort_order"
               type="number"
@@ -127,7 +127,7 @@ export function CollectionRow({ collection, workspaceId, canEdit }: RowProps) {
       ) : (
         <div>
           <h3 className="text-lg font-serif text-white">{collection.name}</h3>
-          <p className="text-xs text-[#5C6A7A] mt-1">Sort order {collection.sort_order}</p>
+          <p className="text-xs text-[#374151] mt-1">Sort order {collection.sort_order}</p>
         </div>
       )}
 

@@ -1,9 +1,9 @@
 type DashboardEditPageProps = {
-  params: Promise<{ dashboardId: string }>;
+  params: { dashboardId: string };
 };
 
-export default async function DashboardEditPage({ params }: DashboardEditPageProps) {
-  const { dashboardId } = await params;
+export default function DashboardEditPage({ params }: DashboardEditPageProps) {
+  const { dashboardId } = params;
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] p-8">

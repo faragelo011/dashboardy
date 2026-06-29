@@ -8,10 +8,10 @@ import { upsertConnectionAction } from "./actions";
 
 // Use a subtle bounding box style designed for high-end inputs
 const fieldClass =
-  "w-full bg-[#0B0F15] border border-white/10 px-4 py-3 text-[#F0F2F5] text-sm focus:outline-none focus:border-[#D4AF37]/50 focus:bg-[#12161E] focus:ring-1 focus:ring-[#D4AF37]/30 transition-all rounded-sm placeholder:text-[#5C6A7A] disabled:opacity-50 disabled:cursor-not-allowed tracking-wide font-light";
+  "w-full bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-sm focus:outline-none focus:border-[#6366F1]/50 focus:bg-[#1F2937] focus:ring-1 focus:ring-[#6366F1]/30 transition-all rounded-sm placeholder:text-[#374151] disabled:opacity-50 disabled:cursor-not-allowed tracking-wide font-light";
 
 const primaryButtonClass =
-  "bg-[#D4AF37] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center";
+  "bg-[#6366F1] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center";
 
 export function ConnectionsForm({
   workspaceId,
@@ -28,7 +28,7 @@ export function ConnectionsForm({
   return (
     <form
       action={upsertConnectionAction}
-      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#12161E] border border-white/5 shadow-2xl"
+      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#1F2937] border border-white/5 shadow-2xl"
       onSubmit={(e) => {
         if (password.length > 0 && privateKeyPem.length > 0) {
           e.preventDefault();
@@ -43,32 +43,33 @@ export function ConnectionsForm({
         }, 0);
       }}
     >
-      <div aria-hidden="true" className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 bg-[#D4AF37] opacity-[0.02] blur-3xl pointer-events-none rounded-full" />
+      <div aria-hidden="true" className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 bg-[#6366F1] opacity-[0.02] blur-3xl pointer-events-none rounded-full" />
 
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
       <div className="flex flex-col gap-10 relative z-10">
         <header className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-serif text-[#F0F2F5] tracking-wide font-light">
+            <h2 className="text-3xl font-serif text-[#F8FAFC] tracking-wide font-light">
               Datastore Link
             </h2>
-            <span className="uppercase tracking-[0.15em] text-[10px] text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 bg-[#D4AF37]/5">
+            <span className="uppercase tracking-[0.15em] text-[10px] text-[#6366F1] border border-[#6366F1]/30 px-3 py-1 bg-[#6366F1]/5">
               Admin Access Built-In
             </span>
           </div>
-          <p className="text-sm text-[#A0AAB2] max-w-[55ch] leading-relaxed font-light">
+          <p className="text-sm text-[#94A3B8] max-w-[55ch] leading-relaxed font-light">
             Set the connection details below. Sensitive credentials submitted here are not displayed after saving to ensure security.
           </p>
         </header>
 
         <fieldset className="grid gap-8 md:grid-cols-2">
           <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Platform Display Name
             </span>
             <input
               name="name"
+              aria-label="Display name"
               required
               className={fieldClass}
               placeholder="e.g. Primary Snowflake"
@@ -76,11 +77,12 @@ export function ConnectionsForm({
             />
           </label>
           <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Processing Warehouse
             </span>
             <input
               name="warehouse"
+              aria-label="Warehouse"
               required
               className={fieldClass}
               placeholder="e.g. COMPUTE_WH"
@@ -88,11 +90,12 @@ export function ConnectionsForm({
             />
           </label>
           <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Primary Database
             </span>
             <input
               name="database"
+              aria-label="Database"
               required
               className={fieldClass}
               placeholder="e.g. ANALYTICS_DB"
@@ -100,7 +103,7 @@ export function ConnectionsForm({
             />
           </label>
           <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Schema <span className="opacity-50">(Optional)</span>
             </span>
             <input
@@ -113,8 +116,8 @@ export function ConnectionsForm({
         </fieldset>
 
         <section className="mt-4 pt-8 border-t border-white/5 relative">
-          <h3 className="text-xl font-serif text-[#F0F2F5] tracking-wide font-light mb-2">Secure Credentials</h3>
-          <p className="text-[11px] leading-5 text-[#A0AAB2] mb-8 font-light max-w-[65ch]">
+          <h3 className="text-xl font-serif text-[#F8FAFC] tracking-wide font-light mb-2">Secure Credentials</h3>
+          <p className="text-[11px] leading-5 text-[#94A3B8] mb-8 font-light max-w-[65ch]">
             Skip these fields to retain existing credentials. Authenticate via standard password OR an encrypted private key PEM (key-pair). Do not populate both simultaneously.
           </p>
           {error && (
@@ -125,7 +128,7 @@ export function ConnectionsForm({
 
           <div className="grid gap-8 md:grid-cols-2">
             <label className="flex flex-col gap-3 group/input">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
                 Tenant Account
               </span>
               <input
@@ -136,7 +139,7 @@ export function ConnectionsForm({
               />
             </label>
             <label className="flex flex-col gap-3 group/input">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
                 Execution Role
               </span>
               <input
@@ -147,7 +150,7 @@ export function ConnectionsForm({
               />
             </label>
             <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
                 Service Username
               </span>
               <input
@@ -159,11 +162,11 @@ export function ConnectionsForm({
             </label>
             
             <div className="md:col-span-2 pt-6 my-2 border-t border-white/5 relative">
-              <span className="absolute -top-3 left-0 bg-[#12161E] px-2 text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Password Auth</span>
+              <span className="absolute -top-3 left-0 bg-[#1F2937] px-2 text-[10px] uppercase tracking-[0.15em] text-[#374151]">Password Auth</span>
             </div>
 
             <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
                 Vault Password
               </span>
               <input
@@ -181,11 +184,11 @@ export function ConnectionsForm({
             </label>
 
             <div className="md:col-span-2 pt-6 my-2 border-t border-white/5 relative">
-              <span className="absolute -top-3 left-0 bg-[#12161E] px-2 text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Key-Pair Auth</span>
+              <span className="absolute -top-3 left-0 bg-[#1F2937] px-2 text-[10px] uppercase tracking-[0.15em] text-[#374151]">Key-Pair Auth</span>
             </div>
 
             <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
                 Private Key Payload (PEM)
               </span>
               <textarea
@@ -202,7 +205,7 @@ export function ConnectionsForm({
               />
             </label>
             <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
                 PEM Passphrase <span className="opacity-50">(If Encrypted)</span>
               </span>
               <input
@@ -218,12 +221,14 @@ export function ConnectionsForm({
         </section>
 
         <div className="flex flex-col gap-6 pt-8 mt-2 border-t border-white/5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] leading-6 text-[#5C6A7A] max-w-[45ch] uppercase tracking-[0.05em] font-medium">
+          <p className="text-[11px] leading-6 text-[#374151] max-w-[45ch] uppercase tracking-[0.05em] font-medium">
             {isNotConfigured
               ? "Not configured yet. Submit credentials to move to pending test."
               : "Saved metadata is shown above. Submit credentials again to rotate later (Phase 5)."}
           </p>
-          <button className={primaryButtonClass}>Secure Configuration</button>
+          <button aria-label="Save connection" className={primaryButtonClass}>
+            Secure Configuration
+          </button>
         </div>
       </div>
     </form>

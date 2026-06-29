@@ -24,7 +24,7 @@ export function ProvisionMemberForm({
   return (
     <form
       ref={formRef}
-      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#12161E] inline-block border-[0.5px] border-white/10"
+      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#1F2937] inline-block border-[0.5px] border-white/10"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -47,21 +47,21 @@ export function ProvisionMemberForm({
       <div className="flex flex-col gap-10">
         <header className="flex flex-col gap-2 relative z-10">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-serif text-[#F0F2F5] tracking-wide font-light">
+            <h2 className="text-3xl font-serif text-[#F8FAFC] tracking-wide font-light">
               Invite
             </h2>
-            <span className="uppercase tracking-[0.15em] text-[10px] text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 bg-[#D4AF37]/5">
+            <span className="uppercase tracking-[0.15em] text-[10px] text-[#6366F1] border border-[#6366F1]/30 px-3 py-1 bg-[#6366F1]/5">
               Admin Access Built-In
             </span>
           </div>
-          <p className="text-sm text-[#A0AAB2] max-w-[50ch] leading-relaxed font-light">
+          <p className="text-sm text-[#94A3B8] max-w-[50ch] leading-relaxed font-light">
             Grant secure workspace access directly. An initial credential will be created and mandated for reset upon entry.
           </p>
         </header>
 
         <div className="grid gap-12 lg:grid-cols-2 relative z-10">
           <label className="flex flex-col gap-3 group/input">
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[11px] uppercase tracking-[0.1em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Email Address
             </span>
             <input
@@ -75,7 +75,7 @@ export function ProvisionMemberForm({
           </label>
 
           <label className="flex flex-col gap-3 group/input">
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[11px] uppercase tracking-[0.1em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Access Tier
             </span>
             <select
@@ -85,7 +85,7 @@ export function ProvisionMemberForm({
               disabled={isPending}
             >
               {roleOptions.map(([value, label]) => (
-                <option key={value} value={value} className="bg-[#0B0F15] text-[#F0F2F5]">
+                <option key={value} value={value} className="bg-[#111827] text-[#F8FAFC]">
                   {label}
                 </option>
               ))}
@@ -93,7 +93,7 @@ export function ProvisionMemberForm({
           </label>
 
           <label className="flex flex-col gap-3 lg:col-span-2 group/input">
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+            <span className="text-[11px] uppercase tracking-[0.1em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
               Temporary Credential
             </span>
             <input
@@ -119,7 +119,7 @@ export function ProvisionMemberForm({
         ) : null}
 
         <div className="pt-8 border-t border-white/5 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between relative z-10">
-          <p className="text-[11px] leading-5 text-[#5C6A7A] uppercase tracking-[0.05em]">
+          <p className="text-[11px] leading-5 text-[#374151] uppercase tracking-[0.05em]">
             Access can be revoked from the roster.
           </p>
           <button className={primaryButtonClass} disabled={isPending}>
@@ -129,7 +129,7 @@ export function ProvisionMemberForm({
       </div>
       
       {/* Decorative luxury mesh */}
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#D4AF37] opacity-[0.03] blur-3xl pointer-events-none rounded-full" />
+      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#6366F1] opacity-[0.03] blur-3xl pointer-events-none rounded-full" />
     </form>
   );
 }

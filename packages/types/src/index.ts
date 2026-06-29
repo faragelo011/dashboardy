@@ -1,4 +1,32 @@
 export type {
+  DashboardCloneRequest,
+  DashboardConsumerDetail,
+  DashboardCreateRequest,
+  DashboardDefinition,
+  DashboardDetail,
+  DashboardEditorDetail,
+  DashboardListQuery,
+  DashboardListResponse,
+  DashboardSummary,
+  DashboardUpdateRequest,
+  DashboardWidget,
+  DashboardWidgetConsumer,
+  DashboardWidgetCreateInput,
+  DashboardWidgetExportQuery,
+  DashboardWidgetUpdateInput,
+  DashboardsNormalizedError,
+  DashboardsNormalizedErrorCode,
+  FilterStateExport,
+  FilterValue,
+  GlobalFilter,
+  GlobalFilterValueType,
+  WidgetExecuteMeta,
+  WidgetExecuteRequest,
+  WidgetExecuteResponse,
+  WidgetLayout,
+} from "./dashboards";
+
+export type {
   AssetGrant,
   AssetType,
   CreateAssetGrantRequest,
@@ -34,15 +62,6 @@ export type {
   QueryExecuteSuccessResponse,
   QueryMode,
 } from "./query-execute";
-
-export type {
-  DashboardDetail,
-  DashboardSummary,
-  DashboardWidget,
-  DashboardWidgetExportQuery,
-  GlobalFilter,
-  WidgetExecuteResponse,
-} from "./dashboards";
 
 export type {
   Collection,

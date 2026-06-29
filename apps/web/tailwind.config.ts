@@ -43,8 +43,8 @@ const config: Config = {
         "danger-ink-strong": "oklch(var(--danger-ink-strong))",
       },
       fontFamily: {
-        sans: ["var(--font-outfit)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-playfair)", "ui-serif", "Georgia", "serif"],
+        sans: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
       },
       animation: {
         "fade-in-up": "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",

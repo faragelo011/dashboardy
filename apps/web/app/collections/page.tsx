@@ -36,17 +36,17 @@ export default async function CollectionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+    <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#6366F1]/30 selection:text-[#6366F1]">
       <AdminLuxuryNav />
       <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
         <header className="flex flex-col gap-6 border-b border-white/10 pb-12 max-w-3xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#6366F1]">
             Saved questions
           </p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-white tracking-tight font-light leading-none">
             Collections
           </h1>
-          <p className="text-sm text-[#A0AAB2] font-light leading-relaxed max-w-[60ch]">
+          <p className="text-sm text-[#94A3B8] font-light leading-relaxed max-w-[60ch]">
             Organize reusable questions into flat collections for{" "}
             <span className="text-white">{me.current_workspace.workspace_name}</span>.
             {canEdit
@@ -64,11 +64,11 @@ export default async function CollectionsPage() {
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <CollectionCreateForm workspaceId={workspaceId} canEdit={canEdit} />
           <section>
-            <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-6">
+            <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#374151] mb-6">
               Active collections ({collections.length})
             </h2>
             {collections.length === 0 ? (
-              <p className="text-sm text-[#A0AAB2]">No collections yet.</p>
+              <p className="text-sm text-[#94A3B8]">No collections yet.</p>
             ) : (
               <ul className="flex flex-col gap-6">
                 {collections.map((collection) => (

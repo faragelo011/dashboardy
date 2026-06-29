@@ -34,7 +34,12 @@ cd apps/api && uv run uvicorn app.main:app --reload --port 8000
 cd apps/web && pnpm dev
 ```
 
-Default dev URL: **http://localhost:3000**. Ensure `API_PUBLIC_URL` or `NEXT_PUBLIC_API_PUBLIC_URL` points at the API.
+Default dev URL: **http://localhost:3000**.
+
+- **Server Components / Route Handlers** (e.g. dashboards list page): set `API_PUBLIC_URL=http://localhost:8000` in `apps/web/.env.local` — read at request time, never exposed to the browser.
+- **Client Components** (browser `fetch`): set `NEXT_PUBLIC_API_PUBLIC_URL=http://localhost:8000` so the value is bundled for client-side calls.
+
+The web API clients (`questions-api.ts`, `dashboards-api.ts`) try `API_PUBLIC_URL` first, then fall back to `NEXT_PUBLIC_API_PUBLIC_URL`. For local dev, set both to the same API origin unless you deliberately split server vs client targets.
 
 After changing shared contracts:
 
@@ -89,18 +94,41 @@ cd packages/types && pnpm build
    ```
 
 7. Change `gf_date` in the client and confirm bound widgets auto-refresh (parallel execute calls).
-8. For a `table` widget, `GET .../widgets/{widget_id}/export.csv?filter_state=...` as an authorized user and verify headers plus ≤10,000 rows.
+8. For a `table` widget, export with current global filter state:
+
+   ```http
+   GET /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv?filter_state=%7B%22global_filter_values%22%3A%7B%22gf_date%22%3A%222026-06-01%22%7D%7D
+   ```
+
+   `filter_state` must be a URL-encoded JSON object matching `FilterStateExport`:
+
+   ```json
+   { "global_filter_values": { "gf_date": "2026-06-01" } }
+   ```
+
+   The server merges `global_filter_values` with the widget's stored `filter_overrides` before executing the export query. Verify CSV headers plus ≤10,000 rows.
 9. Sign in as an `external_client` with an explicit dashboard `asset_grant` and confirm dashboard view works without SQL or connection fields.
 10. `POST .../clone` into another permitted collection and verify new owner plus target-collection permissions.
 
 ## Acceptance checklist
 
+### US1 — Authoring (MVP)
+
 - [ ] Duplicate dashboard title in same collection returns 409
 - [ ] Same title allowed in different collections
-- [ ] Widget without binding ignores unrelated global filter changes
-- [ ] Visible override indicator shown when override active
-- [ ] Filter change does not reuse prior filter-state cache
 - [ ] Stale dashboard PATCH rejected with 409
+
+### US2 — Global filters
+
+- [ ] Widget without binding ignores unrelated global filter changes
+- [ ] Filter change does not reuse prior filter-state cache
+
+### US3 — Overrides
+
+- [ ] Visible override indicator shown when override active
+
+### US4 — Consumption and export
+
 - [ ] External client never receives `sql_text`
 - [ ] Table widget paging is client-side only
 - [ ] CSV export refused for external client without `can_export`

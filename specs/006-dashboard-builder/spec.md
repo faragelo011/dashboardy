@@ -3,7 +3,7 @@
 **Feature Branch**: `006-dashboard-builder`  
 **Created**: 2026-06-29  
 **Status**: Draft  
-**Input**: User description: "C:\Users\KhaledFarghaly\Desktop\dashboardy\docs\implementation-plan.md - create a specification for Feature 6 — Dashboard builder ONLY."
+**Input**: User description: "Create a specification for Feature 6 — Dashboard builder ONLY (from `docs/implementation-plan.md`)."
 
 ## Scope
 

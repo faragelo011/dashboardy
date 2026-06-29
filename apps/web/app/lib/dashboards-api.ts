@@ -6,9 +6,14 @@
  */
 
 import type {
+  DashboardCloneRequest,
+  DashboardCreateRequest,
   DashboardDetail,
-  DashboardSummary,
+  DashboardListQuery,
+  DashboardListResponse,
+  DashboardUpdateRequest,
   DashboardWidgetExportQuery,
+  WidgetExecuteRequest,
   WidgetExecuteResponse,
 } from "@dashboardy/types";
 
@@ -17,15 +22,15 @@ const NOT_IMPLEMENTED = "Dashboard API client scaffold — implementation in Pha
 export async function listDashboards(
   _accessToken: string,
   _workspaceId: string,
-  _query?: { collection_id?: string },
-): Promise<{ dashboards: DashboardSummary[] }> {
+  _query?: DashboardListQuery,
+): Promise<DashboardListResponse> {
   throw new Error(NOT_IMPLEMENTED);
 }
 
 export async function createDashboard(
   _accessToken: string,
   _workspaceId: string,
-  _body: unknown,
+  _body: DashboardCreateRequest,
 ): Promise<DashboardDetail> {
   throw new Error(NOT_IMPLEMENTED);
 }
@@ -42,7 +47,7 @@ export async function updateDashboard(
   _accessToken: string,
   _workspaceId: string,
   _dashboardId: string,
-  _body: unknown,
+  _body: DashboardUpdateRequest,
 ): Promise<DashboardDetail> {
   throw new Error(NOT_IMPLEMENTED);
 }
@@ -59,7 +64,7 @@ export async function cloneDashboard(
   _accessToken: string,
   _workspaceId: string,
   _dashboardId: string,
-  _body: unknown,
+  _body: DashboardCloneRequest,
 ): Promise<DashboardDetail> {
   throw new Error(NOT_IMPLEMENTED);
 }
@@ -69,7 +74,7 @@ export async function executeDashboardWidget(
   _workspaceId: string,
   _dashboardId: string,
   _widgetId: string,
-  _body?: unknown,
+  _body: WidgetExecuteRequest,
 ): Promise<WidgetExecuteResponse> {
   throw new Error(NOT_IMPLEMENTED);
 }

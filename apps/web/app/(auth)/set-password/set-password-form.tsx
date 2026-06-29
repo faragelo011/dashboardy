@@ -7,10 +7,10 @@ import { completePasswordReset } from "@/app/lib/api";
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
 const fieldBoxyClass =
-  "w-full bg-[#0B0F15] border border-white/10 px-4 py-3 text-[#F0F2F5] text-sm focus:outline-none focus:border-[#D4AF37]/50 focus:bg-[#12161E] focus:ring-1 focus:ring-[#D4AF37]/30 transition-all rounded-sm placeholder:text-[#5C6A7A] disabled:opacity-50 disabled:cursor-not-allowed font-light tracking-wide";
+  "w-full bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-sm focus:outline-none focus:border-[#6366F1]/50 focus:bg-[#1F2937] focus:ring-1 focus:ring-[#6366F1]/30 transition-all rounded-sm placeholder:text-[#374151] disabled:opacity-50 disabled:cursor-not-allowed font-light tracking-wide";
 
 const primaryButtonClass =
-  "w-full bg-[#D4AF37] text-black px-6 py-4 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center mt-4";
+  "w-full bg-[#6366F1] text-black px-6 py-4 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center mt-4";
 
 export function SetPasswordForm() {
   const router = useRouter();
@@ -74,7 +74,7 @@ export function SetPasswordForm() {
   return (
     <form className="flex flex-col gap-6" onSubmit={onSubmit}>
       <div className="flex flex-col gap-2 relative group/input">
-        <label htmlFor="password" className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+        <label htmlFor="password" className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
           New Passcode
         </label>
         <input
@@ -94,7 +94,7 @@ export function SetPasswordForm() {
       </div>
 
       <div className="flex flex-col gap-2 relative group/input">
-        <label htmlFor="confirm" className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
+        <label htmlFor="confirm" className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
           Verify Passcode
         </label>
         <input
@@ -117,7 +117,7 @@ export function SetPasswordForm() {
           role="alert"
           aria-live="assertive"
           aria-atomic="true"
-          className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-[12px] text-[#A0AAB2] font-mono leading-relaxed"
+          className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-[12px] text-[#94A3B8] font-mono leading-relaxed"
         >
           <div className="text-[10px] uppercase tracking-[0.2em] text-[#EF4444] mb-1 font-semibold">Validation Error</div>
           {error}
