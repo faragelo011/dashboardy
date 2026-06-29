@@ -14,6 +14,7 @@ import type {
   SavedQuestionExecuteRequest,
   SavedQuestionExportQuery,
   SavedQuestionInternalDetail,
+  SavedQuestionListQuery,
   SavedQuestionListResponse,
   SavedQuestionUpdateRequest,
 } from "@dashboardy/types";
@@ -130,7 +131,7 @@ export async function deleteCollection(
 export async function listSavedQuestions(
   accessToken: string,
   workspaceId: string,
-  query?: { collection_id?: string },
+  query?: SavedQuestionListQuery,
 ): Promise<SavedQuestionListResponse> {
   const params = new URLSearchParams();
   if (query?.collection_id) {

@@ -9,7 +9,7 @@ export default async function CollectionsLoading() {
           Question <span className="italic opacity-80">Collections</span>
         </>
       }
-      subtitle="Loading flat collections for this workspace."
+      subtitle="Loading collection lists and workspace metadata."
     />
   );
 }

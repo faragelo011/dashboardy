@@ -37,6 +37,24 @@ cd apps/web && pnpm dev
 
 Default dev URL: **http://localhost:3000**. Ensure `API_PUBLIC_URL` or `NEXT_PUBLIC_API_PUBLIC_URL` points at the API, for example `http://localhost:8000`.
 
+Web CSV downloads use the authenticated Next.js proxy at `GET /api/workspaces/{workspace_id}/questions/{question_id}/export`, which forwards to the API `export.csv` route with the signed-in session token.
+
+After changing shared contracts, rebuild web types before lint/build:
+
+```bash
+cd packages/types && pnpm build
+```
+
+Integration and contract tests require a live Postgres instance (Testcontainers/Docker when available). Without Docker, API integration tests are skipped locally while unit/contract collection still runs.
+
+Playwright smoke for Feature 5 lives in `apps/web/tests/saved-questions.spec.ts` and runs via:
+
+```bash
+cd apps/web && pnpm test
+```
+
+The Playwright harness starts the web app on port **3005** and expects a mock API on **127.0.0.1:4010** (see `playwright.config.ts`).
+
 ## Smoke: create and run saved question
 
 1. Sign in as an `admin` or `analyst`.
