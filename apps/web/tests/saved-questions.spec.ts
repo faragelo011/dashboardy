@@ -1,38 +1,24 @@
 import { expect, test, type BrowserContext } from "@playwright/test";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
 
+import type {
+  Collection,
+  CollectionCreateRequest,
+  SavedQuestionCloneRequest,
+  SavedQuestionCreateRequest,
+  SavedQuestionInternalDetail,
+  SavedQuestionSummary,
+} from "@dashboardy/types";
+
 const workspaceId = "00000000-0000-4000-8000-000000000001";
 const THREE_MINUTES_MS = 3 * 60 * 1000;
 
-type MockCollection = {
-  id: string;
-  workspace_id: string;
-  name: string;
-  slug: string;
-  sort_order: number;
-  permission: "view" | "edit";
-  created_at: string;
-  updated_at: string;
-};
+type MockQuestionRecord = SavedQuestionInternalDetail;
 
-type MockQuestion = {
-  id: string;
-  collection_id: string;
-  title: string;
-  description: string | null;
-  permission: "view" | "edit";
-  can_export: boolean;
-  sql_text: string;
-  parameters: Array<{
-    name: string;
-    type: "string" | "number" | "boolean" | "date";
-    required: boolean;
-    label?: string | null;
-    default?: string | number | boolean | null;
-  }>;
-  created_at: string;
-  updated_at: string;
-};
+function questionIdFromUrl(url: string): string | null {
+  const match = url.match(/[?&]id=([^&]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
 
 function json(res: ServerResponse, body: unknown, status = 200) {
   res.writeHead(status, { "Content-Type": "application/json" });
@@ -85,10 +71,14 @@ function readJsonBody<T>(req: IncomingMessage): Promise<T> {
   });
 }
 
-async function startMockApi(): Promise<Server> {
+async function startMockApi(): Promise<{
+  server: Server;
+  exportedQuestionIds: () => string[];
+}> {
   let nextId = 1;
-  const collections: MockCollection[] = [];
-  const questions: MockQuestion[] = [];
+  const collections: Collection[] = [];
+  const questions: MockQuestionRecord[] = [];
+  const exportedQuestionIds: string[] = [];
 
   const nextUuid = () => {
     const suffix = String(nextId++).padStart(12, "0");
@@ -97,7 +87,7 @@ async function startMockApi(): Promise<Server> {
 
   const now = () => new Date().toISOString();
 
-  const toSummary = (question: MockQuestion) => ({
+  const toSummary = (question: MockQuestionRecord): SavedQuestionSummary => ({
     id: question.id,
     collection_id: question.collection_id,
     title: question.title,
@@ -108,9 +98,9 @@ async function startMockApi(): Promise<Server> {
     updated_at: question.updated_at,
   });
 
-  const toInternalDetail = (question: MockQuestion) => ({
+  const toInternalDetail = (question: MockQuestionRecord): SavedQuestionInternalDetail => ({
     ...toSummary(question),
-    detail_level: "internal" as const,
+    detail_level: "internal",
     parameters: question.parameters,
     sql_text: question.sql_text,
   });
@@ -143,9 +133,9 @@ async function startMockApi(): Promise<Server> {
         return;
       }
       if (method === "POST") {
-        const body = await readJsonBody<{ name: string; sort_order?: number }>(req);
+        const body = await readJsonBody<CollectionCreateRequest>(req);
         const timestamp = now();
-        const collection: MockCollection = {
+        const collection: Collection = {
           id: nextUuid(),
           workspace_id: workspaceId,
           name: body.name,
@@ -170,21 +160,16 @@ async function startMockApi(): Promise<Server> {
     }
 
     if (url === `/workspaces/${workspaceId}/questions` && method === "POST") {
-      const body = await readJsonBody<{
-        collection_id: string;
-        title: string;
-        description?: string | null;
-        sql_text: string;
-        parameters: MockQuestion["parameters"];
-      }>(req);
+      const body = await readJsonBody<SavedQuestionCreateRequest>(req);
       const timestamp = now();
-      const question: MockQuestion = {
+      const question: MockQuestionRecord = {
         id: nextUuid(),
         collection_id: body.collection_id,
         title: body.title,
         description: body.description ?? null,
         permission: "edit",
         can_export: true,
+        detail_level: "internal",
         sql_text: body.sql_text,
         parameters: body.parameters ?? [],
         created_at: timestamp,
@@ -228,11 +213,9 @@ async function startMockApi(): Promise<Server> {
         json(res, { error_code: "question_not_found", message: "Not found." }, 404);
         return;
       }
-      const body = await readJsonBody<{ target_collection_id: string; title?: string | null }>(
-        req,
-      );
+      const body = await readJsonBody<SavedQuestionCloneRequest>(req);
       const timestamp = now();
-      const cloned: MockQuestion = {
+      const cloned: MockQuestionRecord = {
         ...source,
         id: nextUuid(),
         collection_id: body.target_collection_id,
@@ -249,6 +232,7 @@ async function startMockApi(): Promise<Server> {
       new RegExp(`^/workspaces/${workspaceId}/questions/([^/]+)/export\\.csv`),
     );
     if (exportMatch && method === "GET") {
+      exportedQuestionIds.push(exportMatch[1]);
       res.writeHead(200, { "Content-Type": "text/csv" });
       res.end("revenue\n42\n");
       return;
@@ -259,7 +243,10 @@ async function startMockApi(): Promise<Server> {
   });
 
   await new Promise<void>((resolve) => server.listen(4010, "127.0.0.1", resolve));
-  return server;
+  return {
+    server,
+    exportedQuestionIds: () => [...exportedQuestionIds],
+  };
 }
 
 async function stopMockApi(server: Server) {
@@ -300,7 +287,7 @@ test("authoring loop covers collection, question, execute, clone, and export", a
   page,
 }) => {
   const startedAt = Date.now();
-  const server = await startMockApi();
+  const { server, exportedQuestionIds } = await startMockApi();
   try {
     await setSupabaseSessionCookie(context);
 
@@ -330,11 +317,31 @@ test("authoring loop covers collection, question, execute, clone, and export", a
     await page.getByRole("button", { name: "Force fresh" }).click();
     await expect(page.getByRole("cell", { name: "42" })).toBeVisible();
 
+    const sourceQuestionId = questionIdFromUrl(page.url());
+    expect(sourceQuestionId).toBeTruthy();
+
     await page.getByRole("button", { name: "Clone question" }).click();
-    await page.waitForURL(/\/questions\?id=/);
+    await page.waitForURL((url) => {
+      const nextId = questionIdFromUrl(url.toString());
+      return nextId !== null && nextId !== sourceQuestionId;
+    });
+    const clonedQuestionId = questionIdFromUrl(page.url());
+    expect(clonedQuestionId).toBeTruthy();
+    expect(clonedQuestionId).not.toBe(sourceQuestionId);
     await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible();
 
+    const exportResponsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/workspaces/") &&
+        response.url().includes("/export") &&
+        response.request().method() === "GET" &&
+        response.status() === 200,
+    );
     await page.getByRole("button", { name: "Export CSV" }).click();
+    const exportResponse = await exportResponsePromise;
+    expect(exportResponse.headers()["content-type"]).toContain("text/csv");
+    expect(exportResponse.headers()["content-disposition"]).toContain(`${clonedQuestionId}.csv`);
+    expect(exportedQuestionIds()).toContain(clonedQuestionId);
     await expect(page.getByText("Export failed")).toHaveCount(0);
 
     expect(Date.now() - startedAt).toBeLessThan(THREE_MINUTES_MS);
