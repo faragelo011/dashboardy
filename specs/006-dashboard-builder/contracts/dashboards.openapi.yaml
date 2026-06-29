@@ -1,0 +1,571 @@
+openapi: 3.1.0
+info:
+  title: Dashboardy API - Dashboard Builder (Feature 6)
+  version: 0.6.0
+  description: |
+    Workspace-scoped dashboards, widgets, filter merge, and consumption APIs.
+    Widget execution and table CSV export delegate to the governed Feature 4
+    query engine in `widget` mode. Global filter changes auto-refresh bound
+    widgets on the client by re-calling per-widget execute endpoints.
+
+servers:
+  - url: https://api.staging.dashboardy.app
+    description: Staging
+  - url: https://api.dashboardy.app
+    description: Production
+
+security:
+  - bearerAuth: []
+
+paths:
+  /workspaces/{workspace_id}/dashboards:
+    get:
+      operationId: listDashboards
+      summary: List visible dashboards
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - name: collection_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Permission-filtered dashboards.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [dashboards]
+                properties:
+                  dashboards:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      operationId: createDashboard
+      summary: Create a dashboard in a collection
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardCreateRequest"
+      responses:
+        "201":
+          description: Dashboard created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Duplicate dashboard title in collection.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+
+  /workspaces/{workspace_id}/dashboards/{dashboard_id}:
+    get:
+      operationId: getDashboard
+      summary: Get dashboard detail for view or edit
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DashboardId"
+      responses:
+        "200":
+          description: Dashboard detail with widgets and global filters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardDetail"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateDashboard
+      summary: Update dashboard metadata, filters, and widgets
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DashboardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardUpdateRequest"
+      responses:
+        "200":
+          description: Dashboard updated.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Stale update or duplicate title.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NormalizedError"
+    delete:
+      operationId: deleteDashboard
+      summary: Soft-delete a dashboard
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DashboardId"
+      responses:
+        "204":
+          description: Deleted.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspace_id}/dashboards/{dashboard_id}/clone:
+    post:
+      operationId: cloneDashboard
+      summary: Clone dashboard into a target collection
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DashboardId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DashboardCloneRequest"
+      responses:
+        "201":
+          description: Cloned dashboard created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardDetail"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/execute:
+    post:
+      operationId: executeDashboardWidget
+      summary: Execute one widget with merged dashboard filter state
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DashboardId"
+        - $ref: "#/components/parameters/WidgetId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WidgetExecuteRequest"
+      responses:
+        "200":
+          description: Governed widget result.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WidgetExecuteResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/WarehouseBusy"
+        "503":
+          $ref: "#/components/responses/WarehouseBusy"
+
+  /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv:
+    get:
+      operationId: exportDashboardWidgetCsv
+      summary: Export current table widget result as CSV
+      parameters:
+        - $ref: "#/components/parameters/WorkspaceId"
+        - $ref: "#/components/parameters/DashboardId"
+        - $ref: "#/components/parameters/WidgetId"
+        - name: filter_state
+          in: query
+          required: true
+          description: |
+            URL-encoded JSON string of `FilterStateExport`. The server merges
+            `global_filter_values` with the widget's stored `filter_overrides`
+            before executing the export query.
+          schema:
+            type: string
+          example: "%7B%22global_filter_values%22%3A%7B%22gf_date%22%3A%222026-01-01%22%7D%7D"
+        - name: bypass_cache
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: CSV export capped at 10,000 rows.
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    WorkspaceId:
+      name: workspace_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DashboardId:
+      name: dashboard_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WidgetId:
+      name: widget_id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    GlobalFilter:
+      type: object
+      required: [id, label, value_type, default_value]
+      properties:
+        id:
+          type: string
+          minLength: 1
+        label:
+          type: string
+          minLength: 1
+        value_type:
+          type: string
+          enum: [string, number, boolean, date]
+        default_value: {}
+
+    DashboardDefinition:
+      type: object
+      required: [layout_version, global_filters]
+      properties:
+        layout_version:
+          type: integer
+          minimum: 1
+        global_filters:
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalFilter"
+
+    WidgetLayout:
+      type: object
+      required: [x, y, w, h]
+      properties:
+        x:
+          type: integer
+          minimum: 0
+        y:
+          type: integer
+          minimum: 0
+        w:
+          type: integer
+          minimum: 1
+        h:
+          type: integer
+          minimum: 1
+
+    DashboardWidget:
+      type: object
+      required:
+        - id
+        - widget_type
+        - saved_question_id
+        - layout
+        - config
+        - filter_bindings
+        - filter_overrides
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          nullable: true
+        widget_type:
+          type: string
+          enum: [kpi, bar, line, table]
+        saved_question_id:
+          type: string
+          format: uuid
+        layout:
+          $ref: "#/components/schemas/WidgetLayout"
+        config:
+          type: object
+          additionalProperties: true
+        filter_bindings:
+          type: object
+          additionalProperties:
+            type: string
+        filter_overrides:
+          type: object
+          additionalProperties: true
+        has_active_overrides:
+          type: boolean
+          description: Consumer-facing indicator that one or more overrides differ from global values.
+
+    DashboardSummary:
+      type: object
+      required: [id, collection_id, title, updated_at]
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+
+    DashboardDetail:
+      type: object
+      required:
+        - id
+        - collection_id
+        - title
+        - definition
+        - widgets
+        - updated_at
+        - can_edit
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        definition:
+          $ref: "#/components/schemas/DashboardDefinition"
+        widgets:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardWidget"
+        updated_at:
+          type: string
+          format: date-time
+        can_edit:
+          type: boolean
+
+    DashboardCreateRequest:
+      type: object
+      required: [collection_id, title]
+      properties:
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        definition:
+          $ref: "#/components/schemas/DashboardDefinition"
+        widgets:
+          type: array
+          items:
+            type: object
+            description: Widget create payload without server-assigned id.
+
+    DashboardUpdateRequest:
+      type: object
+      required: [updated_at]
+      properties:
+        updated_at:
+          type: string
+          format: date-time
+        collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          minLength: 1
+        definition:
+          $ref: "#/components/schemas/DashboardDefinition"
+        widgets:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardWidget"
+
+    DashboardCloneRequest:
+      type: object
+      required: [target_collection_id]
+      properties:
+        target_collection_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          description: Optional clone title; defaults to copied title with suffix.
+
+    WidgetExecuteRequest:
+      type: object
+      required: [global_filter_values]
+      properties:
+        global_filter_values:
+          type: object
+          additionalProperties: true
+        bypass_cache:
+          type: boolean
+          default: false
+
+    FilterStateExport:
+      type: object
+      required: [global_filter_values]
+      description: |
+        JSON object URL-encoded for the `filter_state` query parameter on CSV export.
+        Per-widget `filter_overrides` are read from the stored widget row; clients pass
+        current dashboard-global values only.
+      properties:
+        global_filter_values:
+          type: object
+          additionalProperties: true
+          description: Current dashboard-global filter values keyed by global filter id.
+
+    ColumnDescriptor:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          nullable: true
+
+    WidgetExecuteMeta:
+      type: object
+      required: [status, duration_ms, row_count, truncated, cache_hit]
+      properties:
+        status:
+          type: string
+        duration_ms:
+          type: integer
+          minimum: 0
+        row_count:
+          type: integer
+          minimum: 0
+        truncated:
+          type: boolean
+        cache_hit:
+          type: boolean
+        error_code:
+          type: string
+          nullable: true
+
+    WidgetExecuteResponse:
+      type: object
+      required: [columns, rows, meta]
+      properties:
+        columns:
+          type: array
+          items:
+            $ref: "#/components/schemas/ColumnDescriptor"
+        rows:
+          type: array
+          items:
+            type: array
+            items: {}
+        meta:
+          $ref: "#/components/schemas/WidgetExecuteMeta"
+
+    NormalizedError:
+      type: object
+      required: [error_code, message]
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid auth.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    Forbidden:
+      description: Authorization denied.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    NotFound:
+      description: Resource not found or not visible.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    BadRequest:
+      description: Validation failure.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"
+    WarehouseBusy:
+      description: Queue saturated or wait bound exceeded.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/NormalizedError"

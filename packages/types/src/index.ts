@@ -36,6 +36,15 @@ export type {
 } from "./query-execute";
 
 export type {
+  DashboardDetail,
+  DashboardSummary,
+  DashboardWidget,
+  DashboardWidgetExportQuery,
+  GlobalFilter,
+  WidgetExecuteResponse,
+} from "./dashboards";
+
+export type {
   Collection,
   CollectionCreateRequest,
   CollectionListResponse,
