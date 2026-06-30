@@ -14,6 +14,7 @@ export type {
   DashboardWidgetCreateInput,
   DashboardWidgetExportQuery,
   DashboardWidgetUpdateInput,
+  DashboardsKnownErrorCode,
   DashboardsNormalizedError,
   DashboardsNormalizedErrorCode,
   FilterStateExport,

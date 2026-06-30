@@ -161,7 +161,7 @@ export type WidgetExecuteResponse = {
   meta: WidgetExecuteMeta;
 };
 
-export type DashboardsNormalizedErrorCode =
+export type DashboardsKnownErrorCode =
   | "duplicate_dashboard_title"
   | "dashboard_not_found"
   | "widget_not_found"
@@ -171,8 +171,14 @@ export type DashboardsNormalizedErrorCode =
   | "invalid_parameters"
   | "export_not_permitted"
   | "collection_not_empty"
-  | "unsupported_widget_type"
-  | string;
+  | "unsupported_widget_type";
+
+declare const dashboardsNormalizedErrorCodeBrand: unique symbol;
+
+/** Known contract codes plus forward-compatible API error codes. */
+export type DashboardsNormalizedErrorCode =
+  | DashboardsKnownErrorCode
+  | (string & { readonly [dashboardsNormalizedErrorCodeBrand]?: never });
 
 export type DashboardsNormalizedError = {
   error_code: DashboardsNormalizedErrorCode;
