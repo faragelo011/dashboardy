@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ThemeToggle } from "./theme-toggle";
+
 type Props = {
   /** Hide ad hoc query link for non-authoring roles and unsigned contexts. */
   showRunQuery: boolean;
@@ -32,16 +34,19 @@ export function AdminLuxuryNavClient({ showRunQuery, showSavedQuestions }: Props
   ];
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-[#0B0F19]/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-4 sm:px-8">
+    <header className="sticky top-0 z-50 border-b border-border-1 bg-surface-app/85 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-6 px-4 py-3.5 sm:px-8">
         <Link
           href="/"
-          className="font-serif text-lg font-light tracking-tight text-white transition-colors hover:text-[#818CF8]"
+          className="text-sm font-semibold tracking-tight text-ink-strong transition-colors hover:text-accent"
         >
           Dashboardy
         </Link>
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-          <nav className="flex flex-wrap items-center justify-end gap-1 sm:gap-2" aria-label="Workspace">
+          <nav
+            className="flex flex-wrap items-center justify-end gap-1 sm:gap-1.5"
+            aria-label="Workspace"
+          >
             {items.map(({ href, label }) => {
               const active =
                 href === "/"
@@ -52,10 +57,10 @@ export function AdminLuxuryNavClient({ showRunQuery, showSavedQuestions }: Props
                   key={href}
                   href={href}
                   aria-current={active ? "page" : undefined}
-                  className={`rounded-sm px-3 py-2 text-[10px] font-medium uppercase tracking-[0.15em] transition-colors sm:px-4 ${
+                  className={`rounded-[4px] px-2.5 py-1.5 text-xs font-medium tracking-tight transition-colors ${
                     active
-                      ? "text-[#6366F1] shadow-[inset_0_-1px_0_0_rgba(212,175,55,0.9)]"
-                      : "text-[#94A3B8] hover:text-[#818CF8]"
+                      ? "bg-surface-2 text-ink-strong"
+                      : "text-ink-muted hover:bg-surface-1 hover:text-ink"
                   }`}
                 >
                   {label}
@@ -63,11 +68,15 @@ export function AdminLuxuryNavClient({ showRunQuery, showSavedQuestions }: Props
               );
             })}
           </nav>
-          <span className="hidden h-4 w-px shrink-0 bg-white/15 sm:block" aria-hidden />
+          <span
+            className="hidden h-5 w-px shrink-0 bg-border-2 sm:block"
+            aria-hidden
+          />
+          <ThemeToggle />
           <form action="/sign-out" method="post" className="shrink-0">
             <button
               type="submit"
-              className="rounded-sm border border-white/10 bg-transparent px-3 py-2 text-[10px] font-medium uppercase tracking-[0.15em] text-[#94A3B8] transition-colors hover:border-[#6366F1]/40 hover:text-[#818CF8] sm:px-4"
+              className="inline-flex h-8 items-center justify-center rounded-[4px] border border-border-2 bg-surface-1 px-2.5 text-xs font-medium text-ink-muted transition-colors hover:border-border-3 hover:bg-surface-2 hover:text-ink"
             >
               Sign out
             </button>

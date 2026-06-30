@@ -6,13 +6,6 @@ import type { DataConnection } from "@dashboardy/types";
 
 import { upsertConnectionAction } from "./actions";
 
-// Use a subtle bounding box style designed for high-end inputs
-const fieldClass =
-  "w-full bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-sm focus:outline-none focus:border-[#6366F1]/50 focus:bg-[#1F2937] focus:ring-1 focus:ring-[#6366F1]/30 transition-all rounded-sm placeholder:text-[#374151] disabled:opacity-50 disabled:cursor-not-allowed tracking-wide font-light";
-
-const primaryButtonClass =
-  "bg-[#6366F1] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center";
-
 export function ConnectionsForm({
   workspaceId,
   connection,
@@ -28,7 +21,7 @@ export function ConnectionsForm({
   return (
     <form
       action={upsertConnectionAction}
-      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#1F2937] border border-white/5 shadow-2xl"
+      className="ds-card flex flex-col gap-8 p-6 sm:p-7"
       onSubmit={(e) => {
         if (password.length > 0 && privateKeyPem.length > 0) {
           e.preventDefault();
@@ -43,193 +36,180 @@ export function ConnectionsForm({
         }, 0);
       }}
     >
-      <div aria-hidden="true" className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 bg-[#6366F1] opacity-[0.02] blur-3xl pointer-events-none rounded-full" />
-
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
-      <div className="flex flex-col gap-10 relative z-10">
-        <header className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-serif text-[#F8FAFC] tracking-wide font-light">
-              Datastore Link
-            </h2>
-            <span className="uppercase tracking-[0.15em] text-[10px] text-[#6366F1] border border-[#6366F1]/30 px-3 py-1 bg-[#6366F1]/5">
-              Admin Access Built-In
-            </span>
-          </div>
-          <p className="text-sm text-[#94A3B8] max-w-[55ch] leading-relaxed font-light">
-            Set the connection details below. Sensitive credentials submitted here are not displayed after saving to ensure security.
-          </p>
-        </header>
-
-        <fieldset className="grid gap-8 md:grid-cols-2">
-          <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-              Platform Display Name
-            </span>
-            <input
-              name="name"
-              aria-label="Display name"
-              required
-              className={fieldClass}
-              placeholder="e.g. Primary Snowflake"
-              defaultValue={connection?.name ?? ""}
-            />
-          </label>
-          <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-              Processing Warehouse
-            </span>
-            <input
-              name="warehouse"
-              aria-label="Warehouse"
-              required
-              className={fieldClass}
-              placeholder="e.g. COMPUTE_WH"
-              defaultValue={connection?.warehouse ?? ""}
-            />
-          </label>
-          <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-              Primary Database
-            </span>
-            <input
-              name="database"
-              aria-label="Database"
-              required
-              className={fieldClass}
-              placeholder="e.g. ANALYTICS_DB"
-              defaultValue={connection?.database ?? ""}
-            />
-          </label>
-          <label className="flex flex-col gap-3 group/input">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-              Schema <span className="opacity-50">(Optional)</span>
-            </span>
-            <input
-              name="schema"
-              className={fieldClass}
-              placeholder="e.g. PUBLIC"
-              defaultValue={connection?.schema ?? ""}
-            />
-          </label>
-        </fieldset>
-
-        <section className="mt-4 pt-8 border-t border-white/5 relative">
-          <h3 className="text-xl font-serif text-[#F8FAFC] tracking-wide font-light mb-2">Secure Credentials</h3>
-          <p className="text-[11px] leading-5 text-[#94A3B8] mb-8 font-light max-w-[65ch]">
-            Skip these fields to retain existing credentials. Authenticate via standard password OR an encrypted private key PEM (key-pair). Do not populate both simultaneously.
-          </p>
-          {error && (
-            <div role="alert" aria-live="assertive" className="mb-6 border border-red-500/30 bg-red-500/5 px-4 py-3 text-red-400 text-xs tracking-wide">
-              {error}
-            </div>
-          )}
-
-          <div className="grid gap-8 md:grid-cols-2">
-            <label className="flex flex-col gap-3 group/input">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-                Tenant Account
-              </span>
-              <input
-                name="account"
-                className={fieldClass}
-                placeholder="acme.us-east-1"
-                autoComplete="off"
-              />
-            </label>
-            <label className="flex flex-col gap-3 group/input">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-                Execution Role
-              </span>
-              <input
-                name="role"
-                className={fieldClass}
-                placeholder="SYSADMIN"
-                autoComplete="off"
-              />
-            </label>
-            <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-                Service Username
-              </span>
-              <input
-                name="username"
-                className={fieldClass}
-                placeholder="service_user"
-                autoComplete="off"
-              />
-            </label>
-            
-            <div className="md:col-span-2 pt-6 my-2 border-t border-white/5 relative">
-              <span className="absolute -top-3 left-0 bg-[#1F2937] px-2 text-[10px] uppercase tracking-[0.15em] text-[#374151]">Password Auth</span>
-            </div>
-
-            <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-                Vault Password
-              </span>
-              <input
-                name="password"
-                type="password"
-                value={password}
-                onChange={(event) => {
-                  if (privateKeyPem.length === 0) setPassword(event.currentTarget.value);
-                }}
-                disabled={privateKeyPem.length > 0}
-                className={`${fieldClass} placeholder:font-sans`}
-                placeholder="Optional for password authentication..."
-                autoComplete="new-password"
-              />
-            </label>
-
-            <div className="md:col-span-2 pt-6 my-2 border-t border-white/5 relative">
-              <span className="absolute -top-3 left-0 bg-[#1F2937] px-2 text-[10px] uppercase tracking-[0.15em] text-[#374151]">Key-Pair Auth</span>
-            </div>
-
-            <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-                Private Key Payload (PEM)
-              </span>
-              <textarea
-                name="private_key_pem"
-                value={privateKeyPem}
-                onChange={(event) => {
-                  if (password.length === 0) setPrivateKeyPem(event.currentTarget.value);
-                }}
-                disabled={password.length > 0}
-                rows={6}
-                className={`${fieldClass} font-mono placeholder:font-sans text-[11px] leading-relaxed resize-none`}
-                placeholder="— BEGIN PRIVATE KEY —\n..."
-                autoComplete="off"
-              />
-            </label>
-            <label className="flex flex-col gap-3 group/input md:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors">
-                PEM Passphrase <span className="opacity-50">(If Encrypted)</span>
-              </span>
-              <input
-                name={password.length > 0 ? undefined : "private_key_passphrase"}
-                type="password"
-                className={`${fieldClass} placeholder:font-sans`}
-                placeholder="Decryption key..."
-                autoComplete="new-password"
-                disabled={password.length > 0}
-              />
-            </label>
-          </div>
-        </section>
-
-        <div className="flex flex-col gap-6 pt-8 mt-2 border-t border-white/5 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-[11px] leading-6 text-[#374151] max-w-[45ch] uppercase tracking-[0.05em] font-medium">
-            {isNotConfigured
-              ? "Not configured yet. Submit credentials to move to pending test."
-              : "Saved metadata is shown above. Submit credentials again to rotate later (Phase 5)."}
-          </p>
-          <button aria-label="Save connection" className={primaryButtonClass}>
-            Secure Configuration
-          </button>
+      <header className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold tracking-tight text-ink-strong">
+            Connection details
+          </h2>
+          <span className="ds-badge ds-badge--idle">Admin</span>
         </div>
+        <p className="ds-help max-w-[60ch]">
+          Saved metadata is shown below. Credentials are write-only and never displayed back after saving.
+        </p>
+      </header>
+
+      <fieldset className="grid gap-5 md:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="ds-label">Display name</span>
+          <input
+            name="name"
+            aria-label="Display name"
+            required
+            className="ds-input"
+            placeholder="Primary Snowflake"
+            defaultValue={connection?.name ?? ""}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="ds-label">Warehouse</span>
+          <input
+            name="warehouse"
+            aria-label="Warehouse"
+            required
+            className="ds-input"
+            placeholder="COMPUTE_WH"
+            defaultValue={connection?.warehouse ?? ""}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="ds-label">Database</span>
+          <input
+            name="database"
+            aria-label="Database"
+            required
+            className="ds-input"
+            placeholder="ANALYTICS_DB"
+            defaultValue={connection?.database ?? ""}
+          />
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="ds-label">
+            Schema <span className="text-ink-faint">(optional)</span>
+          </span>
+          <input
+            name="schema"
+            className="ds-input"
+            placeholder="PUBLIC"
+            defaultValue={connection?.schema ?? ""}
+          />
+        </label>
+      </fieldset>
+
+      <hr className="ds-divider" />
+
+      <section className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1">
+          <h3 className="text-sm font-semibold text-ink-strong">Credentials</h3>
+          <p className="ds-help max-w-[65ch]">
+            Leave blank to keep existing credentials. Use a password or an encrypted private key (PEM), not both.
+          </p>
+        </div>
+
+        {error && (
+          <div role="alert" aria-live="assertive" className="ds-alert ds-alert--danger">
+            {error}
+          </div>
+        )}
+
+        <div className="grid gap-5 md:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className="ds-label">Account</span>
+            <input
+              name="account"
+              className="ds-input"
+              placeholder="acme.us-east-1"
+              autoComplete="off"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="ds-label">Role</span>
+            <input
+              name="role"
+              className="ds-input"
+              placeholder="SYSADMIN"
+              autoComplete="off"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 md:col-span-2">
+            <span className="ds-label">Username</span>
+            <input
+              name="username"
+              className="ds-input"
+              placeholder="service_user"
+              autoComplete="off"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1.5 md:col-span-2">
+            <span className="ds-label">
+              Password{" "}
+              <span className="text-ink-faint">
+                {privateKeyPem.length > 0 ? "(disabled while key is set)" : "(password auth)"}
+              </span>
+            </span>
+            <input
+              name="password"
+              type="password"
+              value={password}
+              onChange={(event) => {
+                if (privateKeyPem.length === 0) setPassword(event.currentTarget.value);
+              }}
+              disabled={privateKeyPem.length > 0}
+              className="ds-input"
+              placeholder="Enter password"
+              autoComplete="new-password"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1.5 md:col-span-2">
+            <span className="ds-label">
+              Private key (PEM){" "}
+              <span className="text-ink-faint">
+                {password.length > 0 ? "(disabled while password is set)" : "(key-pair auth)"}
+              </span>
+            </span>
+            <textarea
+              name="private_key_pem"
+              value={privateKeyPem}
+              onChange={(event) => {
+                if (password.length === 0) setPrivateKeyPem(event.currentTarget.value);
+              }}
+              disabled={password.length > 0}
+              rows={6}
+              className="ds-textarea"
+              placeholder="-----BEGIN PRIVATE KEY-----"
+              autoComplete="off"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 md:col-span-2">
+            <span className="ds-label">
+              PEM passphrase <span className="text-ink-faint">(if encrypted)</span>
+            </span>
+            <input
+              name={password.length > 0 ? undefined : "private_key_passphrase"}
+              type="password"
+              className="ds-input"
+              placeholder="Decryption passphrase"
+              autoComplete="new-password"
+              disabled={password.length > 0}
+            />
+          </label>
+        </div>
+      </section>
+
+      <hr className="ds-divider" />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="ds-help max-w-[48ch]">
+          {isNotConfigured
+            ? "Not configured yet. Saving moves the connection to pending test."
+            : "Saving submits the credentials again and moves the connection to pending test."}
+        </p>
+        <button aria-label="Save connection" className="ds-btn ds-btn-primary sm:shrink-0">
+          Save connection
+        </button>
       </div>
     </form>
   );

@@ -5,12 +5,6 @@ import { useRouter } from "next/navigation";
 
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
-const fieldBoxyClass =
-  "w-full bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-sm focus:outline-none focus:border-[#6366F1]/50 focus:bg-[#1F2937] focus:ring-1 focus:ring-[#6366F1]/30 transition-all rounded-sm placeholder:text-[#374151] disabled:opacity-50 disabled:cursor-not-allowed font-light tracking-wide";
-
-const primaryButtonClass =
-  "w-full bg-[#6366F1] text-black px-6 py-4 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center mt-4";
-
 export default function SignInPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -59,8 +53,7 @@ export default function SignInPage() {
                   ? (parsed.detail as { error_code?: unknown }).error_code
                   : undefined
                 : undefined;
-            const code =
-              parsed.error_code ?? detailCode;
+            const code = parsed.error_code ?? detailCode;
             if (code === "password_reset_required") {
               router.push("/set-password");
               router.refresh();
@@ -87,40 +80,26 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="min-h-dvh bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#6366F1]/30 selection:text-[#6366F1] flex items-center justify-center relative overflow-hidden">
-      
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 -mr-40 -mt-20 w-[600px] h-[600px] bg-[#6366F1] opacity-[0.02] blur-[100px] pointer-events-none rounded-full" />
-      <div className="absolute bottom-0 left-0 -ml-40 -mb-20 w-[400px] h-[400px] bg-[#818CF8] opacity-[0.015] blur-[100px] pointer-events-none rounded-full" />
-
-      <div className="w-full max-w-md px-6 py-12 relative z-10 animate-fade-in-up">
-        
-        <header className="mb-10 text-center flex flex-col items-center">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#6366F1] mb-4">
-            Authorized Personnel Only
-          </p>
-          <h1 className="text-4xl sm:text-5xl font-serif text-white tracking-tight font-light mb-4">
-            Sign In
+    <main className="flex min-h-dvh items-center justify-center bg-surface-app px-6 py-12">
+      <div className="w-full max-w-md">
+        <header className="mb-8 flex flex-col items-start gap-2">
+          <p className="ds-kicker">Authorized access</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+            Sign in
           </h1>
-          <p className="text-sm text-[#94A3B8] font-light max-w-[35ch] mx-auto leading-relaxed">
-            Please authenticate using your designated corporate workspace credentials.
+          <p className="ds-help max-w-[40ch]">
+            Sign in with your workspace credentials.
           </p>
         </header>
 
         <form
-          className="flex flex-col gap-6 bg-[#111827] p-8 sm:p-10 border border-white/5 shadow-2xl relative"
+          className="ds-card flex flex-col gap-5 p-6"
           onSubmit={onSubmit}
           aria-busy={loading}
         >
-          {/* Form decorative accent */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-px bg-gradient-to-r from-transparent via-[#6366F1]/50 to-transparent" />
-
-          <div className="flex flex-col gap-2 relative group/input">
-            <label
-              htmlFor="email"
-              className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors"
-            >
-              Identity (Email)
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="email" className="ds-label">
+              Email
             </label>
             <input
               id="email"
@@ -129,19 +108,16 @@ export default function SignInPage() {
               required
               autoComplete="email"
               inputMode="email"
-              className={fieldBoxyClass}
-              placeholder="e.g. executive@company.com"
+              className="ds-input"
+              placeholder="you@company.com"
               value={email}
               onChange={(ev) => setEmail(ev.target.value)}
               disabled={loading}
             />
           </div>
 
-          <div className="flex flex-col gap-2 relative group/input">
-            <label
-              htmlFor="password"
-              className="text-[10px] uppercase tracking-[0.15em] text-[#374151] group-focus-within/input:text-[#6366F1] transition-colors"
-            >
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="password" className="ds-label">
               Password
             </label>
             <input
@@ -150,8 +126,8 @@ export default function SignInPage() {
               type="password"
               required
               autoComplete="current-password"
-              className={`${fieldBoxyClass} placeholder:font-sans`}
-              placeholder="Enter your private password..."
+              className="ds-input"
+              placeholder="Enter password"
               value={password}
               onChange={(ev) => setPassword(ev.target.value)}
               disabled={loading}
@@ -166,25 +142,23 @@ export default function SignInPage() {
               role="alert"
               aria-live="assertive"
               aria-atomic="true"
-              className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-[12px] text-[#94A3B8] font-mono leading-relaxed"
+              className="ds-alert ds-alert--danger"
             >
-              <div className="text-[10px] uppercase tracking-[0.2em] text-[#EF4444] mb-1 font-semibold">Verification Failed</div>
-              {error}
+              <div className="flex flex-col gap-1">
+                <span className="font-semibold">Sign-in failed</span>
+                <span>{error}</span>
+              </div>
             </div>
           ) : null}
 
           <button
             type="submit"
             disabled={loading}
-            className={primaryButtonClass}
+            className="ds-btn ds-btn-primary w-full"
           >
-            {loading ? "Authenticating..." : "Log In"}
+            {loading ? "Signing in…" : "Sign in"}
           </button>
         </form>
-
-        <p className="mt-12 text-center text-[10px] uppercase tracking-[0.1em] text-[#374151]">
-          Security Policy: Zero-Trust Ecosystem
-        </p>
       </div>
     </main>
   );
