@@ -361,6 +361,8 @@ components:
         - config
         - filter_bindings
         - filter_overrides
+        - has_active_overrides
+        - can_export
       properties:
         id:
           type: string
@@ -590,6 +592,11 @@ components:
       oneOf:
         - $ref: "#/components/schemas/DashboardEditorDetail"
         - $ref: "#/components/schemas/DashboardConsumerDetail"
+      discriminator:
+        propertyName: detail_level
+        mapping:
+          editor: "#/components/schemas/DashboardEditorDetail"
+          consumer: "#/components/schemas/DashboardConsumerDetail"
 
     DashboardCreateRequest:
       type: object

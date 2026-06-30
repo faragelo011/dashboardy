@@ -39,8 +39,8 @@ export type DashboardWidget = {
   config: Record<string, unknown>;
   filter_bindings: Record<string, string>;
   filter_overrides: Record<string, FilterValue>;
-  has_active_overrides?: boolean;
-  can_export?: boolean;
+  has_active_overrides: boolean;
+  can_export: boolean;
 };
 
 export type DashboardWidgetConsumer = {

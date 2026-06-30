@@ -85,7 +85,6 @@ export default async function MembersPage() {
         {/* Header */}
         <header className="flex flex-col gap-6 border-b border-border-1 pb-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl space-y-3">
-            <h1 className="sr-only">Workspace members</h1>
             <p className="ds-kicker">Workspace directory</p>
             <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
               Members

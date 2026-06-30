@@ -154,7 +154,8 @@ function buildVars(colorsSource, blockLabel) {
 }
 
 const lightVars = buildVars(colorsMap, "colors");
-const darkVars = buildVars(darkColorsMap, "dark_colors");
+const darkVars =
+  darkColorsMap.size > 0 ? buildVars(darkColorsMap, "dark_colors") : [];
 
 const globalsCss = fs.readFileSync(globalsCssPath, "utf8");
 const lightBlock = formatCssVarBlock(lightVars, ":root");
