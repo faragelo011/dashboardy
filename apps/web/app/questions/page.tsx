@@ -87,17 +87,17 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
     : loadedDetail?.permission === "edit";
 
   return (
-    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+    <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#6366F1]/30 selection:text-[#6366F1]">
       <AdminLuxuryNav />
       <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
         <header className="flex flex-col gap-6 border-b border-white/10 pb-12 max-w-3xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
+          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#6366F1]">
             Saved questions
           </p>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-white tracking-tight font-light leading-none">
             Questions
           </h1>
-          <p className="text-sm text-[#A0AAB2] font-light leading-relaxed max-w-[60ch]">
+          <p className="text-sm text-[#94A3B8] font-light leading-relaxed max-w-[60ch]">
             Author and maintain governed SQL questions with scalar parameter schemas.
           </p>
         </header>
@@ -110,10 +110,10 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
 
         {editingId && questionLoadError ? (
           <div className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-5" role="alert">
-            <p className="text-sm text-[#A0AAB2]">{questionLoadError}</p>
+            <p className="text-sm text-[#94A3B8]">{questionLoadError}</p>
             <Link
               href="/questions"
-              className="mt-4 inline-block text-[10px] uppercase tracking-[0.15em] text-[#D4AF37] hover:text-[#FBE398]"
+              className="mt-4 inline-block text-[10px] uppercase tracking-[0.15em] text-[#6366F1] hover:text-[#818CF8]"
             >
               Back to list
             </Link>
@@ -131,13 +131,13 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
         ) : editingId && questionLoadError ? null : (
           <section className="flex flex-col gap-8">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A]">
+              <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#374151]">
                 Active questions ({questions.length})
               </h2>
               {roleCanAuthor ? (
                 <Link
                   href="/questions?new=1"
-                  className="bg-[#D4AF37] text-black px-5 py-2 text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398]"
+                  className="bg-[#6366F1] text-black px-5 py-2 text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8]"
                 >
                   New question
                 </Link>
@@ -145,7 +145,7 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
             </div>
 
             {questions.length === 0 ? (
-              <p className="text-sm text-[#A0AAB2]">No saved questions yet.</p>
+              <p className="text-sm text-[#94A3B8]">No saved questions yet.</p>
             ) : (
               <ul className="flex flex-col gap-4">
                 {questions.map((q) => (
@@ -154,15 +154,15 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
                       <h3 className="text-lg font-serif text-white">{q.title}</h3>
                       <Link
                         href={`/questions?id=${encodeURIComponent(q.id)}`}
-                        className="text-[10px] uppercase tracking-[0.15em] text-[#D4AF37] hover:text-[#FBE398]"
+                        className="text-[10px] uppercase tracking-[0.15em] text-[#6366F1] hover:text-[#818CF8]"
                       >
                         Open
                       </Link>
                     </div>
                     {q.description ? (
-                      <p className="text-sm text-[#A0AAB2]">{q.description}</p>
+                      <p className="text-sm text-[#94A3B8]">{q.description}</p>
                     ) : null}
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">
+                    <p className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
                       Permission: {q.permission}
                     </p>
                   </li>

@@ -6,12 +6,6 @@ import { useRouter } from "next/navigation";
 import { completePasswordReset } from "@/app/lib/api";
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
-const fieldBoxyClass =
-  "w-full bg-[#0B0F15] border border-white/10 px-4 py-3 text-[#F0F2F5] text-sm focus:outline-none focus:border-[#D4AF37]/50 focus:bg-[#12161E] focus:ring-1 focus:ring-[#D4AF37]/30 transition-all rounded-sm placeholder:text-[#5C6A7A] disabled:opacity-50 disabled:cursor-not-allowed font-light tracking-wide";
-
-const primaryButtonClass =
-  "w-full bg-[#D4AF37] text-black px-6 py-4 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#FBE398] transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-center mt-4";
-
 export function SetPasswordForm() {
   const router = useRouter();
   const [password, setPassword] = useState("");
@@ -26,15 +20,15 @@ export function SetPasswordForm() {
     const trimmedPassword = password.trim();
     const trimmedConfirm = confirm.trim();
     if (!trimmedPassword) {
-      setError("Passcode is required.");
+      setError("Password is required.");
       return;
     }
     if (!trimmedConfirm) {
-      setError("Passcode confirmation is required.");
+      setError("Password confirmation is required.");
       return;
     }
     if (trimmedPassword !== trimmedConfirm) {
-      setError("Passcodes do not match.");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -60,7 +54,7 @@ export function SetPasswordForm() {
       const completeRes = await completePasswordReset(token);
       if (!completeRes.ok) {
         const body = await completeRes.text().catch(() => "");
-        setError(body || "Unable to complete passcode initialization.");
+        setError(body || "Unable to complete password setup.");
         return;
       }
 
@@ -72,10 +66,10 @@ export function SetPasswordForm() {
   }
 
   return (
-    <form className="flex flex-col gap-6" onSubmit={onSubmit}>
-      <div className="flex flex-col gap-2 relative group/input">
-        <label htmlFor="password" className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
-          New Passcode
+    <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="password" className="ds-label">
+          New password
         </label>
         <input
           id="password"
@@ -83,8 +77,8 @@ export function SetPasswordForm() {
           type="password"
           required
           autoComplete="new-password"
-          className={`${fieldBoxyClass} placeholder:font-sans`}
-          placeholder="Highly secure passcode..."
+          className="ds-input"
+          placeholder="Enter new password"
           value={password}
           onChange={(ev) => setPassword(ev.target.value)}
           disabled={loading}
@@ -93,9 +87,9 @@ export function SetPasswordForm() {
         />
       </div>
 
-      <div className="flex flex-col gap-2 relative group/input">
-        <label htmlFor="confirm" className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
-          Verify Passcode
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="confirm" className="ds-label">
+          Confirm password
         </label>
         <input
           id="confirm"
@@ -103,8 +97,8 @@ export function SetPasswordForm() {
           type="password"
           required
           autoComplete="new-password"
-          className={`${fieldBoxyClass} placeholder:font-sans`}
-          placeholder="Repeat secure passcode..."
+          className="ds-input"
+          placeholder="Repeat new password"
           value={confirm}
           onChange={(ev) => setConfirm(ev.target.value)}
           disabled={loading}
@@ -117,19 +111,21 @@ export function SetPasswordForm() {
           role="alert"
           aria-live="assertive"
           aria-atomic="true"
-          className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-[12px] text-[#A0AAB2] font-mono leading-relaxed"
+          className="ds-alert ds-alert--danger"
         >
-          <div className="text-[10px] uppercase tracking-[0.2em] text-[#EF4444] mb-1 font-semibold">Validation Error</div>
-          {error}
+          <div className="flex flex-col gap-1">
+            <span className="font-semibold">Could not set password</span>
+            <span>{error}</span>
+          </div>
         </div>
       ) : null}
 
       <button
         type="submit"
         disabled={loading}
-        className={primaryButtonClass}
+        className="ds-btn ds-btn-primary w-full"
       >
-        {loading ? "Encrypting..." : "Commit Initialization"}
+        {loading ? "Saving…" : "Set password"}
       </button>
     </form>
   );

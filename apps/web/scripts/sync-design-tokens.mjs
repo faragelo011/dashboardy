@@ -36,15 +36,20 @@ function extractFrontmatter(text) {
   return normalized.slice(4, end + 1);
 }
 
-function extractColorsMapFromFrontmatter(frontmatter) {
+function extractColorsMapFromFrontmatter(frontmatter, blockName) {
   const lines = frontmatter.split("\n");
-  const colorsStart = lines.findIndex((l) => l.trim() === "colors:");
-  if (colorsStart === -1) {
-    throw new Error("DESIGN.md frontmatter missing `colors:` block");
+  const startMarker = `${blockName}:`;
+  const blockStart = lines.findIndex((l) => l.trim() === startMarker);
+  if (blockStart === -1) {
+    if (blockName === "colors") {
+      throw new Error("DESIGN.md frontmatter missing `colors:` block");
+    }
+    // Optional block (e.g. dark_colors) — absence is valid.
+    return new Map();
   }
 
   const colors = new Map();
-  for (let i = colorsStart + 1; i < lines.length; i += 1) {
+  for (let i = blockStart + 1; i < lines.length; i += 1) {
     const line = lines[i];
     if (!line) continue;
 
@@ -59,15 +64,15 @@ function extractColorsMapFromFrontmatter(frontmatter) {
   }
 
   if (colors.size === 0) {
-    throw new Error("DESIGN.md frontmatter `colors:` block is empty or unparseable");
+    throw new Error(`DESIGN.md frontmatter \`${blockName}:\` block is empty or unparseable`);
   }
 
   return colors;
 }
 
-function formatCssVarBlock(vars) {
+function formatCssVarBlock(vars, selector = ":root") {
   const lines = [];
-  lines.push(":root {");
+  lines.push(`${selector} {`);
   for (const [name, triplet] of vars) {
     lines.push(`    --${name}: ${triplet};`);
   }
@@ -96,9 +101,11 @@ const globalsCssPath = path.join(process.cwd(), "app", "globals.css");
 
 const designMd = fs.readFileSync(designMdPath, "utf8");
 const frontmatter = extractFrontmatter(designMd);
-const colorsMap = extractColorsMapFromFrontmatter(frontmatter);
+const colorsMap = extractColorsMapFromFrontmatter(frontmatter, "colors");
+const darkColorsMap = extractColorsMapFromFrontmatter(frontmatter, "dark_colors");
 
 // Canonical token mapping. Add here if you add new tokens to DESIGN.md.
+// Every name MUST appear in both `colors:` and (if present) `dark_colors:` in DESIGN.md.
 const tokenNames = [
   "ink-strong",
   "ink",
@@ -121,10 +128,14 @@ const tokenNames = [
   "accent-active",
   "accent-soft",
   "accent-soft-ink",
+  "accent-border",
   "focus",
   "focus-ring",
+  "success",
   "success-soft",
   "success-soft-ink",
+  "warn",
+  "warn-soft",
   "danger-border",
   "danger-soft",
   "danger-soft-strong",
@@ -132,18 +143,31 @@ const tokenNames = [
   "danger-ink-strong",
 ];
 
-const vars = tokenNames.map((name) => {
-  const value = colorsMap.get(name);
-  if (!value) {
-    throw new Error(`DESIGN.md is missing colors.${name} in frontmatter`);
-  }
-  return [name, parseOklchTriplet(value, `colors.${name}`)];
-});
+function buildVars(colorsSource, blockLabel) {
+  return tokenNames.map((name) => {
+    const value = colorsSource.get(name);
+    if (!value) {
+      throw new Error(`DESIGN.md is missing ${blockLabel}.${name} in frontmatter`);
+    }
+    return [name, parseOklchTriplet(value, `${blockLabel}.${name}`)];
+  });
+}
+
+const lightVars = buildVars(colorsMap, "colors");
+const darkVars =
+  darkColorsMap.size > 0 ? buildVars(darkColorsMap, "dark_colors") : [];
 
 const globalsCss = fs.readFileSync(globalsCssPath, "utf8");
-const newBlock = formatCssVarBlock(vars);
+const lightBlock = formatCssVarBlock(lightVars, ":root");
+const darkBlock =
+  darkVars.length > 0 ? formatCssVarBlock(darkVars, '[data-theme="dark"]') : "";
+const newBlock = darkBlock ? `${lightBlock}\n  ${darkBlock}` : lightBlock;
 const updated = replaceBetweenMarkers(globalsCss, newBlock);
 
 fs.writeFileSync(globalsCssPath, updated);
-process.stdout.write(`Synced ${vars.length} tokens into ${globalsCssPath}\n`);
+process.stdout.write(
+  `Synced ${lightVars.length} tokens (${lightVars.length} light${
+    darkVars.length ? ` + ${darkVars.length} dark` : ""
+  }) into ${globalsCssPath}\n`,
+);
 

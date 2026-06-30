@@ -13,7 +13,7 @@ type Props = {
 function SkeletonBlock({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-pulse rounded-sm bg-white/[0.06] ${className ?? ""}`}
+      className={`animate-pulse rounded-[4px] bg-surface-2 ${className ?? ""}`}
       aria-hidden
     />
   );
@@ -22,55 +22,44 @@ function SkeletonBlock({ className }: { className?: string }) {
 export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props) {
   const me = await getProtectedMe();
   const role = me.current_workspace.role;
-  const showRunQuery =
-    role === "admin" || role === "analyst";
+  const showRunQuery = role === "admin" || role === "analyst";
   const showSavedQuestions =
     role === "admin" || role === "analyst" || role === "viewer";
 
   return (
-    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+    <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNavClient
         showRunQuery={showRunQuery}
         showSavedQuestions={showSavedQuestions}
       />
-      <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
-        <header className="flex flex-col gap-12 border-b border-white/10 pb-12 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-6">
-            <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-              {kicker}
+      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-14">
+        <header className="flex flex-col gap-6 border-b border-border-1 pb-8 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl space-y-3">
+            <p className="ds-kicker">{kicker}</p>
+            <h1 className="text-2xl font-semibold leading-tight tracking-tight text-ink-strong sm:text-3xl">
+              {title}
+            </h1>
+            <p className="max-w-[60ch] text-sm leading-relaxed text-ink-muted">
+              {subtitle}
             </p>
-            <div className="space-y-4">
-              <h1 className="font-serif text-5xl font-light leading-none tracking-tight text-white lg:text-7xl">
-                {title}
-              </h1>
-              <p className="max-w-[55ch] text-sm font-light leading-relaxed text-[#A0AAB2] lg:text-base">
-                {subtitle}
-              </p>
-            </div>
           </div>
-          <div className="flex shrink-0 flex-col items-start gap-3 pt-8 lg:items-end lg:pt-0">
+          <div className="flex shrink-0 flex-col items-start gap-2 pt-4 lg:items-end lg:pt-0">
             <SkeletonBlock className="h-8 w-28" />
             <SkeletonBlock className="h-4 w-40" />
           </div>
         </header>
 
-        <section className="grid animate-fade-in-up gap-12 lg:grid-cols-[1.2fr_0.8fr] lg:gap-24">
-          <div className="flex flex-col gap-8">
-            <SkeletonBlock className="h-64 w-full border border-white/5 bg-[#0B0F15]" />
-            <SkeletonBlock className="h-48 w-full border border-white/5 bg-[#0B0F15]" />
-            <SkeletonBlock className="h-40 w-full border border-white/5 bg-[#0B0F15]" />
+        <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10">
+          <div className="flex flex-col gap-4">
+            <SkeletonBlock className="h-40 w-full border border-border-1" />
+            <SkeletonBlock className="h-32 w-full border border-border-1" />
+            <SkeletonBlock className="h-28 w-full border border-border-1" />
           </div>
-          <aside className="relative flex flex-col justify-start px-2 py-8 lg:py-12">
-            <div
-              className="pointer-events-none absolute left-[-48px] top-4 hidden h-[calc(100%-2rem)] w-px bg-gradient-to-b from-transparent via-white/10 to-transparent lg:block"
-              aria-hidden
-            />
-            <SkeletonBlock className="mb-10 h-8 w-48" />
-            <div className="space-y-6">
-              <SkeletonBlock className="h-4 w-full max-w-[12rem]" />
-              <SkeletonBlock className="h-4 w-full max-w-[10rem]" />
-              <SkeletonBlock className="h-4 w-full max-w-[14rem]" />
-            </div>
+          <aside className="flex flex-col gap-4">
+            <SkeletonBlock className="h-8 w-48" />
+            <SkeletonBlock className="h-4 w-full max-w-[12rem]" />
+            <SkeletonBlock className="h-4 w-full max-w-[10rem]" />
+            <SkeletonBlock className="h-4 w-full max-w-[14rem]" />
           </aside>
         </section>
       </div>

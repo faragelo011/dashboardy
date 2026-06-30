@@ -24,6 +24,7 @@ from app.models.data_connections import (
 )
 from app.models.query_engine import CacheEntry, QueryAuditLog
 
+from app.models.dashboards import Dashboard, DashboardGrant, DashboardWidget
 from app.models.saved_questions import Collection, QuestionGrant, SavedQuestion
 
 __all__ = [
@@ -36,6 +37,9 @@ __all__ = [
     "CollectionPermission",
     "ConnectionManagementAuditRecord",
     "ConnectionTestResult",
+    "Dashboard",
+    "DashboardGrant",
+    "DashboardWidget",
     "DataConnection",
     "DbAuditAction",
     "DbAuditOutcome",

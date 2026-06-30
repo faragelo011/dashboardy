@@ -3,6 +3,8 @@ import plugin from "tailwindcss/plugin";
 
 const config: Config = {
   content: ["./app/**/*.{ts,tsx}"],
+  // Theme toggle sets data-theme="dark" on <html>; dark: variants respond to it.
+  darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
       colors: {
@@ -30,11 +32,16 @@ const config: Config = {
         "accent-active": "oklch(var(--accent-active))",
         "accent-soft": "oklch(var(--accent-soft))",
         "accent-soft-ink": "oklch(var(--accent-soft-ink))",
+        "accent-border": "oklch(var(--accent-border))",
         focus: "oklch(var(--focus))",
         "focus-ring": "oklch(var(--focus-ring))",
 
+        success: "oklch(var(--success))",
         "success-soft": "oklch(var(--success-soft))",
         "success-soft-ink": "oklch(var(--success-soft-ink))",
+
+        warn: "oklch(var(--warn))",
+        "warn-soft": "oklch(var(--warn-soft))",
 
         "danger-border": "oklch(var(--danger-border))",
         "danger-soft": "oklch(var(--danger-soft))",
@@ -43,8 +50,14 @@ const config: Config = {
         "danger-ink-strong": "oklch(var(--danger-ink-strong))",
       },
       fontFamily: {
-        sans: ["var(--font-outfit)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-playfair)", "ui-serif", "Georgia", "serif"],
+        sans: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
+      },
+      borderRadius: {
+        // Dense system: tight radii. 4px for inputs/buttons, 6px for cards.
+        ds: "4px",
+        "ds-lg": "6px",
       },
       animation: {
         "fade-in-up": "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",

@@ -4,19 +4,14 @@ import { useRef, useState, useTransition } from "react";
 
 import { provisionMemberAction } from "./actions";
 
+type RoleOption = readonly [value: string, label: string, description: string];
+
 type Props = {
   workspaceId: string;
-  fieldClass: string;
-  primaryButtonClass: string;
-  roleOptions: readonly (readonly [string, string, string])[];
+  roleOptions: readonly RoleOption[];
 };
 
-export function ProvisionMemberForm({
-  workspaceId,
-  fieldClass,
-  primaryButtonClass,
-  roleOptions,
-}: Props) {
+export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -24,7 +19,7 @@ export function ProvisionMemberForm({
   return (
     <form
       ref={formRef}
-      className="p-8 sm:p-12 relative overflow-hidden group bg-gradient-to-br from-[#12161E] inline-block border-[0.5px] border-white/10"
+      className="ds-card flex flex-col gap-6 p-6 sm:p-7"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -44,92 +39,74 @@ export function ProvisionMemberForm({
     >
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
-      <div className="flex flex-col gap-10">
-        <header className="flex flex-col gap-2 relative z-10">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-serif text-[#F0F2F5] tracking-wide font-light">
-              Invite
-            </h2>
-            <span className="uppercase tracking-[0.15em] text-[10px] text-[#D4AF37] border border-[#D4AF37]/30 px-3 py-1 bg-[#D4AF37]/5">
-              Admin Access Built-In
-            </span>
-          </div>
-          <p className="text-sm text-[#A0AAB2] max-w-[50ch] leading-relaxed font-light">
-            Grant secure workspace access directly. An initial credential will be created and mandated for reset upon entry.
-          </p>
-        </header>
-
-        <div className="grid gap-12 lg:grid-cols-2 relative z-10">
-          <label className="flex flex-col gap-3 group/input">
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
-              Email Address
-            </span>
-            <input
-              name="email"
-              type="email"
-              required
-              className={fieldClass}
-              placeholder="e.g. executive@company.com"
-              disabled={isPending}
-            />
-          </label>
-
-          <label className="flex flex-col gap-3 group/input">
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
-              Access Tier
-            </span>
-            <select
-              name="role"
-              className={fieldClass}
-              defaultValue="viewer"
-              disabled={isPending}
-            >
-              {roleOptions.map(([value, label]) => (
-                <option key={value} value={value} className="bg-[#0B0F15] text-[#F0F2F5]">
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="flex flex-col gap-3 lg:col-span-2 group/input">
-            <span className="text-[11px] uppercase tracking-[0.1em] text-[#5C6A7A] group-focus-within/input:text-[#D4AF37] transition-colors">
-              Temporary Credential
-            </span>
-            <input
-              name="initial_password"
-              type="password"
-              required
-              minLength={8}
-              className={fieldClass}
-              placeholder="Required: minimum 8 characters"
-              autoComplete="new-password"
-              disabled={isPending}
-            />
-          </label>
+      <header className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-lg font-semibold tracking-tight text-ink-strong">Invite member</h2>
+          <span className="ds-badge ds-badge--idle">Admin</span>
         </div>
+        <p className="ds-help max-w-[55ch]">
+          Grant workspace access. A temporary password will be created and must be reset on first sign-in.
+        </p>
+      </header>
 
-        {error ? (
-          <div
-            role="alert"
-            className="border-l-2 border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-200 font-light relative z-10"
+      <div className="grid gap-5 lg:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="ds-label">Email</span>
+          <input
+            name="email"
+            type="email"
+            required
+            className="ds-input"
+            placeholder="you@company.com"
+            disabled={isPending}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5">
+          <span className="ds-label">Role</span>
+          <select
+            name="role"
+            className="ds-select"
+            defaultValue="viewer"
+            disabled={isPending}
           >
-            {error}
-          </div>
-        ) : null}
+            {roleOptions.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between relative z-10">
-          <p className="text-[11px] leading-5 text-[#5C6A7A] uppercase tracking-[0.05em]">
-            Access can be revoked from the roster.
-          </p>
-          <button className={primaryButtonClass} disabled={isPending}>
-            {isPending ? "Connecting..." : "Provision Access"}
-          </button>
-        </div>
+        <label className="flex flex-col gap-1.5 lg:col-span-2">
+          <span className="ds-label">Temporary password</span>
+          <input
+            name="initial_password"
+            type="password"
+            required
+            minLength={8}
+            className="ds-input"
+            placeholder="Minimum 8 characters"
+            autoComplete="new-password"
+            disabled={isPending}
+          />
+        </label>
       </div>
-      
-      {/* Decorative luxury mesh */}
-      <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-[#D4AF37] opacity-[0.03] blur-3xl pointer-events-none rounded-full" />
+
+      {error ? (
+        <div role="alert" className="ds-alert ds-alert--danger">
+          {error}
+        </div>
+      ) : null}
+
+      <hr className="ds-divider" />
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="ds-help max-w-[48ch]">Access can be revoked from the roster below.</p>
+        <button className="ds-btn ds-btn-primary sm:shrink-0" disabled={isPending}>
+          {isPending ? "Inviting…" : "Invite member"}
+        </button>
+      </div>
     </form>
   );
 }

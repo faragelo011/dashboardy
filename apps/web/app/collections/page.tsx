@@ -36,19 +36,17 @@ export default async function CollectionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#06080A] text-[#F0F2F5] font-sans selection:bg-[#D4AF37]/30 selection:text-[#D4AF37]">
+    <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNav />
-      <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
-        <header className="flex flex-col gap-6 border-b border-white/10 pb-12 max-w-3xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#D4AF37]">
-            Saved questions
-          </p>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-white tracking-tight font-light leading-none">
+      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-14">
+        <header className="max-w-3xl space-y-3 border-b border-border-1 pb-8">
+          <p className="ds-kicker">Saved questions</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
             Collections
           </h1>
-          <p className="text-sm text-[#A0AAB2] font-light leading-relaxed max-w-[60ch]">
+          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-muted">
             Organize reusable questions into flat collections for{" "}
-            <span className="text-white">{me.current_workspace.workspace_name}</span>.
+            <span className="font-medium text-ink">{me.current_workspace.workspace_name}</span>.
             {canEdit
               ? " Authors can create, rename, reorder, and delete empty collections."
               : " You can browse collections granted to your role."}
@@ -56,21 +54,19 @@ export default async function CollectionsPage() {
         </header>
 
         {loadError ? (
-          <p className="text-sm text-[#EF4444]" role="alert">
-            {loadError}
-          </p>
+          <p className="text-sm text-danger-ink" role="alert">{loadError}</p>
         ) : null}
 
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <CollectionCreateForm workspaceId={workspaceId} canEdit={canEdit} />
           <section>
-            <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#5C6A7A] mb-6">
+            <h2 className="mb-4 text-sm font-medium text-ink-muted">
               Active collections ({collections.length})
             </h2>
             {collections.length === 0 ? (
-              <p className="text-sm text-[#A0AAB2]">No collections yet.</p>
+              <p className="ds-help">No collections yet.</p>
             ) : (
-              <ul className="flex flex-col gap-6">
+              <ul className="flex flex-col gap-3">
                 {collections.map((collection) => (
                   <CollectionRow
                     key={collection.id}

@@ -3,7 +3,7 @@
 import type { ParameterDefinition, ParameterType } from "@dashboardy/types";
 
 const fieldClass =
-  "w-full bg-[#0B0F15] border border-white/10 px-3 py-2 text-[#F0F2F5] text-[13px] focus:outline-none focus:border-[#D4AF37]/50 rounded-sm";
+  "w-full bg-[#111827] border border-white/10 px-3 py-2 text-[#F8FAFC] text-[13px] focus:outline-none focus:border-[#6366F1]/50 rounded-sm";
 
 const types: ParameterType[] = ["string", "number", "boolean", "date"];
 
@@ -72,13 +72,13 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-4">
-        <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">
+        <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
           Parameters
         </span>
         <button
           type="button"
           disabled={disabled}
-          className="text-[10px] uppercase tracking-[0.15em] text-[#D4AF37] hover:text-[#FBE398] disabled:opacity-50"
+          className="text-[10px] uppercase tracking-[0.15em] text-[#6366F1] hover:text-[#818CF8] disabled:opacity-50"
           onClick={() =>
             onChange([
               ...value,
@@ -91,7 +91,7 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
       </div>
 
       {value.length === 0 ? (
-        <p className="text-xs text-[#5C6A7A]">No parameters declared.</p>
+        <p className="text-xs text-[#374151]">No parameters declared.</p>
       ) : null}
 
       {value.map((row, index) => {
@@ -102,7 +102,7 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
             className="grid gap-3 border border-white/10 p-4 sm:grid-cols-2"
           >
             <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Name</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Name</span>
               <input
                 className={fieldClass}
                 value={row.name}
@@ -115,7 +115,7 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
               ) : null}
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Type</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Type</span>
               <select
                 className={fieldClass}
                 value={row.type}
@@ -138,10 +138,10 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
                 disabled={disabled}
                 onChange={(e) => updateRow(index, { required: e.target.checked })}
               />
-              <span className="text-xs text-[#A0AAB2]">Required</span>
+              <span className="text-xs text-[#94A3B8]">Required</span>
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Label</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Label</span>
               <input
                 className={fieldClass}
                 value={row.label ?? ""}
@@ -150,7 +150,7 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#5C6A7A]">Default</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Default</span>
               {row.type === "boolean" ? (
                 <select
                   className={fieldClass}
