@@ -169,7 +169,7 @@ async def test_widget_disabled_before_parser_or_snowflake(
             )
 
         assert excinfo.value.status_code == 403
-        assert excinfo.value.detail["error_code"] == "feature_not_available"
+        assert excinfo.value.detail["error_code"] == "authz_denied"
         audit = await _latest_audit(session, tenancy.tenant_id)
         assert audit.status == ExecutionStatus.authz_denied
-        assert audit.error_code == "feature_not_available"
+        assert audit.error_code == "authz_denied"

@@ -14,6 +14,7 @@ from app.middleware import CorrelationIdMiddleware
 from app.routes import (
     auth_router,
     connections_router,
+    dashboards_router,
     me_router,
     query_router,
     questions_router,
@@ -129,4 +130,5 @@ app.include_router(workspaces_router)
 app.include_router(connections_router)
 app.include_router(query_router)
 app.include_router(questions_router, prefix="/workspaces/{workspace_id}")
+app.include_router(dashboards_router, prefix="/workspaces/{workspace_id}")
 app.include_router(admin_router)

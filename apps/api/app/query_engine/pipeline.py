@@ -34,7 +34,7 @@ from app.query_engine.hashing import (
     bound_parameters_projection_hash,
     canonical_sql_sha256,
 )
-from app.query_engine.modal_sql_resolve import resolve_modal_sql
+from app.query_engine.modal_sql_resolve import WidgetSqlResolveError, resolve_modal_sql
 from app.query_engine.parameter_binding import (
     ParameterBindingError,
     prepare_adhoc_sql_hashes,
@@ -137,6 +137,7 @@ async def execute_workspace_query(
     connection_service: ConnectionService,
     settings: Settings | None = None,
     allow_saved_question_execution: bool = False,
+    allow_widget_execution: bool = False,
 ) -> QueryExecuteSuccessResponse:
     cfg = settings or get_settings()
     t0 = time.perf_counter()
@@ -165,6 +166,7 @@ async def execute_workspace_query(
         cache_hit: bool,
         audit_sq_id: UUID | None,
         audit_dash_id: UUID | None,
+        audit_widget_id: UUID | None = None,
     ) -> None:
         await insert_audit_log(
             session,
@@ -175,6 +177,7 @@ async def execute_workspace_query(
                 connection_id=connection_id,
                 saved_question_id=audit_sq_id,
                 dashboard_id=audit_dash_id,
+                widget_id=audit_widget_id,
                 sql_hash=sql_hash,
                 bound_parameters_hash=bound_hash,
                 row_count=row_count,
@@ -210,7 +213,32 @@ async def execute_workspace_query(
                 "message": "Saved question execution must use the questions API.",
             },
         )
-    if not perm.allowed and not isinstance(payload, SavedQuestionQueryExecuteRequest):
+    if isinstance(payload, WidgetQueryExecuteRequest) and not allow_widget_execution:
+        await _audit(
+            connection_id=None,
+            sql_hash=_STRUCTURAL_SQL_HASH,
+            bound_hash=bound_parameters_projection_hash(payload.parameters),
+            row_count=0,
+            bytes_scanned=None,
+            exec_status=ExecutionStatus.authz_denied,
+            error_code="authz_denied",
+            cache_hit=False,
+            audit_sq_id=payload.saved_question_id,
+            audit_dash_id=payload.dashboard_id,
+            audit_widget_id=payload.widget_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error_code": "authz_denied",
+                "message": "Widget execution must use the dashboards API.",
+            },
+        )
+    asset_execution_allowed = (
+        isinstance(payload, SavedQuestionQueryExecuteRequest)
+        and allow_saved_question_execution
+    ) or (isinstance(payload, WidgetQueryExecuteRequest) and allow_widget_execution)
+    if not perm.allowed and not asset_execution_allowed:
         await _audit(
             connection_id=None,
             sql_hash=_STRUCTURAL_SQL_HASH,
@@ -260,6 +288,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=None,
             audit_dash_id=getattr(payload, "dashboard_id", None),
+            audit_widget_id=getattr(payload, "widget_id", None),
         )
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -309,13 +338,14 @@ async def execute_workspace_query(
         filter_state_hash = payload.filter_state_hash
     else:
         assert isinstance(payload, WidgetQueryExecuteRequest)
-        resolved = await resolve_modal_sql(
-            session,
-            tenant_id=tenancy.tenant_id,
-            workspace_id=tenancy.workspace_id,
-            payload=payload,
-        )
-        if resolved is None:
+        try:
+            resolved = await resolve_modal_sql(
+                session,
+                tenant_id=tenancy.tenant_id,
+                workspace_id=tenancy.workspace_id,
+                payload=payload,
+            )
+        except WidgetSqlResolveError as exc:
             sh, ph = _stub_mode_hashes("widget", payload.parameters)
             await _audit(
                 connection_id=None,
@@ -324,18 +354,19 @@ async def execute_workspace_query(
                 row_count=0,
                 bytes_scanned=None,
                 exec_status=ExecutionStatus.authz_denied,
-                error_code="feature_not_available",
+                error_code=exc.error_code,
                 cache_hit=False,
                 audit_sq_id=payload.saved_question_id,
                 audit_dash_id=payload.dashboard_id,
+                audit_widget_id=payload.widget_id,
             )
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail={
-                    "error_code": "feature_not_available",
-                    "message": "Widget execution is not available yet.",
+                    "error_code": exc.error_code,
+                    "message": exc.message,
                 },
-            )
+            ) from exc
         mode_for_cache = QueryMode.widget.value
         sql_text, parameters = resolved
         cacheable = True
@@ -364,6 +395,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -381,6 +413,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -404,6 +437,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -421,6 +455,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -439,6 +474,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -482,8 +518,14 @@ async def execute_workspace_query(
                 isinstance(payload, SavedQuestionQueryExecuteRequest)
                 and allow_saved_question_execution
             )
+            widget_hit_allowed = (
+                isinstance(payload, WidgetQueryExecuteRequest)
+                and allow_widget_execution
+            )
             cache_reuse_denied = (
-                not saved_question_hit_allowed and not perm_hit.allowed
+                not saved_question_hit_allowed
+                and not widget_hit_allowed
+                and not perm_hit.allowed
             ) or not mod_hit.allowed
             if cache_reuse_denied:
                 await _audit(
@@ -497,6 +539,7 @@ async def execute_workspace_query(
                     cache_hit=False,
                     audit_sq_id=saved_question_id,
                     audit_dash_id=dashboard_id,
+                    audit_widget_id=widget_id,
                 )
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
@@ -527,6 +570,7 @@ async def execute_workspace_query(
                     cache_hit=True,
                     audit_sq_id=saved_question_id,
                     audit_dash_id=dashboard_id,
+                    audit_widget_id=widget_id,
                 )
                 return resp
 
@@ -551,6 +595,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -571,6 +616,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
@@ -592,6 +638,7 @@ async def execute_workspace_query(
             cache_hit=False,
             audit_sq_id=saved_question_id,
             audit_dash_id=dashboard_id,
+            audit_widget_id=widget_id,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -618,6 +665,7 @@ async def execute_workspace_query(
         cache_hit=False,
         audit_sq_id=saved_question_id,
         audit_dash_id=dashboard_id,
+        audit_widget_id=widget_id,
     )
 
     if (

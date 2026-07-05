@@ -87,6 +87,7 @@ class QueryAuditLog(Base):
     )
     saved_question_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     dashboard_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
+    widget_id: Mapped[uuid.UUID | None] = mapped_column(PG_UUID(as_uuid=True))
     sql_hash: Mapped[str] = mapped_column(CHAR(64), nullable=False)
     bound_parameters_hash: Mapped[str] = mapped_column(CHAR(64), nullable=False)
     row_count: Mapped[int] = mapped_column(Integer, nullable=False)
