@@ -166,7 +166,7 @@ def can_clone_dashboard(
     actor_role: MembershipRole,
     source_collection_grant: CollectionPermission | None,
     source_dashboard_grant: CollectionPermission | None,
-    target_collection_grant: CollectionPermission | None,
+    target_collection_grant: CollectionPermission | None,  # noqa: ARG001 — wired in T076
 ) -> DashboardsAuthzDecision:
     if not internal_author_has_implicit_edit(actor_role):
         return DashboardsAuthzDecision(False, PermissionReason.grant_required)
@@ -179,15 +179,6 @@ def can_clone_dashboard(
     if not source_view.allowed:
         return DashboardsAuthzDecision(False, source_view.reason)
 
-    if internal_author_has_implicit_edit(actor_role):
-        target_allowed = True
-    elif target_collection_grant == CollectionPermission.edit:
-        target_allowed = True
-    else:
-        target_allowed = False
-
-    if not target_allowed:
-        return DashboardsAuthzDecision(False, PermissionReason.grant_required)
     return DashboardsAuthzDecision(True, PermissionReason.allowed)
 
 

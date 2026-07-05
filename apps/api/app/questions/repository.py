@@ -226,15 +226,14 @@ async def count_active_dashboards_by_collection(
     workspace_id: UUID,
     collection_id: UUID,
 ) -> int:
-    from app.models.dashboards import Dashboard
+    from app.dashboards import repository as dashboards_repository
 
-    stmt = select(func.count()).select_from(Dashboard).where(
-        Dashboard.tenant_id == tenant_id,
-        Dashboard.workspace_id == workspace_id,
-        Dashboard.collection_id == collection_id,
-        Dashboard.deleted_at.is_(None),
+    return await dashboards_repository.count_active_dashboards_by_collection(
+        session,
+        tenant_id=tenant_id,
+        workspace_id=workspace_id,
+        collection_id=collection_id,
     )
-    return int((await session.execute(stmt)).scalar_one())
 
 
 async def list_active_saved_questions(

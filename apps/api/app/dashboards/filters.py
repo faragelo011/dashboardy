@@ -82,15 +82,25 @@ def compute_filter_state_hash(
     widget_bindings: dict[str, str],
     filter_overrides: dict[str, Any],
 ) -> str:
-    """Stable hash for widget cache identity when filter state changes."""
+    """Stable hash for widget cache identity when bound filter state changes."""
+
+    bound_filter_ids = set(widget_bindings) | set(filter_overrides)
+    defaults = {
+        item.id: item.default_value
+        for item in global_filters
+        if item.id in bound_filter_ids
+    }
+    scoped_values = {
+        key: value
+        for key, value in global_filter_values.items()
+        if key in bound_filter_ids
+    }
 
     payload = {
-        "global_filter_values": _canonicalize(global_filter_values),
+        "global_filter_values": _canonicalize(scoped_values),
         "widget_bindings": _canonicalize(widget_bindings),
         "filter_overrides": _canonicalize(filter_overrides),
-        "global_filter_defaults": _canonicalize(
-            {item.id: item.default_value for item in global_filters},
-        ),
+        "global_filter_defaults": _canonicalize(defaults),
     }
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str)
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()

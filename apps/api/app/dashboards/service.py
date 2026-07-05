@@ -9,142 +9,63 @@ class DashboardServiceError(Exception):
     """Base error for dashboard domain operations."""
 
     error_code: str
+    default_message: str
 
     def __init__(
         self,
-        message: str,
+        message: str | None = None,
         *,
-        error_code: str,
         details: dict[str, Any] | None = None,
     ) -> None:
-        super().__init__(message)
-        self.error_code = error_code
+        super().__init__(message if message is not None else self.default_message)
         self.details = details
 
 
 class DuplicateDashboardTitleError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "A dashboard with this title already exists in the collection.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="duplicate_dashboard_title",
-            details=details,
-        )
+    error_code = "duplicate_dashboard_title"
+    default_message = "A dashboard with this title already exists in the collection."
 
 
 class DashboardNotFoundError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Dashboard not found.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message, error_code="dashboard_not_found", details=details)
+    error_code = "dashboard_not_found"
+    default_message = "Dashboard not found."
 
 
 class WidgetNotFoundError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Widget not found.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message, error_code="widget_not_found", details=details)
+    error_code = "widget_not_found"
+    default_message = "Widget not found."
 
 
 class StaleUpdateError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "The dashboard changed since it was loaded.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(message, error_code="stale_update", details=details)
+    error_code = "stale_update"
+    default_message = "The dashboard changed since it was loaded."
 
 
 class InvalidFilterBindingsError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Invalid dashboard filter bindings.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="invalid_filter_bindings",
-            details=details,
-        )
+    error_code = "invalid_filter_bindings"
+    default_message = "Invalid dashboard filter bindings."
 
 
 class WidgetLocalFilterForbiddenError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Widget-local-only filters are not permitted.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="widget_local_filter_forbidden",
-            details=details,
-        )
+    error_code = "widget_local_filter_forbidden"
+    default_message = "Widget-local-only filters are not permitted."
 
 
 class InvalidParametersError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Invalid parameters.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="invalid_parameters",
-            details=details,
-        )
+    error_code = "invalid_parameters"
+    default_message = "Invalid parameters."
 
 
 class ExportNotPermittedError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Export is not permitted for this dashboard widget.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="export_not_permitted",
-            details=details,
-        )
+    error_code = "export_not_permitted"
+    default_message = "Export is not permitted for this dashboard widget."
 
 
 class CollectionNotEmptyError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Collection contains active dashboards.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="collection_not_empty",
-            details=details,
-        )
+    error_code = "collection_not_empty"
+    default_message = "Collection contains active dashboards."
 
 
 class UnsupportedWidgetTypeError(DashboardServiceError):
-    def __init__(
-        self,
-        message: str = "Unsupported widget type.",
-        *,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        super().__init__(
-            message,
-            error_code="unsupported_widget_type",
-            details=details,
-        )
+    error_code = "unsupported_widget_type"
+    default_message = "Unsupported widget type."

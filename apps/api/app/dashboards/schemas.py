@@ -245,6 +245,8 @@ def clamp_widget_ttl_seconds(
     raw = widget_config.get("ttl_seconds")
     if raw is None:
         return ceiling
+    if isinstance(raw, bool):
+        return ceiling
     try:
         requested = int(raw)
     except (TypeError, ValueError):

@@ -271,9 +271,6 @@ async def execute_workspace_query(
         if mode_value == QueryMode.saved_question.value:
             error_code = "saved_question_not_implemented"
             message = "Saved question execution is not available yet."
-        elif mode_value == QueryMode.widget.value:
-            error_code = "feature_not_available"
-            message = "Widget execution is not available yet."
         else:
             error_code = "authz_denied"
             message = "Query execution is not permitted for this modality."

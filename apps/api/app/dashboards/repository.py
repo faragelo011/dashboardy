@@ -174,7 +174,18 @@ async def soft_delete_dashboard(
     workspace_id: UUID,
     dashboard_id: UUID,
 ) -> bool:
-    stmt = (
+    now = _utcnow()
+    await session.execute(
+        update(DashboardWidget)
+        .where(
+            DashboardWidget.tenant_id == tenant_id,
+            DashboardWidget.workspace_id == workspace_id,
+            DashboardWidget.dashboard_id == dashboard_id,
+            _active_widget_clause(),
+        )
+        .values(deleted_at=now, updated_at=now)
+    )
+    result = await session.execute(
         update(Dashboard)
         .where(
             Dashboard.tenant_id == tenant_id,
@@ -182,9 +193,8 @@ async def soft_delete_dashboard(
             Dashboard.id == dashboard_id,
             _active_dashboard_clause(),
         )
-        .values(deleted_at=_utcnow(), updated_at=_utcnow())
+        .values(deleted_at=now, updated_at=now)
     )
-    result = await session.execute(stmt)
     await session.flush()
     return result.rowcount > 0
 
