@@ -406,6 +406,7 @@ components:
         - widget_type
         - layout
         - config
+        - filter_bindings
         - has_active_overrides
         - can_export
       properties:
@@ -423,6 +424,11 @@ components:
         config:
           type: object
           additionalProperties: true
+        filter_bindings:
+          type: object
+          additionalProperties:
+            type: string
+          description: Maps global filter id to saved-question parameter name (needed for bound-only auto-refresh in viewer).
         has_active_overrides:
           type: boolean
         can_export:

@@ -22,6 +22,45 @@ def _global_filter_ids(global_filters: list[GlobalFilter]) -> set[str]:
     return {item.id for item in global_filters}
 
 
+def validate_global_filters(global_filters: list[GlobalFilter]) -> None:
+    """Reject duplicate ids and blank labels."""
+
+    seen: set[str] = set()
+    for item in global_filters:
+        if not item.label.strip():
+            raise FilterValidationError(
+                "invalid_parameters",
+                "Global filter label must not be blank.",
+            )
+        if not item.id.strip():
+            raise FilterValidationError(
+                "invalid_parameters",
+                "Global filter id must not be blank.",
+            )
+        if item.id in seen:
+            raise FilterValidationError(
+                "invalid_parameters",
+                f"Duplicate global filter id: {item.id!r}.",
+            )
+        seen.add(item.id)
+
+
+def validate_global_filter_values(
+    *,
+    global_filters: list[GlobalFilter],
+    global_filter_values: dict[str, Any],
+) -> None:
+    """Reject runtime values that reference undeclared global filters."""
+
+    known = _global_filter_ids(global_filters)
+    unknown = set(global_filter_values) - known
+    if unknown:
+        raise FilterValidationError(
+            "invalid_filter_bindings",
+            f"Unknown global filter value ids: {sorted(unknown)}",
+        )
+
+
 def validate_bindings_reference_global_filters(
     *,
     global_filters: list[GlobalFilter],

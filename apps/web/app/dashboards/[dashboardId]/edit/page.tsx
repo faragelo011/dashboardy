@@ -3,8 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
 import { getDashboard } from "@/app/lib/dashboards-api";
-import { listCollections, listSavedQuestions } from "@/app/lib/questions-api";
+import { getSavedQuestion, listCollections, listSavedQuestions } from "@/app/lib/questions-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
+import type { ParameterDefinition, SavedQuestionInternalDetail } from "@dashboardy/types";
 
 import { DashboardBuilder } from "../dashboard-builder";
 
@@ -50,6 +51,21 @@ export default async function DashboardEditPage({ params }: PageProps) {
     redirect(`/dashboards/${dashboardId}`);
   }
 
+  const questionIds = Array.from(
+    new Set(dashboard.widgets.map((w) => w.saved_question_id)),
+  );
+  const questionDetails = await Promise.all(
+    questionIds.map((id) => getSavedQuestion(token, workspaceId, id)),
+  );
+  const questionParametersById: Record<string, ParameterDefinition[]> = {};
+  for (const detail of questionDetails) {
+    if (detail.detail_level === "internal") {
+      questionParametersById[detail.id] = (
+        detail as SavedQuestionInternalDetail
+      ).parameters;
+    }
+  }
+
   const editableCollections = collectionsResp.collections.filter(
     (c) => c.permission === "edit",
   );
@@ -70,6 +86,7 @@ export default async function DashboardEditPage({ params }: PageProps) {
           initial={dashboard}
           collections={editableCollections}
           questions={questionsResp.questions}
+          questionParametersById={questionParametersById}
         />
       </div>
     </div>

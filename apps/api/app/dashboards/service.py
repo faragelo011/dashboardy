@@ -13,6 +13,8 @@ from app.dashboards.filters import (
     compute_filter_state_hash,
     merge_widget_parameters,
     validate_bindings_reference_global_filters,
+    validate_global_filter_values,
+    validate_global_filters,
 )
 from app.dashboards.schemas import (
     ColumnDescriptor,
@@ -155,7 +157,16 @@ def _map_filter_error(exc: FilterValidationError) -> DashboardServiceError:
         return InvalidFilterBindingsError(str(exc))
     if exc.error_code == "widget_local_filter_forbidden":
         return WidgetLocalFilterForbiddenError(str(exc))
+    if exc.error_code == "invalid_parameters":
+        return InvalidParametersError(str(exc))
     return InvalidParametersError(str(exc))
+
+
+def _validate_definition_global_filters(definition: DashboardDefinition) -> None:
+    try:
+        validate_global_filters(definition.global_filters)
+    except FilterValidationError as exc:
+        raise _map_filter_error(exc) from exc
 
 
 def _widget_execute_response(
@@ -427,6 +438,7 @@ class DashboardService:
             widget_type=WidgetType(row.widget_type),
             layout=WidgetLayout.model_validate(row.layout),
             config=row.config or {},
+            filter_bindings=row.filter_bindings or {},
             has_active_overrides=False,
             can_export=self._widget_can_export(
                 widget_type=row.widget_type,
@@ -669,6 +681,7 @@ class DashboardService:
             title=title,
         )
         definition = payload.definition or _default_definition()
+        _validate_definition_global_filters(definition)
         widgets = payload.widgets or []
         await self._validate_widget_inputs(
             session,
@@ -740,6 +753,7 @@ class DashboardService:
             if payload.definition is not None
             else _definition_from_row(dashboard)
         )
+        _validate_definition_global_filters(definition)
 
         if payload.title is not None or payload.collection_id is not None:
             await self._assert_unique_title(
@@ -882,6 +896,10 @@ class DashboardService:
         definition = _definition_from_row(dashboard)
         global_filters = definition.global_filters
         try:
+            validate_global_filter_values(
+                global_filters=global_filters,
+                global_filter_values=payload.global_filter_values,
+            )
             merged = merge_widget_parameters(
                 global_filters,
                 payload.global_filter_values,

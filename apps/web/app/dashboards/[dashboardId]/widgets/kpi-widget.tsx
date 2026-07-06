@@ -1,8 +1,8 @@
 "use client";
 
-import type { WidgetExecuteResponse } from "@dashboardy/types";
+import type { FilterValue, WidgetExecuteResponse } from "@dashboardy/types";
 
-import { useWidgetExecute } from "./use-widget-execute";
+import { WidgetChrome } from "./widget-chrome";
 
 type KpiWidgetProps = {
   accessToken: string;
@@ -10,6 +10,8 @@ type KpiWidgetProps = {
   dashboardId: string;
   widgetId: string;
   title?: string | null;
+  filterBindings?: Record<string, string>;
+  globalFilterValues?: Record<string, FilterValue>;
 };
 
 function scalarFromResult(data: WidgetExecuteResponse | null): string | null {
@@ -29,33 +31,43 @@ export function KpiWidget({
   dashboardId,
   widgetId,
   title,
+  filterBindings,
+  globalFilterValues,
 }: KpiWidgetProps) {
-  const { loading, error, data } = useWidgetExecute(
-    accessToken,
-    workspaceId,
-    dashboardId,
-    widgetId,
-  );
-  const value = scalarFromResult(data);
-
   return (
-    <div className="flex h-full flex-col gap-2 rounded-lg border border-border-1 bg-surface-1 p-4">
-      {title ? (
-        <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
-          {title}
-        </p>
-      ) : null}
-      {loading ? (
-        <p className="text-sm text-ink-muted">Loading…</p>
-      ) : error ? (
-        <p className="text-sm text-danger-ink" role="alert">
-          {error}
-        </p>
-      ) : value === null ? (
-        <p className="text-sm text-ink-muted">No data</p>
-      ) : (
-        <p className="text-3xl font-semibold tabular-nums text-ink-strong">{value}</p>
-      )}
-    </div>
+    <WidgetChrome
+      accessToken={accessToken}
+      workspaceId={workspaceId}
+      dashboardId={dashboardId}
+      widgetId={widgetId}
+      filterBindings={filterBindings}
+      globalFilterValues={globalFilterValues}
+    >
+      {({ loading, error, data }) => {
+        const value = scalarFromResult(data);
+        return (
+          <div className="flex h-full flex-col gap-2 rounded-lg border border-border-1 bg-surface-1 p-4">
+            {title ? (
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+                {title}
+              </p>
+            ) : null}
+            {loading ? (
+              <p className="text-sm text-ink-muted">Loading…</p>
+            ) : error ? (
+              <p className="text-sm text-danger-ink" role="alert">
+                {error}
+              </p>
+            ) : value === null ? (
+              <p className="text-sm text-ink-muted">No data</p>
+            ) : (
+              <p className="text-3xl font-semibold tabular-nums text-ink-strong">
+                {value}
+              </p>
+            )}
+          </div>
+        );
+      }}
+    </WidgetChrome>
   );
 }

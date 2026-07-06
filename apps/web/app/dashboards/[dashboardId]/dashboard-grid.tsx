@@ -6,6 +6,9 @@ import type {
   DashboardWidget,
   DashboardWidgetConsumer,
   DashboardWidgetCreateInput,
+  FilterValue,
+  GlobalFilter,
+  ParameterDefinition,
   SavedQuestionSummary,
   WidgetLayout,
 } from "@dashboardy/types";
@@ -24,6 +27,9 @@ type DashboardGridProps = {
   widgets: (DashboardWidget | DashboardWidgetConsumer | EditableWidget)[];
   mode?: "view" | "edit";
   questions?: SavedQuestionSummary[];
+  globalFilters?: GlobalFilter[];
+  globalFilterValues?: Record<string, FilterValue>;
+  questionParametersById?: Record<string, ParameterDefinition[]>;
   onWidgetsChange?: (widgets: EditableWidget[]) => void;
 };
 
@@ -37,24 +43,38 @@ function layoutStyle(layout: WidgetLayout): CSSProperties {
   };
 }
 
+function widgetBindings(
+  widget: DashboardWidget | DashboardWidgetConsumer | EditableWidget,
+): Record<string, string> {
+  if ("filter_bindings" in widget && widget.filter_bindings) {
+    return widget.filter_bindings;
+  }
+  return {};
+}
+
 function WidgetBody({
   accessToken,
   workspaceId,
   dashboardId,
   widget,
+  globalFilterValues = {},
 }: {
   accessToken: string;
   workspaceId: string;
   dashboardId: string;
   widget: DashboardWidget | DashboardWidgetConsumer;
+  globalFilterValues?: Record<string, FilterValue>;
 }) {
   const id = widget.id;
+  const bindings = widgetBindings(widget);
   const common = {
     accessToken,
     workspaceId,
     dashboardId,
     widgetId: id,
     title: widget.title,
+    filterBindings: bindings,
+    globalFilterValues,
   };
   switch (widget.widget_type) {
     case "kpi":
@@ -81,6 +101,9 @@ export function DashboardGrid({
   widgets,
   mode = "view",
   questions = [],
+  globalFilters = [],
+  globalFilterValues = {},
+  questionParametersById = {},
   onWidgetsChange,
 }: DashboardGridProps) {
   const [draftType, setDraftType] = useState<"kpi" | "bar" | "line" | "table">("kpi");
@@ -189,6 +212,27 @@ export function DashboardGrid({
       y: Math.max(0, widget.layout.y + dy),
     };
     updateWidget(index, { ...widget, layout: nextLayout } as EditableWidget);
+  };
+
+  const setBinding = (
+    index: number,
+    globalFilterId: string,
+    parameterName: string,
+  ) => {
+    const widget = widgets[index];
+    if (!widget || !onWidgetsChange) {
+      return;
+    }
+    const nextBindings = { ...widgetBindings(widget) };
+    if (parameterName) {
+      nextBindings[globalFilterId] = parameterName;
+    } else {
+      delete nextBindings[globalFilterId];
+    }
+    updateWidget(index, {
+      ...widget,
+      filter_bindings: nextBindings,
+    } as EditableWidget);
   };
 
   const maxRow = widgets.reduce(
@@ -304,12 +348,44 @@ export function DashboardGrid({
                   </button>
                 </div>
               ) : null}
+              {mode === "edit" && globalFilters.length > 0 && "saved_question_id" in widget ? (
+                <div className="absolute left-2 top-2 z-10 max-w-[calc(100%-5rem)] rounded bg-surface-2/95 p-2 text-[10px]">
+                  <p className="mb-1 font-medium text-ink-muted">Filter bindings</p>
+                  <div className="flex flex-col gap-1">
+                    {globalFilters.map((gf) => {
+                      const questionId =
+                        "saved_question_id" in widget ? widget.saved_question_id : "";
+                      const params = questionParametersById[questionId] ?? [];
+                      return (
+                        <label key={gf.id} className="flex items-center gap-1">
+                          <span className="w-16 truncate">{gf.label}</span>
+                          <select
+                            className="ds-input py-0.5 text-[10px]"
+                            value={widgetBindings(widget)[gf.id] ?? ""}
+                            onChange={(e) =>
+                              setBinding(index, gf.id, e.target.value)
+                            }
+                          >
+                            <option value="">—</option>
+                            {params.map((p) => (
+                              <option key={p.name} value={p.name}>
+                                {p.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
               {hasId ? (
                 <WidgetBody
                   accessToken={accessToken}
                   workspaceId={workspaceId}
                   dashboardId={dashboardId}
                   widget={widget as DashboardWidget | DashboardWidgetConsumer}
+                  globalFilterValues={globalFilterValues}
                 />
               ) : (
                 <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border-2 bg-surface-1 p-4 text-sm text-ink-muted">
