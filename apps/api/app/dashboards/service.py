@@ -403,6 +403,27 @@ class DashboardService:
     ) -> bool:
         return export_allowed and widget_type == WidgetType.table.value
 
+    def _widget_shared_fields(
+        self,
+        row: DashboardWidgetRow,
+        *,
+        global_filters: list[GlobalFilter],
+        export_allowed: bool,
+    ) -> dict[str, object]:
+        overrides = row.filter_overrides or {}
+        return {
+            "filter_bindings": row.filter_bindings or {},
+            "filter_overrides": overrides,
+            "has_active_overrides": widget_has_active_overrides(
+                global_filters=global_filters,
+                filter_overrides=overrides,
+            ),
+            "can_export": self._widget_can_export(
+                widget_type=row.widget_type,
+                export_allowed=export_allowed,
+            ),
+        }
+
     def _widget_editor_dto(
         self,
         row: DashboardWidgetRow,
@@ -410,7 +431,11 @@ class DashboardService:
         global_filters: list[GlobalFilter],
         export_allowed: bool,
     ) -> DashboardWidget:
-        overrides = row.filter_overrides or {}
+        shared = self._widget_shared_fields(
+            row,
+            global_filters=global_filters,
+            export_allowed=export_allowed,
+        )
         return DashboardWidget(
             id=row.id,
             title=row.title,
@@ -418,16 +443,7 @@ class DashboardService:
             saved_question_id=row.saved_question_id,
             layout=WidgetLayout.model_validate(row.layout),
             config=row.config or {},
-            filter_bindings=row.filter_bindings or {},
-            filter_overrides=overrides,
-            has_active_overrides=widget_has_active_overrides(
-                global_filters=global_filters,
-                filter_overrides=overrides,
-            ),
-            can_export=self._widget_can_export(
-                widget_type=row.widget_type,
-                export_allowed=export_allowed,
-            ),
+            **shared,
         )
 
     def _widget_consumer_dto(
@@ -437,23 +453,18 @@ class DashboardService:
         global_filters: list[GlobalFilter],
         export_allowed: bool,
     ) -> DashboardWidgetConsumer:
-        overrides = row.filter_overrides or {}
+        shared = self._widget_shared_fields(
+            row,
+            global_filters=global_filters,
+            export_allowed=export_allowed,
+        )
         return DashboardWidgetConsumer(
             id=row.id,
             title=row.title,
             widget_type=WidgetType(row.widget_type),
             layout=WidgetLayout.model_validate(row.layout),
             config=row.config or {},
-            filter_bindings=row.filter_bindings or {},
-            filter_overrides=overrides,
-            has_active_overrides=widget_has_active_overrides(
-                global_filters=global_filters,
-                filter_overrides=overrides,
-            ),
-            can_export=self._widget_can_export(
-                widget_type=row.widget_type,
-                export_allowed=export_allowed,
-            ),
+            **shared,
         )
 
     async def _editor_detail(

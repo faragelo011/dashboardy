@@ -437,10 +437,7 @@ components:
         filter_overrides:
           type: object
           additionalProperties:
-            oneOf:
-              - type: string
-              - type: number
-              - type: boolean
+            $ref: "#/components/schemas/FilterValue"
           description: |
             Per-widget override values for declared global filters. Exposed to
             consumers for visible override indicators; not widget-local-only keys.

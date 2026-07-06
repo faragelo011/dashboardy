@@ -166,13 +166,6 @@ def test_viewer_gets_consumer_detail_without_authoring_fields(
         assert created.status_code == 201
         dashboard_id = created.json()["id"]
 
-        monkeypatch.setattr(
-            "app.auth_context.dependencies.decode_supabase_jwt",
-            lambda _t: {
-                "sub": str(seeded.viewer_user_id),
-                "email": "viewer@example.com",
-            },
-        )
         viewer_headers = _headers(
             monkeypatch,
             seeded.viewer_user_id,

@@ -421,7 +421,7 @@ export function DashboardGrid({
                               ))}
                             </select>
                           </label>
-                          {boundParameter ? (
+                          {boundParameter || gf.id in widgetOverrides(widget) ? (
                             <label className="flex items-center gap-1 pl-16">
                               <span className="w-16 truncate text-ink-muted">Override</span>
                               {filterInputForType(
