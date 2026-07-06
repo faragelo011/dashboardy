@@ -103,7 +103,12 @@ function WidgetBody({
     case "line":
       return <LineWidget {...common} />;
     case "table":
-      return <TableWidget {...common} />;
+      return (
+        <TableWidget
+          {...common}
+          canExport={"can_export" in widget ? widget.can_export : false}
+        />
+      );
     default:
       return (
         <div className="rounded-lg border border-border-1 p-4 text-sm text-ink-muted">

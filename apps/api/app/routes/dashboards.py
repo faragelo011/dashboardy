@@ -13,10 +13,13 @@ Route groups from specs/006-dashboard-builder/contracts/dashboards.openapi.yaml:
 
 from __future__ import annotations
 
+import json
 from typing import Annotated, NoReturn
+from urllib.parse import unquote
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth_context.context import VerifiedSupabaseUser
@@ -27,6 +30,7 @@ from app.dashboards.schemas import (
     DashboardEditorDetail,
     DashboardListResponse,
     DashboardUpdateRequest,
+    FilterStateExport,
     WidgetExecuteRequest,
     WidgetExecuteResponse,
 )
@@ -46,7 +50,7 @@ def _forbidden(*, error_code: str, message: str) -> NoReturn:
 
 def _map_service_error(exc: DashboardServiceError) -> NoReturn:
     code = exc.error_code
-    if code == "authz_denied":
+    if code in {"authz_denied", "export_not_permitted"}:
         _forbidden(error_code=code, message=str(exc))
     if code in {"dashboard_not_found", "widget_not_found"}:
         raise HTTPException(
@@ -71,6 +75,7 @@ def _map_service_error(exc: DashboardServiceError) -> NoReturn:
         "invalid_filter_bindings",
         "widget_local_filter_forbidden",
         "unsupported_widget_type",
+        "export_execution_refused",
     }:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -84,6 +89,38 @@ def _map_service_error(exc: DashboardServiceError) -> NoReturn:
         status_code=status.HTTP_400_BAD_REQUEST,
         detail={"error_code": code, "message": str(exc), "details": exc.details},
     ) from exc
+
+
+def _parse_filter_state(raw: str) -> FilterStateExport:
+    if len(raw) > 2048:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": "invalid_parameters",
+                "message": "filter_state exceeds maximum length.",
+            },
+        )
+    try:
+        payload = json.loads(unquote(raw))
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": "invalid_parameters",
+                "message": "filter_state must be URL-encoded JSON.",
+            },
+        ) from exc
+    try:
+        return FilterStateExport.model_validate(payload)
+    except ValidationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": "invalid_parameters",
+                "message": "filter_state is invalid.",
+                "details": exc.errors(),
+            },
+        ) from exc
 
 
 @router.get("/dashboards", response_model=DashboardListResponse)
@@ -243,3 +280,50 @@ async def execute_dashboard_widget(
         raise
     await session.commit()
     return result
+
+
+@router.get(
+    "/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv",
+)
+async def export_dashboard_widget_csv(
+    workspace_id: UUID,
+    dashboard_id: UUID,
+    widget_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    filter_state: Annotated[str, Query()],
+    bypass_cache: Annotated[bool, Query()] = False,
+) -> Response:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    connection_service = get_connection_service(vault_required=True)
+    parsed = _parse_filter_state(filter_state)
+    try:
+        csv_text = await service.export_widget_csv(
+            session,
+            dashboard_id=dashboard_id,
+            widget_id=widget_id,
+            global_filter_values=parsed.global_filter_values,
+            bypass_cache=bypass_cache,
+            connection_service=connection_service,
+        )
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    except HTTPException:
+        await session.commit()
+        raise
+    await session.commit()
+    return Response(
+        content=csv_text,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": (
+                'attachment; filename="dashboard-'
+                f'{dashboard_id}-widget-{widget_id}.csv"'
+            ),
+        },
+    )

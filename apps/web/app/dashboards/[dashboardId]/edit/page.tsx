@@ -17,7 +17,7 @@ export default async function DashboardEditPage({ params }: PageProps) {
   const { dashboardId } = await params;
   const me = await getProtectedMe();
   const role = me.current_workspace.role;
-  if (role !== "admin" && role !== "analyst") {
+  if (role === "external_client" || role === "viewer") {
     redirect(`/dashboards/${dashboardId}`);
   }
 
@@ -47,7 +47,11 @@ export default async function DashboardEditPage({ params }: PageProps) {
     notFound();
   }
 
-  if (dashboard.detail_level !== "editor" || !dashboard.can_edit) {
+  if (!dashboard.can_edit) {
+    redirect(`/dashboards/${dashboardId}`);
+  }
+
+  if (dashboard.detail_level !== "editor") {
     redirect(`/dashboards/${dashboardId}`);
   }
 

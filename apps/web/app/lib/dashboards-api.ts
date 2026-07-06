@@ -188,6 +188,10 @@ export async function executeDashboardWidget(
   return readJsonOrThrow(res, "Failed to execute dashboard widget");
 }
 
+/**
+ * Download a table widget CSV. `filter_state` must be URL-encoded JSON:
+ * `{ "global_filter_values": { ... } }` (see `FilterStateExport` in `@dashboardy/types`).
+ */
 export async function exportDashboardWidgetCsv(
   accessToken: string,
   workspaceId: string,

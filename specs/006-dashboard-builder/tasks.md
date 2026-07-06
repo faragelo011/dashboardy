@@ -198,11 +198,11 @@ Implementation notes for US3:
 
 ### Tests for User Story 4
 
-- [ ] T059 [P] [US4] Add integration tests for permission-filtered dashboard lists across `admin`, `analyst`, `viewer`, and `external_client` in `apps/api/tests/integration/test_dashboards_visibility.py`
-- [ ] T060 [P] [US4] Add integration tests in `apps/api/tests/integration/test_dashboards_external_client.py` verifying external clients never receive `sql_text`, connection fields, or unrelated dashboards
-- [ ] T061 [P] [US4] Add contract tests for `GET .../widgets/{widget_id}/export.csv` in `apps/api/tests/contract/test_dashboard_widget_export_contract.py`
-- [ ] T062 [P] [US4] Add unit tests for table widget CSV renderer in `apps/api/tests/unit/test_dashboard_csv_export.py` covering headers, zero rows, escaping, and 10,000-row cap (reuse patterns from `apps/api/tests/unit/test_saved_question_csv_export.py`)
-- [ ] T063 [P] [US4] Add integration tests in `apps/api/tests/integration/test_dashboard_widget_export.py` for internal export permission, external `can_export` true/false, and refusal for non-table widget types
+- [X] T059 [P] [US4] Add integration tests for permission-filtered dashboard lists across `admin`, `analyst`, `viewer`, and `external_client` in `apps/api/tests/integration/test_dashboards_visibility.py`
+- [X] T060 [P] [US4] Add integration tests in `apps/api/tests/integration/test_dashboards_external_client.py` verifying external clients never receive `sql_text`, connection fields, or unrelated dashboards
+- [X] T061 [P] [US4] Add contract tests for `GET .../widgets/{widget_id}/export.csv` in `apps/api/tests/contract/test_dashboard_widget_export_contract.py`
+- [X] T062 [P] [US4] Add unit tests for table widget CSV renderer in `apps/api/tests/unit/test_dashboard_csv_export.py` covering headers, zero rows, escaping, and 10,000-row cap (reuse patterns from `apps/api/tests/unit/test_saved_question_csv_export.py`)
+- [X] T063 [P] [US4] Add integration tests in `apps/api/tests/integration/test_dashboard_widget_export.py` for internal export permission, external `can_export` true/false, and refusal for non-table widget types
 
 ### Implementation for User Story 4
 
@@ -215,15 +215,15 @@ Implementation notes for US4:
 - CSV export allowed only for `widget_type='table'`; KPI/bar/line must return `unsupported_widget_type` or hide export affordance.
 - Export reuses merged filter state and Feature 4 widget execution path before CSV rendering.
 
-- [ ] T064 [US4] Wire `get_dashboard`, `list_dashboards`, `execute_widget`, and `export_widget_csv` in `apps/api/app/dashboards/service.py` to helpers from T014 in `apps/api/app/dashboards/authz.py` so viewers cannot patch/delete/clone, external clients cannot list ungranted dashboards, and export follows Feature 5 internal/external rules
-- [ ] T065 [US4] Ensure permission-filtered queries in `apps/api/app/dashboards/repository.py` and consumer-safe DTO mapping in `get_dashboard`/`list_dashboards` strip authoring-only fields for non-editors
-- [ ] T066 [US4] Implement CSV renderer in `apps/api/app/dashboards/csv_export.py` mirroring `apps/api/app/questions/csv_export.py` (headers, escaping, 10,000-row cap)
-- [ ] T067 [US4] Implement `export_widget_csv` service method in `apps/api/app/dashboards/service.py` that re-checks export permission, refuses non-table widgets, merges filters from `filter_state` query input, executes via widget path, and returns CSV or normalized JSON error
-- [ ] T068 [US4] Implement export route in `apps/api/app/routes/dashboards.py` for `GET /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv` with `filter_state` and `bypass_cache` query params; document `filter_state` as URL-encoded JSON `{ "global_filter_values": {...} }` in `apps/web/app/lib/dashboards-api.ts`
-- [ ] T069 [US4] Implement `exportDashboardWidgetCsv` in `apps/web/app/lib/dashboards-api.ts` and add export button to `apps/web/app/dashboards/[dashboardId]/widgets/table-widget.tsx` only, with loading/error states and hidden for users without export permission
-- [ ] T070 [US4] Update `apps/web/app/dashboards/[dashboardId]/widgets/table-widget.tsx` to paginate rows client-side with page size control and **no** additional API calls when changing pages
-- [ ] T071 [US4] Update `apps/web/app/dashboards/[dashboardId]/edit/page.tsx` to hide builder controls when `can_edit=false` and redirect viewers to viewer route `apps/web/app/dashboards/[dashboardId]/page.tsx`
-- [ ] T072 [US4] Run US4 tests with `cd apps/api && uv run pytest tests/integration/test_dashboards_visibility.py tests/integration/test_dashboards_external_client.py tests/contract/test_dashboard_widget_export_contract.py tests/unit/test_dashboard_csv_export.py tests/integration/test_dashboard_widget_export.py`
+- [X] T064 [US4] Wire `get_dashboard`, `list_dashboards`, `execute_widget`, and `export_widget_csv` in `apps/api/app/dashboards/service.py` to helpers from T014 in `apps/api/app/dashboards/authz.py` so viewers cannot patch/delete/clone, external clients cannot list ungranted dashboards, and export follows Feature 5 internal/external rules
+- [X] T065 [US4] Ensure permission-filtered queries in `apps/api/app/dashboards/repository.py` and consumer-safe DTO mapping in `get_dashboard`/`list_dashboards` strip authoring-only fields for non-editors
+- [X] T066 [US4] Implement CSV renderer in `apps/api/app/dashboards/csv_export.py` mirroring `apps/api/app/questions/csv_export.py` (headers, escaping, 10,000-row cap)
+- [X] T067 [US4] Implement `export_widget_csv` service method in `apps/api/app/dashboards/service.py` that re-checks export permission, refuses non-table widgets, merges filters from `filter_state` query input, executes via widget path, and returns CSV or normalized JSON error
+- [X] T068 [US4] Implement export route in `apps/api/app/routes/dashboards.py` for `GET /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv` with `filter_state` and `bypass_cache` query params; document `filter_state` as URL-encoded JSON `{ "global_filter_values": {...} }` in `apps/web/app/lib/dashboards-api.ts`
+- [X] T069 [US4] Implement `exportDashboardWidgetCsv` in `apps/web/app/lib/dashboards-api.ts` and add export button to `apps/web/app/dashboards/[dashboardId]/widgets/table-widget.tsx` only, with loading/error states and hidden for users without export permission
+- [X] T070 [US4] Update `apps/web/app/dashboards/[dashboardId]/widgets/table-widget.tsx` to paginate rows client-side with page size control and **no** additional API calls when changing pages
+- [X] T071 [US4] Update `apps/web/app/dashboards/[dashboardId]/edit/page.tsx` to hide builder controls when `can_edit=false` and redirect viewers to viewer route `apps/web/app/dashboards/[dashboardId]/page.tsx`
+- [X] T072 [US4] Run US4 tests with `cd apps/api && uv run pytest tests/integration/test_dashboards_visibility.py tests/integration/test_dashboards_external_client.py tests/contract/test_dashboard_widget_export_contract.py tests/unit/test_dashboard_csv_export.py tests/integration/test_dashboard_widget_export.py`
 
 **Checkpoint**: US4 delivers safe multi-role consumption and table CSV export.
 

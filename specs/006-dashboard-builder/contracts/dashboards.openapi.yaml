@@ -439,10 +439,12 @@ components:
           additionalProperties:
             $ref: "#/components/schemas/FilterValue"
           description: |
-            Per-widget override values for declared global filters. Exposed to
-            consumers for visible override indicators; not widget-local-only keys.
+            Per-widget override values keyed by declared global filter id. Only
+            overrides for dashboard global filters are exposed; widget-local
+            parameter keys are excluded.
         has_active_overrides:
           type: boolean
+          description: Consumer-facing indicator that one or more overrides differ from global values.
         can_export:
           type: boolean
           description: |
