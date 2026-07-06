@@ -1,16 +1,87 @@
+"use client";
+
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+import type { WidgetExecuteResponse } from "@dashboardy/types";
+
+import { useWidgetExecute } from "./use-widget-execute";
+
 type LineWidgetProps = {
+  accessToken: string;
+  workspaceId: string;
   dashboardId: string;
   widgetId: string;
+  title?: string | null;
 };
 
-export function LineWidget({ dashboardId, widgetId }: LineWidgetProps) {
+function chartData(data: WidgetExecuteResponse | null): Record<string, unknown>[] {
+  if (!data || data.meta.status !== "ok") {
+    return [];
+  }
+  if (data.columns.length < 2) {
+    return [];
+  }
+  return data.rows.map((row) => ({
+    x: row[0],
+    y: Number(row[1]) || 0,
+  }));
+}
+
+export function LineWidget({
+  accessToken,
+  workspaceId,
+  dashboardId,
+  widgetId,
+  title,
+}: LineWidgetProps) {
+  const { loading, error, data } = useWidgetExecute(
+    accessToken,
+    workspaceId,
+    dashboardId,
+    widgetId,
+  );
+  const points = chartData(data);
+
   return (
-    <div
-      className="rounded-lg border border-[#1E293B] bg-[#111827]/60 p-4 text-sm text-[#94A3B8]"
-      data-dashboard-id={dashboardId}
-      data-widget-id={widgetId}
-    >
-      Line chart widget (scaffold)
+    <div className="flex h-full min-h-[200px] flex-col gap-2 rounded-lg border border-border-1 bg-surface-1 p-4">
+      {title ? (
+        <p className="text-xs font-medium uppercase tracking-wide text-ink-muted">
+          {title}
+        </p>
+      ) : null}
+      {loading ? (
+        <p className="text-sm text-ink-muted">Loading…</p>
+      ) : error ? (
+        <p className="text-sm text-danger-ink" role="alert">
+          {error}
+        </p>
+      ) : points.length === 0 ? (
+        <p className="text-sm text-ink-muted">No data</p>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={points}>
+            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+            <XAxis dataKey="x" tick={{ fontSize: 11 }} />
+            <YAxis tick={{ fontSize: 11 }} />
+            <Tooltip />
+            <Line
+              type="monotone"
+              dataKey="y"
+              stroke="var(--color-accent, #6366f1)"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

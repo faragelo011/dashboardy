@@ -9,10 +9,13 @@ export async function AdminLuxuryNav() {
   const showRunQuery = role === "admin" || role === "analyst";
   const showSavedQuestions =
     role === "admin" || role === "analyst" || role === "viewer";
+  const showDashboards =
+    role === "admin" || role === "analyst" || role === "viewer";
   return (
     <AdminLuxuryNavClient
       showRunQuery={showRunQuery}
       showSavedQuestions={showSavedQuestions}
+      showDashboards={showDashboards}
     />
   );
 }

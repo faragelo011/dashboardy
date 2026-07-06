@@ -10,6 +10,8 @@ type Props = {
   showRunQuery: boolean;
   /** Show collections/questions for internal members (including read-only viewers). */
   showSavedQuestions: boolean;
+  /** Show dashboards for internal members with dashboard access. */
+  showDashboards: boolean;
 };
 
 const coreItems = [
@@ -23,13 +25,20 @@ const savedQuestionItems = [
   { href: "/questions", label: "Questions" },
 ] as const;
 
+const dashboardItem = { href: "/dashboards", label: "Dashboards" } as const;
+
 const runQueryItem = { href: "/query-run", label: "Run query" } as const;
 
-export function AdminLuxuryNavClient({ showRunQuery, showSavedQuestions }: Props) {
+export function AdminLuxuryNavClient({
+  showRunQuery,
+  showSavedQuestions,
+  showDashboards,
+}: Props) {
   const pathname = usePathname();
   const items = [
     ...coreItems,
     ...(showSavedQuestions ? savedQuestionItems : []),
+    ...(showDashboards ? [dashboardItem] : []),
     ...(showRunQuery ? [runQueryItem] : []),
   ];
 

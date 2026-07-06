@@ -2,14 +2,244 @@
 
 Route groups from specs/006-dashboard-builder/contracts/dashboards.openapi.yaml:
 - List/create dashboard: GET/POST /workspaces/{workspace_id}/dashboards
-- Get/patch/delete dashboard: GET/PATCH/DELETE /workspaces/{workspace_id}/dashboards/{dashboard_id}
+- Get/patch/delete dashboard:
+  GET/PATCH/DELETE /workspaces/{workspace_id}/dashboards/{dashboard_id}
 - Clone: POST /workspaces/{workspace_id}/dashboards/{dashboard_id}/clone
-- Widget execute: POST /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/execute
-- Table export: GET /workspaces/{workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv
+- Widget execute:
+  POST .../dashboards/{dashboard_id}/widgets/{widget_id}/execute
+- Table export:
+  GET .../dashboards/{dashboard_id}/widgets/{widget_id}/export.csv
 """
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from typing import Annotated, NoReturn
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth_context.context import VerifiedSupabaseUser
+from app.auth_context.dependencies import get_verified_supabase_user
+from app.dashboards.schemas import (
+    DashboardConsumerDetail,
+    DashboardCreateRequest,
+    DashboardEditorDetail,
+    DashboardListResponse,
+    DashboardUpdateRequest,
+    WidgetExecuteRequest,
+    WidgetExecuteResponse,
+)
+from app.dashboards.service import DashboardService, DashboardServiceError
+from app.db.deps import get_db
+from app.routes.connections import get_connection_service, require_active_membership
 
 router = APIRouter(tags=["dashboards"])
+
+
+def _forbidden(*, error_code: str, message: str) -> NoReturn:
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail={"error_code": error_code, "message": message},
+    )
+
+
+def _map_service_error(exc: DashboardServiceError) -> NoReturn:
+    code = exc.error_code
+    if code == "authz_denied":
+        _forbidden(error_code=code, message=str(exc))
+    if code in {"dashboard_not_found", "widget_not_found"}:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    if code in {"duplicate_dashboard_title", "stale_update"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    if code in {
+        "invalid_parameters",
+        "invalid_filter_bindings",
+        "widget_local_filter_forbidden",
+        "unsupported_widget_type",
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "error_code": code,
+                "message": str(exc),
+                "details": exc.details,
+            },
+        ) from exc
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail={"error_code": code, "message": str(exc), "details": exc.details},
+    ) from exc
+
+
+@router.get("/dashboards", response_model=DashboardListResponse)
+async def list_dashboards(
+    workspace_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    collection_id: Annotated[UUID | None, Query()] = None,
+) -> DashboardListResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.list_dashboards(session, collection_id=collection_id)
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.post(
+    "/dashboards",
+    response_model=DashboardEditorDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+async def create_dashboard(
+    workspace_id: UUID,
+    payload: DashboardCreateRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> DashboardEditorDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.create_dashboard(session, payload=payload)
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.get(
+    "/dashboards/{dashboard_id}",
+    response_model=DashboardEditorDetail | DashboardConsumerDetail,
+)
+async def get_dashboard(
+    workspace_id: UUID,
+    dashboard_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> DashboardEditorDetail | DashboardConsumerDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.get_dashboard(session, dashboard_id=dashboard_id)
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.patch(
+    "/dashboards/{dashboard_id}",
+    response_model=DashboardEditorDetail,
+)
+async def update_dashboard(
+    workspace_id: UUID,
+    dashboard_id: UUID,
+    payload: DashboardUpdateRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> DashboardEditorDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.update_dashboard(
+            session,
+            dashboard_id=dashboard_id,
+            payload=payload,
+        )
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
+
+
+@router.delete(
+    "/dashboards/{dashboard_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_dashboard(
+    workspace_id: UUID,
+    dashboard_id: UUID,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    try:
+        await service.delete_dashboard(session, dashboard_id=dashboard_id)
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/dashboards/{dashboard_id}/widgets/{widget_id}/execute",
+    response_model=WidgetExecuteResponse,
+)
+async def execute_dashboard_widget(
+    workspace_id: UUID,
+    dashboard_id: UUID,
+    widget_id: UUID,
+    payload: WidgetExecuteRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> WidgetExecuteResponse:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    connection_service = get_connection_service(vault_required=True)
+    try:
+        result = await service.execute_widget(
+            session,
+            dashboard_id=dashboard_id,
+            widget_id=widget_id,
+            payload=payload,
+            connection_service=connection_service,
+        )
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    except HTTPException:
+        await session.commit()
+        raise
+    await session.commit()
+    return result

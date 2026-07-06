@@ -1,8 +1,5 @@
 /**
  * Web API client for Feature 006 dashboards.
- *
- * Function names match operation IDs in
- * `specs/006-dashboard-builder/contracts/dashboards.openapi.yaml`.
  */
 
 import type {
@@ -17,74 +14,194 @@ import type {
   WidgetExecuteResponse,
 } from "@dashboardy/types";
 
-const NOT_IMPLEMENTED = "Dashboard API client scaffold — implementation in Phase 3+.";
+import { ApiError, parseApiErrorBody } from "@/app/lib/connections-api";
+
+const apiBase = () => {
+  const base = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_PUBLIC_URL;
+  if (!base) {
+    throw new Error("API_PUBLIC_URL or NEXT_PUBLIC_API_PUBLIC_URL must be set");
+  }
+  return base.replace(/\/$/, "");
+};
+
+async function apiFetch(
+  path: string,
+  accessToken: string,
+  init?: RequestInit,
+): Promise<Response> {
+  return fetch(`${apiBase()}${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+    cache: "no-store",
+  });
+}
+
+async function readJsonOrThrow<T>(
+  res: Response,
+  fallbackMessage: string,
+): Promise<T> {
+  if (res.ok) {
+    return (await res.json()) as T;
+  }
+  const text = await res.text().catch(() => "");
+  const parsed = parseApiErrorBody(text, fallbackMessage);
+  throw new ApiError(res.status, parsed.message, parsed.error_code);
+}
+
+function workspacePath(workspaceId: string, suffix: string): string {
+  const ws = encodeURIComponent(workspaceId);
+  return `/workspaces/${ws}${suffix}`;
+}
 
 export async function listDashboards(
-  _accessToken: string,
-  _workspaceId: string,
-  _query?: DashboardListQuery,
+  accessToken: string,
+  workspaceId: string,
+  query?: DashboardListQuery,
 ): Promise<DashboardListResponse> {
-  throw new Error(NOT_IMPLEMENTED);
+  const params = new URLSearchParams();
+  if (query?.collection_id) {
+    params.set("collection_id", query.collection_id);
+  }
+  const qs = params.toString();
+  const path = workspacePath(
+    workspaceId,
+    qs ? `/dashboards?${qs}` : "/dashboards",
+  );
+  const res = await apiFetch(path, accessToken);
+  return readJsonOrThrow(res, "Failed to list dashboards");
 }
 
 export async function createDashboard(
-  _accessToken: string,
-  _workspaceId: string,
-  _body: DashboardCreateRequest,
+  accessToken: string,
+  workspaceId: string,
+  body: DashboardCreateRequest,
 ): Promise<DashboardDetail> {
-  throw new Error(NOT_IMPLEMENTED);
+  const res = await apiFetch(workspacePath(workspaceId, "/dashboards"), accessToken, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return readJsonOrThrow(res, "Failed to create dashboard");
 }
 
 export async function getDashboard(
-  _accessToken: string,
-  _workspaceId: string,
-  _dashboardId: string,
+  accessToken: string,
+  workspaceId: string,
+  dashboardId: string,
 ): Promise<DashboardDetail> {
-  throw new Error(NOT_IMPLEMENTED);
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/dashboards/${encodeURIComponent(dashboardId)}`),
+    accessToken,
+  );
+  return readJsonOrThrow(res, "Failed to load dashboard");
 }
 
 export async function updateDashboard(
-  _accessToken: string,
-  _workspaceId: string,
-  _dashboardId: string,
-  _body: DashboardUpdateRequest,
+  accessToken: string,
+  workspaceId: string,
+  dashboardId: string,
+  body: DashboardUpdateRequest,
 ): Promise<DashboardDetail> {
-  throw new Error(NOT_IMPLEMENTED);
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/dashboards/${encodeURIComponent(dashboardId)}`),
+    accessToken,
+    {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to update dashboard");
 }
 
 export async function deleteDashboard(
-  _accessToken: string,
-  _workspaceId: string,
-  _dashboardId: string,
+  accessToken: string,
+  workspaceId: string,
+  dashboardId: string,
 ): Promise<void> {
-  throw new Error(NOT_IMPLEMENTED);
+  const res = await apiFetch(
+    workspacePath(workspaceId, `/dashboards/${encodeURIComponent(dashboardId)}`),
+    accessToken,
+    { method: "DELETE" },
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to delete dashboard");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
 }
 
 export async function cloneDashboard(
-  _accessToken: string,
-  _workspaceId: string,
-  _dashboardId: string,
-  _body: DashboardCloneRequest,
+  accessToken: string,
+  workspaceId: string,
+  dashboardId: string,
+  body: DashboardCloneRequest,
 ): Promise<DashboardDetail> {
-  throw new Error(NOT_IMPLEMENTED);
+  const res = await apiFetch(
+    workspacePath(
+      workspaceId,
+      `/dashboards/${encodeURIComponent(dashboardId)}/clone`,
+    ),
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to clone dashboard");
 }
 
 export async function executeDashboardWidget(
-  _accessToken: string,
-  _workspaceId: string,
-  _dashboardId: string,
-  _widgetId: string,
-  _body: WidgetExecuteRequest,
+  accessToken: string,
+  workspaceId: string,
+  dashboardId: string,
+  widgetId: string,
+  body?: WidgetExecuteRequest,
 ): Promise<WidgetExecuteResponse> {
-  throw new Error(NOT_IMPLEMENTED);
+  const res = await apiFetch(
+    workspacePath(
+      workspaceId,
+      `/dashboards/${encodeURIComponent(dashboardId)}/widgets/${encodeURIComponent(widgetId)}/execute`,
+    ),
+    accessToken,
+    {
+      method: "POST",
+      body: JSON.stringify(
+        body ?? { global_filter_values: {}, bypass_cache: false },
+      ),
+    },
+  );
+  return readJsonOrThrow(res, "Failed to execute dashboard widget");
 }
 
 export async function exportDashboardWidgetCsv(
-  _accessToken: string,
-  _workspaceId: string,
-  _dashboardId: string,
-  _widgetId: string,
-  _query: DashboardWidgetExportQuery,
+  accessToken: string,
+  workspaceId: string,
+  dashboardId: string,
+  widgetId: string,
+  query: DashboardWidgetExportQuery,
 ): Promise<Response> {
-  throw new Error(NOT_IMPLEMENTED);
+  const params = new URLSearchParams();
+  params.set("filter_state", query.filter_state);
+  if (query.bypass_cache) {
+    params.set("bypass_cache", "true");
+  }
+  const path = workspacePath(
+    workspaceId,
+    `/dashboards/${encodeURIComponent(dashboardId)}/widgets/${encodeURIComponent(widgetId)}/export.csv?${params.toString()}`,
+  );
+  const res = await fetch(`${apiBase()}${path}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    const parsed = parseApiErrorBody(text, "Failed to export dashboard widget");
+    throw new ApiError(res.status, parsed.message, parsed.error_code);
+  }
+  return res;
 }
+
+export { ApiError };
