@@ -673,7 +673,12 @@ async def execute_workspace_query(
         and presentation_class is not None
     ):
         try:
-            ttl_secs = presentation_class_ttl_seconds(presentation_class, settings=cfg)
+            ttl_secs = (
+                payload.cache_ttl_seconds
+                if isinstance(payload, WidgetQueryExecuteRequest)
+                and payload.cache_ttl_seconds is not None
+                else presentation_class_ttl_seconds(presentation_class, settings=cfg)
+            )
             expires_at = datetime.now(tz=UTC) + timedelta(seconds=ttl_secs)
             blob = _snowflake_payload_for_cache(
                 column_names=sf_out.column_names,

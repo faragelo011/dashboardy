@@ -25,12 +25,15 @@ export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props
   const showRunQuery = role === "admin" || role === "analyst";
   const showSavedQuestions =
     role === "admin" || role === "analyst" || role === "viewer";
+  const showDashboards =
+    role === "admin" || role === "analyst" || role === "viewer";
 
   return (
     <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNavClient
         showRunQuery={showRunQuery}
         showSavedQuestions={showSavedQuestions}
+        showDashboards={showDashboards}
       />
       <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-14">
         <header className="flex flex-col gap-6 border-b border-border-1 pb-8 lg:flex-row lg:items-end lg:justify-between">

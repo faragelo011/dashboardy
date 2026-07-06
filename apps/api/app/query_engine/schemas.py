@@ -67,6 +67,7 @@ class WidgetQueryExecuteRequest(BaseModel):
     presentation_class: PresentationClass
     bypass_cache: bool = False
     filter_state_hash: str | None = None
+    cache_ttl_seconds: int | None = None
 
 
 QueryExecuteRequest = Annotated[
