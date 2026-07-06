@@ -145,7 +145,7 @@ export function DashboardGrid({
       startY: event.clientY,
       origin: layout,
     };
-    const onMove = (moveEvent: PointerEvent) => {
+    const onMove = (moveEvent: globalThis.PointerEvent) => {
       const drag = dragRef.current;
       if (!drag || drag.widgetKey !== widgetKey) {
         return;
@@ -163,13 +163,32 @@ export function DashboardGrid({
       }
       updateWidget(index, { ...widget, layout: nextLayout } as EditableWidget);
     };
-    const onUp = () => {
+    const endDrag = () => {
       dragRef.current = null;
-      window.removeEventListener("pointermove", onMove as unknown as EventListener);
-      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
     };
-    window.addEventListener("pointermove", onMove as unknown as EventListener);
-    window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+  };
+
+  const moveWidgetByKeys = (
+    index: number,
+    dx: number,
+    dy: number,
+  ) => {
+    const widget = widgets[index];
+    if (!widget || mode !== "edit" || !onWidgetsChange) {
+      return;
+    }
+    const nextLayout: WidgetLayout = {
+      ...widget.layout,
+      x: Math.max(0, Math.min(COLS - widget.layout.w, widget.layout.x + dx)),
+      y: Math.max(0, widget.layout.y + dy),
+    };
+    updateWidget(index, { ...widget, layout: nextLayout } as EditableWidget);
   };
 
   const maxRow = widgets.reduce(
@@ -233,9 +252,30 @@ export function DashboardGrid({
               key={widgetKey}
               style={layoutStyle(widget.layout)}
               className={`relative min-h-0 ${mode === "edit" ? "cursor-grab active:cursor-grabbing" : ""}`}
+              tabIndex={mode === "edit" ? 0 : undefined}
+              aria-label={
+                mode === "edit" ? "Widget layout. Use arrow keys to reposition." : undefined
+              }
               onPointerDown={(e) =>
                 onPointerDown(e, widgetKey, widget.layout, index)
               }
+              onKeyDown={(e) => {
+                if (mode !== "edit") {
+                  return;
+                }
+                const deltas: Record<string, [number, number]> = {
+                  ArrowLeft: [-1, 0],
+                  ArrowRight: [1, 0],
+                  ArrowUp: [0, -1],
+                  ArrowDown: [0, 1],
+                };
+                const delta = deltas[e.key];
+                if (!delta) {
+                  return;
+                }
+                e.preventDefault();
+                moveWidgetByKeys(index, delta[0], delta[1]);
+              }}
             >
               {mode === "edit" ? (
                 <div className="absolute right-2 top-2 z-10 flex gap-1">
@@ -245,7 +285,10 @@ export function DashboardGrid({
                     onClick={() => {
                       const next = {
                         ...widget.layout,
-                        w: Math.min(COLS, widget.layout.w + 1),
+                        w: Math.min(
+                          COLS - widget.layout.x,
+                          widget.layout.w + 1,
+                        ),
                       };
                       updateWidget(index, { ...widget, layout: next } as EditableWidget);
                     }}

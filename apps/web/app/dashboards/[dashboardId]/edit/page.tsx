@@ -31,43 +31,47 @@ export default async function DashboardEditPage({ params }: PageProps) {
 
   const workspaceId = me.current_workspace.workspace_id;
 
+  let dashboard: Awaited<ReturnType<typeof getDashboard>>;
+  let collectionsResp: Awaited<ReturnType<typeof listCollections>>;
+  let questionsResp: Awaited<ReturnType<typeof listSavedQuestions>>;
+
   try {
-    const [dashboard, collectionsResp, questionsResp] = await Promise.all([
+    [dashboard, collectionsResp, questionsResp] = await Promise.all([
       getDashboard(token, workspaceId, dashboardId),
       listCollections(token, workspaceId),
       listSavedQuestions(token, workspaceId),
     ]);
-
-    if (dashboard.detail_level !== "editor" || !dashboard.can_edit) {
-      redirect(`/dashboards/${dashboardId}`);
-    }
-
-    const editableCollections = collectionsResp.collections.filter(
-      (c) => c.permission === "edit",
-    );
-
-    return (
-      <div className="min-h-screen bg-surface-app text-ink">
-        <AdminLuxuryNav />
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-14">
-          <header className="space-y-2 border-b border-border-1 pb-6">
-            <p className="ds-kicker">Dashboard builder</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
-              Edit dashboard
-            </h1>
-          </header>
-          <DashboardBuilder
-            accessToken={token}
-            workspaceId={workspaceId}
-            initial={dashboard}
-            collections={editableCollections}
-            questions={questionsResp.questions}
-          />
-        </div>
-      </div>
-    );
   } catch (err) {
     console.error("failed to load dashboard builder", { workspaceId, dashboardId, err });
     notFound();
   }
+
+  if (dashboard.detail_level !== "editor" || !dashboard.can_edit) {
+    redirect(`/dashboards/${dashboardId}`);
+  }
+
+  const editableCollections = collectionsResp.collections.filter(
+    (c) => c.permission === "edit",
+  );
+
+  return (
+    <div className="min-h-screen bg-surface-app text-ink">
+      <AdminLuxuryNav />
+      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-14">
+        <header className="space-y-2 border-b border-border-1 pb-6">
+          <p className="ds-kicker">Dashboard builder</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+            Edit dashboard
+          </h1>
+        </header>
+        <DashboardBuilder
+          accessToken={token}
+          workspaceId={workspaceId}
+          initial={dashboard}
+          collections={editableCollections}
+          questions={questionsResp.questions}
+        />
+      </div>
+    </div>
+  );
 }

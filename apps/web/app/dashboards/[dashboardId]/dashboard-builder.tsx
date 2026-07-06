@@ -101,6 +101,11 @@ export function DashboardBuilder({
               value={collectionId}
               onChange={(e) => setCollectionId(e.target.value)}
             >
+              {!collections.some((c) => c.id === collectionId) ? (
+                <option value={collectionId} disabled>
+                  Current collection
+                </option>
+              ) : null}
               {collections.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}

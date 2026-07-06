@@ -45,7 +45,6 @@ export function DashboardCreateForm({
           title,
         });
         router.push(`/dashboards/${created.id}/edit`);
-        router.refresh();
       } catch (err) {
         setError(
           err instanceof ApiError

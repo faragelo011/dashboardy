@@ -3,8 +3,7 @@ import { notFound, redirect } from "next/navigation";
 
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
-import { getDashboard } from "@/app/lib/dashboards-api";
-import { ApiError } from "@/app/lib/connections-api";
+import { getDashboard, ApiError } from "@/app/lib/dashboards-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
 import { DashboardGrid } from "./dashboard-grid";

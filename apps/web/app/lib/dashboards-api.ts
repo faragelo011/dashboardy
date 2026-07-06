@@ -16,6 +16,8 @@ import type {
 
 import { ApiError, parseApiErrorBody } from "@/app/lib/connections-api";
 
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
 const apiBase = () => {
   const base = process.env.API_PUBLIC_URL ?? process.env.NEXT_PUBLIC_API_PUBLIC_URL;
   if (!base) {
@@ -29,15 +31,25 @@ async function apiFetch(
   accessToken: string,
   init?: RequestInit,
 ): Promise<Response> {
-  return fetch(`${apiBase()}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-      ...(init?.headers ?? {}),
-    },
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEFAULT_REQUEST_TIMEOUT_MS);
+  try {
+    const res = await fetch(`${apiBase()}${path}`, {
+      ...init,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        ...(init?.headers ?? {}),
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return res;
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
 }
 
 async function readJsonOrThrow<T>(
@@ -192,10 +204,20 @@ export async function exportDashboardWidgetCsv(
     workspaceId,
     `/dashboards/${encodeURIComponent(dashboardId)}/widgets/${encodeURIComponent(widgetId)}/export.csv?${params.toString()}`,
   );
-  const res = await fetch(`${apiBase()}${path}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: "no-store",
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), DEFAULT_REQUEST_TIMEOUT_MS);
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase()}${path}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+  } catch (err) {
+    clearTimeout(timer);
+    throw err;
+  }
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     const parsed = parseApiErrorBody(text, "Failed to export dashboard widget");

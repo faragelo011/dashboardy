@@ -15,6 +15,7 @@ from app.dashboards.filters import (
     validate_bindings_reference_global_filters,
 )
 from app.dashboards.schemas import (
+    ColumnDescriptor,
     DashboardConsumerDetail,
     DashboardCreateRequest,
     DashboardDefinition,
@@ -37,9 +38,9 @@ from app.dashboards.schemas import (
 )
 from app.models.dashboards import Dashboard
 from app.models.dashboards import DashboardWidget as DashboardWidgetRow
+from app.models.saved_questions import SavedQuestion
 from app.query_engine.pipeline import execute_workspace_query
 from app.query_engine.schemas import (
-    ColumnDescriptor,
     QueryExecuteSuccessResponse,
     WidgetQueryExecuteRequest,
 )
@@ -237,7 +238,7 @@ class DashboardService:
         session: AsyncSession,
         *,
         saved_question_id: UUID,
-    ) -> None:
+    ) -> SavedQuestion:
         row = await questions_repository.get_active_saved_question(
             session,
             tenant_id=self._actor.tenant_id,
@@ -273,6 +274,24 @@ class DashboardService:
             raise DashboardsAuthzDeniedError(
                 "Saved question is not accessible for this widget."
             )
+        return row
+
+    def _widget_rows_to_update_inputs(
+        self, widget_rows: list[DashboardWidgetRow]
+    ) -> list[DashboardWidgetUpdateInput]:
+        return [
+            DashboardWidgetUpdateInput(
+                id=w.id,
+                title=w.title,
+                widget_type=WidgetType(w.widget_type),
+                saved_question_id=w.saved_question_id,
+                layout=WidgetLayout.model_validate(w.layout),
+                config=w.config or {},
+                filter_bindings=w.filter_bindings or {},
+                filter_overrides=w.filter_overrides or {},
+            )
+            for w in widget_rows
+        ]
 
     def _validate_widget_type(self, widget_type: WidgetType) -> None:
         try:
@@ -667,7 +686,7 @@ class DashboardService:
         dashboard_id: UUID,
         payload: DashboardUpdateRequest,
     ) -> DashboardEditorDetail:
-        dashboard, _ = await repository.load_dashboard_with_widgets(
+        dashboard, existing_widgets = await repository.load_dashboard_with_widgets(
             session,
             tenant_id=self._actor.tenant_id,
             workspace_id=self._actor.workspace_id,
@@ -706,11 +725,16 @@ class DashboardService:
             )
 
         if payload.widgets is not None:
-            await self._upsert_widgets(
+            await self._validate_widget_inputs(
                 session,
-                dashboard_id=dashboard_id,
                 global_filters=definition.global_filters,
                 widgets=payload.widgets,
+            )
+        elif payload.definition is not None:
+            await self._validate_widget_inputs(
+                session,
+                global_filters=definition.global_filters,
+                widgets=self._widget_rows_to_update_inputs(existing_widgets),
             )
 
         updated = await repository.update_dashboard_if_current(
@@ -738,6 +762,14 @@ class DashboardService:
             if current is None:
                 raise DashboardNotFoundError()
             raise StaleUpdateError()
+
+        if payload.widgets is not None:
+            await self._upsert_widgets(
+                session,
+                dashboard_id=dashboard_id,
+                global_filters=definition.global_filters,
+                widgets=payload.widgets,
+            )
 
         _, widget_rows = await repository.load_dashboard_with_widgets(
             session,
@@ -829,17 +861,10 @@ class DashboardService:
         except FilterValidationError as exc:
             raise _map_filter_error(exc) from exc
 
-        await self._require_saved_question_access(
+        question = await self._require_saved_question_access(
             session,
             saved_question_id=widget.saved_question_id,
         )
-        question = await questions_repository.get_active_saved_question(
-            session,
-            tenant_id=self._actor.tenant_id,
-            workspace_id=self._actor.workspace_id,
-            question_id=widget.saved_question_id,
-        )
-        assert question is not None
 
         declarations = _parameters_from_json(question.parameter_schema)
         try:

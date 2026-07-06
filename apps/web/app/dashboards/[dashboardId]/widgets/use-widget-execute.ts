@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { FilterValue, WidgetExecuteResponse } from "@dashboardy/types";
 
@@ -26,8 +26,10 @@ export function useWidgetExecute(
     error: null,
     data: null,
   });
+  const requestSeq = useRef(0);
 
   const run = useCallback(async () => {
+    const seq = ++requestSeq.current;
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
       const data = await executeDashboardWidget(
@@ -37,8 +39,14 @@ export function useWidgetExecute(
         widgetId,
         { global_filter_values: globalFilterValues, bypass_cache: false },
       );
+      if (seq !== requestSeq.current) {
+        return;
+      }
       setState({ loading: false, error: null, data });
     } catch (err) {
+      if (seq !== requestSeq.current) {
+        return;
+      }
       const message =
         err instanceof ApiError
           ? err.message
