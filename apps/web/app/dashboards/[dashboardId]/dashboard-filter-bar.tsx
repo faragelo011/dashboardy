@@ -31,7 +31,16 @@ function inputForType(
           type="number"
           className="ds-input"
           value={String(value)}
-          onChange={(e) => onValue(Number(e.target.value))}
+          onChange={(e) => {
+            const raw = e.target.value;
+            if (raw === "") {
+              return;
+            }
+            const parsed = Number(raw);
+            if (Number.isFinite(parsed)) {
+              onValue(parsed);
+            }
+          }}
         />
       );
     case "date":
@@ -54,6 +63,8 @@ function inputForType(
       );
   }
 }
+
+export { inputForType as filterInputForType };
 
 export function DashboardFilterBar({
   globalFilters,

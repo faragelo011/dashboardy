@@ -157,8 +157,6 @@ def _map_filter_error(exc: FilterValidationError) -> DashboardServiceError:
         return InvalidFilterBindingsError(str(exc))
     if exc.error_code == "widget_local_filter_forbidden":
         return WidgetLocalFilterForbiddenError(str(exc))
-    if exc.error_code == "invalid_parameters":
-        return InvalidParametersError(str(exc))
     return InvalidParametersError(str(exc))
 
 

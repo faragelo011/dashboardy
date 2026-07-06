@@ -142,6 +142,7 @@ def test_widget_execute_rejects_unknown_global_filter_value_id(
             },
             headers=headers,
         )
+        assert created.status_code == 201, created.text
         dashboard_id = created.json()["id"]
         widget_id = created.json()["widgets"][0]["id"]
 

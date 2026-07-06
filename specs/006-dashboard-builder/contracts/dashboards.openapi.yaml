@@ -83,8 +83,9 @@ paths:
       summary: Get dashboard detail for view or edit
       description: |
         Editor responses include widget authoring fields (`saved_question_id`,
-        `filter_bindings`, `filter_overrides`). Consumer responses omit those fields
-        and expose `can_export` per table widget only.
+        `filter_overrides`). Consumer responses include `filter_bindings` for
+        bound-only auto-refresh and expose `can_export` per table widget only;
+        they omit `saved_question_id` and `filter_overrides`.
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/DashboardId"
@@ -400,7 +401,9 @@ components:
 
     DashboardWidgetConsumer:
       type: object
-      description: Consumer-safe widget shape without authoring fields.
+      description: |
+        Consumer-safe widget shape. Includes `filter_bindings` for bound-only
+        auto-refresh; omits `saved_question_id` and `filter_overrides`.
       required:
         - id
         - widget_type

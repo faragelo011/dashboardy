@@ -7,6 +7,7 @@ from app.dashboards.filters import (
     FilterValidationError,
     compute_filter_state_hash,
     merge_widget_parameters,
+    validate_global_filter_values,
     validate_global_filters,
 )
 from app.dashboards.schemas import (
@@ -135,6 +136,43 @@ def test_validate_global_filters_rejects_duplicate_ids() -> None:
     with pytest.raises(FilterValidationError) as exc:
         validate_global_filters(filters)
     assert exc.value.error_code == "invalid_parameters"
+
+
+def test_validate_global_filters_rejects_blank_id() -> None:
+    filters = [
+        GlobalFilter(
+            id="   ",
+            label="Region",
+            value_type=GlobalFilterValueType.string,
+            default_value="x",
+        ),
+    ]
+    with pytest.raises(FilterValidationError) as exc:
+        validate_global_filters(filters)
+    assert exc.value.error_code == "invalid_parameters"
+
+
+def test_validate_global_filters_rejects_blank_label() -> None:
+    filters = [
+        GlobalFilter(
+            id="gf_region",
+            label="   ",
+            value_type=GlobalFilterValueType.string,
+            default_value="x",
+        ),
+    ]
+    with pytest.raises(FilterValidationError) as exc:
+        validate_global_filters(filters)
+    assert exc.value.error_code == "invalid_parameters"
+
+
+def test_validate_global_filter_values_rejects_unknown_id() -> None:
+    with pytest.raises(FilterValidationError) as exc:
+        validate_global_filter_values(
+            global_filters=[_gf("gf_region")],
+            global_filter_values={"gf_unknown": "x"},
+        )
+    assert exc.value.error_code == "invalid_filter_bindings"
 
 
 def test_clamp_widget_ttl_rejects_bool() -> None:

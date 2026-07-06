@@ -18,7 +18,7 @@ import type {
 
 import { ApiError, updateDashboard } from "@/app/lib/dashboards-api";
 
-import { DashboardFilterBar } from "./dashboard-filter-bar";
+import { DashboardFilterBar, filterInputForType } from "./dashboard-filter-bar";
 import { initialGlobalFilterValues } from "./dashboard-filter-state";
 import { DashboardGrid, type EditableWidget } from "./dashboard-grid";
 
@@ -31,10 +31,19 @@ type DashboardBuilderProps = {
   questionParametersById: Record<string, ParameterDefinition[]>;
 };
 
-function emptyFilter(index: number): GlobalFilter {
+function uniqueFilterId(existing: GlobalFilter[]): string {
+  const used = new Set(existing.map((filter) => filter.id));
+  let candidate = "";
+  do {
+    candidate = `gf_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+  } while (used.has(candidate));
+  return candidate;
+}
+
+function emptyFilter(existing: GlobalFilter[]): GlobalFilter {
   return {
-    id: `gf_${index}`,
-    label: `Filter ${index}`,
+    id: uniqueFilterId(existing),
+    label: `Filter ${existing.length + 1}`,
     value_type: "string",
     default_value: "",
   };
@@ -49,8 +58,13 @@ function coerceDefaultValue(
       const parsed = Number(raw);
       return Number.isFinite(parsed) ? parsed : 0;
     }
-    case "boolean":
-      return raw === "true";
+    case "boolean": {
+      const normalized = raw.trim().toLowerCase();
+      if (["true", "1", "yes", "on"].includes(normalized)) {
+        return true;
+      }
+      return false;
+    }
     default:
       return raw;
   }
@@ -77,7 +91,7 @@ export function DashboardBuilder({
   const [pending, startTransition] = useTransition();
 
   const addGlobalFilter = () => {
-    const next = emptyFilter(definition.global_filters.length + 1);
+    const next = emptyFilter(definition.global_filters);
     const nextDefinition = {
       ...definition,
       global_filters: [...definition.global_filters, next],
@@ -116,25 +130,30 @@ export function DashboardBuilder({
 
     if (patch.id !== undefined && patch.id !== previous.id) {
       const oldId = previous.id;
-      const newId = patch.id;
-      setFilterValues((prev) => {
-        const next = { ...prev };
-        if (oldId in next) {
-          next[newId] = next[oldId];
-          delete next[oldId];
-        }
-        return next;
-      });
-      setWidgets((prev) =>
-        prev.map((w) => {
-          const bindings = { ...(w.filter_bindings ?? {}) };
-          if (oldId in bindings) {
-            bindings[newId] = bindings[oldId];
-            delete bindings[oldId];
-          }
-          return { ...w, filter_bindings: bindings };
-        }),
+      const newId = patch.id.trim();
+      const idTaken = definition.global_filters.some(
+        (gf, i) => i !== index && gf.id === newId,
       );
+      if (newId && !idTaken) {
+        setFilterValues((prev) => {
+          const next = { ...prev };
+          if (oldId in next) {
+            next[newId] = next[oldId];
+            delete next[oldId];
+          }
+          return next;
+        });
+        setWidgets((prev) =>
+          prev.map((w) => {
+            const bindings = { ...(w.filter_bindings ?? {}) };
+            if (oldId in bindings) {
+              bindings[newId] = bindings[oldId];
+              delete bindings[oldId];
+            }
+            return { ...w, filter_bindings: bindings };
+          }),
+        );
+      }
     } else if (patch.default_value !== undefined || patch.value_type !== undefined) {
       setFilterValues((prev) => ({
         ...prev,
@@ -319,18 +338,11 @@ export function DashboardBuilder({
                 </label>
                 <label className="flex flex-col gap-1">
                   <span className="ds-label">Default</span>
-                  <input
-                    className="ds-input"
-                    value={String(filter.default_value)}
-                    onChange={(e) =>
-                      updateGlobalFilter(index, {
-                        default_value: coerceDefaultValue(
-                          filter.value_type,
-                          e.target.value,
-                        ),
-                      })
-                    }
-                  />
+                  {filterInputForType(
+                    filter.value_type,
+                    filter.default_value,
+                    (next) => updateGlobalFilter(index, { default_value: next }),
+                  )}
                 </label>
                 <div className="flex items-end">
                   <button

@@ -54,17 +54,21 @@ export default async function DashboardEditPage({ params }: PageProps) {
   const questionIds = Array.from(
     new Set(dashboard.widgets.map((w) => w.saved_question_id)),
   );
-  const questionDetails = await Promise.all(
-    questionIds.map((id) => getSavedQuestion(token, workspaceId, id)),
-  );
   const questionParametersById: Record<string, ParameterDefinition[]> = {};
-  for (const detail of questionDetails) {
-    if (detail.detail_level === "internal") {
-      questionParametersById[detail.id] = (
-        detail as SavedQuestionInternalDetail
-      ).parameters;
-    }
-  }
+  await Promise.all(
+    questionIds.map(async (id) => {
+      try {
+        const detail = await getSavedQuestion(token, workspaceId, id);
+        if (detail.detail_level === "internal") {
+          questionParametersById[detail.id] = (
+            detail as SavedQuestionInternalDetail
+          ).parameters;
+        }
+      } catch (err) {
+        console.error("failed to load saved question for bindings", { id, err });
+      }
+    }),
+  );
 
   const editableCollections = collectionsResp.collections.filter(
     (c) => c.permission === "edit",
