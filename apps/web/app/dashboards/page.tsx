@@ -41,19 +41,29 @@ export default async function DashboardsPage({ searchParams }: PageProps) {
   let dashboards: Awaited<ReturnType<typeof listDashboards>>["dashboards"] = [];
   let collections: Awaited<ReturnType<typeof listCollections>>["collections"] = [];
   let loadError: string | null = null;
+  let collectionsError: string | null = null;
 
   try {
     const dashboardsResp = await listDashboards(token, workspaceId, {
       collection_id: collectionFilter,
     });
     dashboards = dashboardsResp.dashboards;
-    if (!isExternalClient) {
-      const collectionsResp = await listCollections(token, workspaceId);
-      collections = collectionsResp.collections;
-    }
   } catch (err) {
     console.error("failed to load dashboards", { workspaceId, err });
     loadError = "Failed to load dashboards. Please refresh and try again.";
+  }
+
+  if (!isExternalClient && !loadError) {
+    try {
+      const collectionsResp = await listCollections(token, workspaceId);
+      collections = collectionsResp.collections;
+    } catch (err) {
+      console.error("failed to load collections for dashboard filter", {
+        workspaceId,
+        err,
+      });
+      collectionsError = "Collection filter is unavailable right now.";
+    }
   }
 
   const editableCollections = collections.filter(
@@ -83,6 +93,11 @@ export default async function DashboardsPage({ searchParams }: PageProps) {
             {loadError}
           </p>
         ) : null}
+        {collectionsError ? (
+          <p className="text-sm text-ink-muted" role="status">
+            {collectionsError}
+          </p>
+        ) : null}
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           <DashboardCreateForm
@@ -92,7 +107,7 @@ export default async function DashboardsPage({ searchParams }: PageProps) {
             canEdit={canEdit}
           />
           <section className="flex flex-col gap-4">
-            {!isExternalClient ? (
+            {!isExternalClient && !collectionsError ? (
               <form method="get" className="flex flex-wrap items-end gap-3">
               <label className="flex flex-col gap-1.5">
                 <span className="ds-label">Collection filter</span>

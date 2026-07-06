@@ -897,26 +897,19 @@ class DashboardService:
         if not deleted:
             raise DashboardNotFoundError()
 
-    async def execute_widget(
+    async def _execute_widget_loaded(
         self,
         session: AsyncSession,
         *,
-        dashboard_id: UUID,
+        dashboard: Dashboard,
+        widgets: list[DashboardWidgetRow],
         widget_id: UUID,
         payload: WidgetExecuteRequest,
         connection_service: object,
+        collection_grants: dict[UUID, Any],
+        dashboard_grants: dict[UUID, Any],
+        asset_grants: list[Any],
     ) -> WidgetExecuteResponse:
-        dashboard, widgets = await repository.load_dashboard_with_widgets(
-            session,
-            tenant_id=self._actor.tenant_id,
-            workspace_id=self._actor.workspace_id,
-            dashboard_id=dashboard_id,
-        )
-        if dashboard is None:
-            raise DashboardNotFoundError()
-        collection_grants = await self._collection_grant_map(session)
-        dashboard_grants = await self._dashboard_grant_map(session)
-        asset_grants = await self._asset_grants(session)
         view = await self._dashboard_authz(
             session,
             dashboard=dashboard,
@@ -930,9 +923,9 @@ class DashboardService:
             actor_role=self._actor.role,
             actor_user_id=self._user_id,
             actor_workspace_id=self._actor.workspace_id,
-            dashboard_id=dashboard_id,
+            dashboard_id=dashboard.id,
             collection_grant=collection_grants.get(dashboard.collection_id),
-            dashboard_grant=dashboard_grants.get(dashboard_id),
+            dashboard_grant=dashboard_grants.get(dashboard.id),
             asset_grants=asset_grants,
         )
         if not execute_decision.allowed:
@@ -981,7 +974,7 @@ class DashboardService:
         cache_ttl_seconds = clamp_widget_ttl_seconds(widget.config or {}, presentation)
 
         engine_payload = WidgetQueryExecuteRequest(
-            dashboard_id=dashboard_id,
+            dashboard_id=dashboard.id,
             widget_id=widget_id,
             saved_question_id=widget.saved_question_id,
             parameters=coerced,
@@ -999,6 +992,38 @@ class DashboardService:
             allow_widget_execution=True,
         )
         return _widget_execute_response(result)
+
+    async def execute_widget(
+        self,
+        session: AsyncSession,
+        *,
+        dashboard_id: UUID,
+        widget_id: UUID,
+        payload: WidgetExecuteRequest,
+        connection_service: object,
+    ) -> WidgetExecuteResponse:
+        dashboard, widgets = await repository.load_dashboard_with_widgets(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            dashboard_id=dashboard_id,
+        )
+        if dashboard is None:
+            raise DashboardNotFoundError()
+        collection_grants = await self._collection_grant_map(session)
+        dashboard_grants = await self._dashboard_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+        return await self._execute_widget_loaded(
+            session,
+            dashboard=dashboard,
+            widgets=widgets,
+            widget_id=widget_id,
+            payload=payload,
+            connection_service=connection_service,
+            collection_grants=collection_grants,
+            dashboard_grants=dashboard_grants,
+            asset_grants=asset_grants,
+        )
 
     async def export_widget_csv(
         self,
@@ -1054,19 +1079,22 @@ class DashboardService:
                 details={"widget_type": widget.widget_type},
             )
 
-        result = await self.execute_widget(
+        result = await self._execute_widget_loaded(
             session,
-            dashboard_id=dashboard_id,
+            dashboard=dashboard,
+            widgets=widgets,
             widget_id=widget_id,
             payload=WidgetExecuteRequest(
                 global_filter_values=global_filter_values,
                 bypass_cache=bypass_cache,
             ),
             connection_service=connection_service,
+            collection_grants=collection_grants,
+            dashboard_grants=dashboard_grants,
+            asset_grants=asset_grants,
         )
         if result.meta.status != ExecutionStatus.ok.value:
             raise ExportExecutionRefusedError(
-                error_code=result.meta.error_code or result.meta.status,
                 details={
                     "status": result.meta.status,
                     "error_code": result.meta.error_code,

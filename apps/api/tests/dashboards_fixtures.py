@@ -3,13 +3,57 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
+import pytest
 from app.db.session import get_async_session_maker, get_engine
 from app.models.auth_tenancy import AssetType, Membership, Tenant, Workspace
+from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from tests.factories import auth_tenancy as factories
 from tests.saved_questions_fixtures import SeededQuestionCatalog
+
+
+def dashboard_test_headers(
+    monkeypatch: pytest.MonkeyPatch,
+    user_id: uuid.UUID,
+    email: str,
+) -> dict[str, str]:
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {"sub": str(user_id), "email": email},
+    )
+    return {"Authorization": "Bearer fake"}
+
+
+def create_test_dashboard(
+    client: TestClient,
+    *,
+    workspace_id: uuid.UUID,
+    seeded: SeededQuestionCatalog,
+    headers: dict[str, str],
+    title: str = "Test dashboard",
+    widgets: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    payload_widgets = widgets or [
+        {
+            "widget_type": "kpi",
+            "saved_question_id": str(seeded.question_id),
+            "layout": {"x": 0, "y": 0, "w": 4, "h": 2},
+        }
+    ]
+    created = client.post(
+        f"/workspaces/{workspace_id}/dashboards",
+        json={
+            "collection_id": str(seeded.collection_id),
+            "title": title,
+            "widgets": payload_widgets,
+        },
+        headers=headers,
+    )
+    assert created.status_code == 201, created.text
+    return created.json()
 
 
 async def grant_external_dashboard_asset(

@@ -8,41 +8,8 @@ import pytest
 from app.main import app
 from fastapi.testclient import TestClient
 
+from tests.dashboards_fixtures import create_test_dashboard, dashboard_test_headers
 from tests.saved_questions_fixtures import seed_question_catalog
-
-
-def _headers(monkeypatch: pytest.MonkeyPatch, user_id, email: str) -> dict[str, str]:
-    monkeypatch.setattr(
-        "app.auth_context.dependencies.decode_supabase_jwt",
-        lambda _t: {"sub": str(user_id), "email": email},
-    )
-    return {"Authorization": "Bearer fake"}
-
-
-def _create_dashboard(
-    client: TestClient,
-    *,
-    workspace_id,
-    seeded,
-    headers: dict[str, str],
-) -> str:
-    created = client.post(
-        f"/workspaces/{workspace_id}/dashboards",
-        json={
-            "collection_id": str(seeded.collection_id),
-            "title": "Visibility dashboard",
-            "widgets": [
-                {
-                    "widget_type": "kpi",
-                    "saved_question_id": str(seeded.question_id),
-                    "layout": {"x": 0, "y": 0, "w": 4, "h": 2},
-                }
-            ],
-        },
-        headers=headers,
-    )
-    assert created.status_code == 201, created.text
-    return created.json()["id"]
 
 
 def test_admin_analyst_viewer_and_external_client_dashboard_visibility(
@@ -50,15 +17,21 @@ def test_admin_analyst_viewer_and_external_client_dashboard_visibility(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seeded = asyncio.run(seed_question_catalog())
-    admin_headers = _headers(monkeypatch, seeded.admin_user_id, "admin@example.com")
+    admin_headers = dashboard_test_headers(
+        monkeypatch,
+        seeded.admin_user_id,
+        "admin@example.com",
+    )
 
     with TestClient(app) as client:
-        dashboard_id = _create_dashboard(
+        created = create_test_dashboard(
             client,
             workspace_id=seeded.workspace_id,
             seeded=seeded,
             headers=admin_headers,
+            title="Visibility dashboard",
         )
+        dashboard_id = created["id"]
 
         cases = [
             (seeded.admin_user_id, "admin@example.com", True),
@@ -67,7 +40,7 @@ def test_admin_analyst_viewer_and_external_client_dashboard_visibility(
             (seeded.external_user_id, "client@example.com", False),
         ]
         for user_id, email, expect_visible in cases:
-            headers = _headers(monkeypatch, user_id, email)
+            headers = dashboard_test_headers(monkeypatch, user_id, email)
             listed = client.get(
                 f"/workspaces/{seeded.workspace_id}/dashboards",
                 headers=headers,
@@ -85,20 +58,26 @@ def test_viewer_cannot_patch_dashboard(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seeded = asyncio.run(seed_question_catalog())
-    admin_headers = _headers(monkeypatch, seeded.admin_user_id, "admin@example.com")
+    admin_headers = dashboard_test_headers(
+        monkeypatch,
+        seeded.admin_user_id,
+        "admin@example.com",
+    )
 
     with TestClient(app) as client:
-        dashboard_id = _create_dashboard(
+        created = create_test_dashboard(
             client,
             workspace_id=seeded.workspace_id,
             seeded=seeded,
             headers=admin_headers,
+            title="Visibility dashboard",
         )
+        dashboard_id = created["id"]
         detail = client.get(
             f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}",
             headers=admin_headers,
         )
-        viewer_headers = _headers(
+        viewer_headers = dashboard_test_headers(
             monkeypatch,
             seeded.viewer_user_id,
             "viewer@example.com",
@@ -117,16 +96,22 @@ def test_viewer_cannot_delete_dashboard(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seeded = asyncio.run(seed_question_catalog())
-    admin_headers = _headers(monkeypatch, seeded.admin_user_id, "admin@example.com")
+    admin_headers = dashboard_test_headers(
+        monkeypatch,
+        seeded.admin_user_id,
+        "admin@example.com",
+    )
 
     with TestClient(app) as client:
-        dashboard_id = _create_dashboard(
+        created = create_test_dashboard(
             client,
             workspace_id=seeded.workspace_id,
             seeded=seeded,
             headers=admin_headers,
+            title="Visibility dashboard",
         )
-        viewer_headers = _headers(
+        dashboard_id = created["id"]
+        viewer_headers = dashboard_test_headers(
             monkeypatch,
             seeded.viewer_user_id,
             "viewer@example.com",
@@ -144,16 +129,22 @@ def test_viewer_gets_consumer_detail_with_can_edit_false(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     seeded = asyncio.run(seed_question_catalog())
-    admin_headers = _headers(monkeypatch, seeded.admin_user_id, "admin@example.com")
+    admin_headers = dashboard_test_headers(
+        monkeypatch,
+        seeded.admin_user_id,
+        "admin@example.com",
+    )
 
     with TestClient(app) as client:
-        dashboard_id = _create_dashboard(
+        created = create_test_dashboard(
             client,
             workspace_id=seeded.workspace_id,
             seeded=seeded,
             headers=admin_headers,
+            title="Visibility dashboard",
         )
-        viewer_headers = _headers(
+        dashboard_id = created["id"]
+        viewer_headers = dashboard_test_headers(
             monkeypatch,
             seeded.viewer_user_id,
             "viewer@example.com",

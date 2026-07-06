@@ -10,6 +10,7 @@ import { ApiError } from "@/app/lib/connections-api";
 import { WidgetChrome } from "./widget-chrome";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const EMPTY_FILTER_VALUES: Record<string, FilterValue> = {};
 
 type TableWidgetProps = {
   accessToken: string;
@@ -38,10 +39,15 @@ export function TableWidget({
   widgetId,
   title,
   filterBindings,
-  globalFilterValues = {},
+  globalFilterValues: globalFilterValuesProp,
   hasActiveOverrides,
   canExport = false,
 }: TableWidgetProps) {
+  const globalFilterValues = globalFilterValuesProp ?? EMPTY_FILTER_VALUES;
+  const filterKey = useMemo(
+    () => JSON.stringify(globalFilterValues),
+    [globalFilterValues],
+  );
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [exporting, setExporting] = useState(false);
@@ -49,7 +55,7 @@ export function TableWidget({
 
   useEffect(() => {
     setPage(0);
-  }, [globalFilterValues, widgetId]);
+  }, [filterKey, widgetId]);
 
   return (
     <WidgetChrome

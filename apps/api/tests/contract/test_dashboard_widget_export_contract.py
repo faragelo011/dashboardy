@@ -348,3 +348,65 @@ def test_export_rejects_truncated_execution(
 
     assert exported.status_code == 422
     assert exported.json()["error_code"] == "export_execution_refused"
+
+
+def test_export_rejects_non_ok_execution(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seeded = asyncio.run(seed_question_catalog())
+    monkeypatch.setattr(
+        "app.auth_context.dependencies.decode_supabase_jwt",
+        lambda _t: {"sub": str(seeded.admin_user_id), "email": "admin@example.com"},
+    )
+
+    async def _sf_error(*_a, **_k):
+        return SnowflakeSelectOutcome(
+            column_names=["region", "amount"],
+            column_types=["STRING", "INTEGER"],
+            rows=[],
+            status=ExecutionStatus.warehouse_error,
+            truncated=False,
+            snowflake_wall_ms=1,
+            bytes_scanned=None,
+            message="warehouse failed",
+        )
+
+    monkeypatch.setattr(
+        "app.query_engine.pipeline.execute_snowflake_select",
+        _sf_error,
+    )
+    conn_stub = SimpleNamespace(id=seeded.connection_id, secret_version=1)
+
+    class _ConnSvc:
+        async def resolve_active_execution_credentials(
+            self, *, session, tenant_id
+        ):  # noqa: ARG002
+            return conn_stub, {
+                "account": "a",
+                "username": "u",
+                "password": "p",
+                "role": "r",
+            }
+
+    monkeypatch.setattr(
+        "app.routes.dashboards.get_connection_service",
+        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
+    )
+    headers = {"Authorization": "Bearer fake"}
+
+    with TestClient(app) as client:
+        dashboard_id, widget_id = _create_table_dashboard(
+            client,
+            workspace_id=seeded.workspace_id,
+            seeded=seeded,
+            headers=headers,
+        )
+        exported = client.get(
+            f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv",
+            params={"filter_state": _filter_state()},
+            headers=headers,
+        )
+
+    assert exported.status_code == 422
+    assert exported.json()["error_code"] == "export_execution_refused"
