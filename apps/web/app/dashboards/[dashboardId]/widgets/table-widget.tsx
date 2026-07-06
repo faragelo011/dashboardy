@@ -12,6 +12,7 @@ type TableWidgetProps = {
   title?: string | null;
   filterBindings?: Record<string, string>;
   globalFilterValues?: Record<string, FilterValue>;
+  hasActiveOverrides?: boolean;
 };
 
 export function TableWidget({
@@ -22,6 +23,7 @@ export function TableWidget({
   title,
   filterBindings,
   globalFilterValues,
+  hasActiveOverrides,
 }: TableWidgetProps) {
   return (
     <WidgetChrome
@@ -31,6 +33,7 @@ export function TableWidget({
       widgetId={widgetId}
       filterBindings={filterBindings}
       globalFilterValues={globalFilterValues}
+      hasActiveOverrides={hasActiveOverrides}
     >
       {({ loading, error, data }) => (
         <div className="flex h-full flex-col gap-2 overflow-hidden rounded-lg border border-border-1 bg-surface-1 p-4">

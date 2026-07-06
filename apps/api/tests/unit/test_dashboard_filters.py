@@ -9,6 +9,7 @@ from app.dashboards.filters import (
     merge_widget_parameters,
     validate_global_filter_values,
     validate_global_filters,
+    widget_has_active_overrides,
 )
 from app.dashboards.schemas import (
     GlobalFilter,
@@ -67,8 +68,8 @@ def test_merge_widget_parameters_ignores_unbound_global_filters() -> None:
     assert merged == {"param_a": "x"}
 
 
-def test_merge_widget_parameters_override_precedence_stub() -> None:
-    """US3 will extend this; US2 documents override beats global value."""
+def test_merge_widget_parameters_override_precedence() -> None:
+    """Override beats global runtime value for the same global_filter_id."""
 
     global_filters = [_gf("gf_date", default="2024-01-01")]
     merged = merge_widget_parameters(
@@ -78,6 +79,51 @@ def test_merge_widget_parameters_override_precedence_stub() -> None:
         {"gf_date": "2024-03-01"},
     )
     assert merged == {"as_of_date": "2024-03-01"}
+
+
+def test_compute_filter_state_hash_changes_when_override_changes() -> None:
+    global_filters = [_gf("gf_date", default="2024-01-01")]
+    bindings = {"gf_date": "as_of_date"}
+    common = dict(
+        global_filters=global_filters,
+        widget_bindings=bindings,
+        global_filter_values={"gf_date": "2024-06-01"},
+    )
+
+    hash_a = compute_filter_state_hash(
+        **common,
+        filter_overrides={"gf_date": "2024-03-01"},
+    )
+    hash_b = compute_filter_state_hash(
+        **common,
+        filter_overrides={"gf_date": "2024-04-01"},
+    )
+    assert hash_a != hash_b
+
+
+def test_widget_has_active_overrides_true_when_override_differs_from_default() -> None:
+    global_filters = [_gf("gf_date", default="2024-01-01")]
+    assert widget_has_active_overrides(
+        global_filters=global_filters,
+        filter_overrides={"gf_date": "2024-03-01"},
+    )
+
+
+def test_widget_has_active_overrides_false_when_override_matches_default() -> None:
+    global_filters = [_gf("gf_date", default="2024-01-01")]
+    assert not widget_has_active_overrides(
+        global_filters=global_filters,
+        filter_overrides={"gf_date": "2024-01-01"},
+    )
+
+
+def test_widget_has_active_overrides_false_when_override_matches_runtime() -> None:
+    global_filters = [_gf("gf_date", default="2024-01-01")]
+    assert not widget_has_active_overrides(
+        global_filters=global_filters,
+        filter_overrides={"gf_date": "2024-06-01"},
+        global_filter_values={"gf_date": "2024-06-01"},
+    )
 
 
 def test_compute_filter_state_hash_changes_when_bound_value_changes() -> None:

@@ -15,6 +15,7 @@ from app.dashboards.filters import (
     validate_bindings_reference_global_filters,
     validate_global_filter_values,
     validate_global_filters,
+    widget_has_active_overrides,
 )
 from app.dashboards.schemas import (
     ColumnDescriptor,
@@ -402,12 +403,39 @@ class DashboardService:
     ) -> bool:
         return export_allowed and widget_type == WidgetType.table.value
 
+    def _widget_shared_fields(
+        self,
+        row: DashboardWidgetRow,
+        *,
+        global_filters: list[GlobalFilter],
+        export_allowed: bool,
+    ) -> dict[str, object]:
+        overrides = row.filter_overrides or {}
+        return {
+            "filter_bindings": row.filter_bindings or {},
+            "filter_overrides": overrides,
+            "has_active_overrides": widget_has_active_overrides(
+                global_filters=global_filters,
+                filter_overrides=overrides,
+            ),
+            "can_export": self._widget_can_export(
+                widget_type=row.widget_type,
+                export_allowed=export_allowed,
+            ),
+        }
+
     def _widget_editor_dto(
         self,
         row: DashboardWidgetRow,
         *,
+        global_filters: list[GlobalFilter],
         export_allowed: bool,
     ) -> DashboardWidget:
+        shared = self._widget_shared_fields(
+            row,
+            global_filters=global_filters,
+            export_allowed=export_allowed,
+        )
         return DashboardWidget(
             id=row.id,
             title=row.title,
@@ -415,33 +443,28 @@ class DashboardService:
             saved_question_id=row.saved_question_id,
             layout=WidgetLayout.model_validate(row.layout),
             config=row.config or {},
-            filter_bindings=row.filter_bindings or {},
-            filter_overrides=row.filter_overrides or {},
-            has_active_overrides=False,
-            can_export=self._widget_can_export(
-                widget_type=row.widget_type,
-                export_allowed=export_allowed,
-            ),
+            **shared,
         )
 
     def _widget_consumer_dto(
         self,
         row: DashboardWidgetRow,
         *,
+        global_filters: list[GlobalFilter],
         export_allowed: bool,
     ) -> DashboardWidgetConsumer:
+        shared = self._widget_shared_fields(
+            row,
+            global_filters=global_filters,
+            export_allowed=export_allowed,
+        )
         return DashboardWidgetConsumer(
             id=row.id,
             title=row.title,
             widget_type=WidgetType(row.widget_type),
             layout=WidgetLayout.model_validate(row.layout),
             config=row.config or {},
-            filter_bindings=row.filter_bindings or {},
-            has_active_overrides=False,
-            can_export=self._widget_can_export(
-                widget_type=row.widget_type,
-                export_allowed=export_allowed,
-            ),
+            **shared,
         )
 
     async def _editor_detail(
@@ -454,13 +477,18 @@ class DashboardService:
     ) -> DashboardEditorDetail:
         view = await self._dashboard_authz(session, dashboard=dashboard)
         export_allowed = view.can_export
+        definition = _definition_from_row(dashboard)
         return DashboardEditorDetail(
             id=dashboard.id,
             collection_id=dashboard.collection_id,
             title=dashboard.title,
-            definition=_definition_from_row(dashboard),
+            definition=definition,
             widgets=[
-                self._widget_editor_dto(w, export_allowed=export_allowed)
+                self._widget_editor_dto(
+                    w,
+                    global_filters=definition.global_filters,
+                    export_allowed=export_allowed,
+                )
                 for w in widgets
             ],
             updated_at=dashboard.updated_at,
@@ -477,13 +505,18 @@ class DashboardService:
     ) -> DashboardConsumerDetail:
         view = await self._dashboard_authz(session, dashboard=dashboard)
         export_allowed = view.can_export
+        definition = _definition_from_row(dashboard)
         return DashboardConsumerDetail(
             id=dashboard.id,
             collection_id=dashboard.collection_id,
             title=dashboard.title,
-            definition=_definition_from_row(dashboard),
+            definition=definition,
             widgets=[
-                self._widget_consumer_dto(w, export_allowed=export_allowed)
+                self._widget_consumer_dto(
+                    w,
+                    global_filters=definition.global_filters,
+                    export_allowed=export_allowed,
+                )
                 for w in widgets
             ],
             updated_at=dashboard.updated_at,

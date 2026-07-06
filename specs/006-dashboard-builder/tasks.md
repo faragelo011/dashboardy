@@ -168,8 +168,8 @@ Implementation notes for US2:
 
 ### Tests for User Story 3
 
-- [ ] T052 [P] [US3] Add unit tests in `apps/api/tests/unit/test_dashboard_filters.py` (extend file) for override precedence: override beats global value for the same `global_filter_id`, and `filter_state_hash` differs when override changes
-- [ ] T053 [P] [US3] Add integration tests in `apps/api/tests/integration/test_dashboard_filter_overrides.py` covering visible `has_active_overrides` in API detail, execution with override values, and refusal when override keys are not declared global filters (`widget_local_filter_forbidden`)
+- [X] T052 [P] [US3] Add unit tests in `apps/api/tests/unit/test_dashboard_filters.py` (extend file) for override precedence: override beats global value for the same `global_filter_id`, and `filter_state_hash` differs when override changes
+- [X] T053 [P] [US3] Add integration tests in `apps/api/tests/integration/test_dashboard_filter_overrides.py` covering visible `has_active_overrides` in API detail, execution with override values, and refusal when override keys are not declared global filters (`widget_local_filter_forbidden`)
 
 ### Implementation for User Story 3
 
@@ -180,11 +180,11 @@ Implementation notes for US3:
 - Widget chrome must show indicator text/badge when `has_active_overrides` is true — hidden overrides are forbidden.
 - Builder must not allow adding override keys that are not global filters.
 
-- [ ] T054 [US3] Extend `filters.py` and `execute_widget` in `apps/api/app/dashboards/service.py` so overrides replace global values per widget before parameter validation and hash computation
-- [ ] T055 [US3] Extend dashboard detail DTO assembly in `apps/api/app/dashboards/service.py` to compute `has_active_overrides` per widget by comparing `filter_overrides` to current global filter values
-- [ ] T056 [US3] Add override editor UI to `apps/web/app/dashboards/[dashboardId]/edit/page.tsx` per widget (select global filter + override value) and persist in `filter_overrides` on save
-- [ ] T057 [P] [US3] Update all widget components in `apps/web/app/dashboards/[dashboardId]/widgets/*.tsx` to render a visible "Filter override active" indicator when `has_active_overrides` is true
-- [ ] T058 [US3] Run US3 tests with `cd apps/api && uv run pytest tests/unit/test_dashboard_filters.py tests/integration/test_dashboard_filter_overrides.py`
+- [X] T054 [US3] Extend `filters.py` and `execute_widget` in `apps/api/app/dashboards/service.py` so overrides replace global values per widget before parameter validation and hash computation
+- [X] T055 [US3] Extend dashboard detail DTO assembly in `apps/api/app/dashboards/service.py` to compute `has_active_overrides` per widget by comparing `filter_overrides` to current global filter values
+- [X] T056 [US3] Add override editor UI to `apps/web/app/dashboards/[dashboardId]/edit/page.tsx` per widget (select global filter + override value) and persist in `filter_overrides` on save
+- [X] T057 [P] [US3] Update all widget components in `apps/web/app/dashboards/[dashboardId]/widgets/*.tsx` to render a visible "Filter override active" indicator when `has_active_overrides` is true
+- [X] T058 [US3] Run US3 tests with `cd apps/api && uv run pytest tests/unit/test_dashboard_filters.py tests/integration/test_dashboard_filter_overrides.py`
 
 **Checkpoint**: US3 delivers visible, executable per-widget overrides without widget-local-only filters.
 

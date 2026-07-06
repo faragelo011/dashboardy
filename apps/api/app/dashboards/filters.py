@@ -87,6 +87,43 @@ def validate_bindings_reference_global_filters(
         )
 
 
+def resolve_global_filter_value(
+    global_filters: list[GlobalFilter],
+    global_filter_values: dict[str, Any],
+    global_filter_id: str,
+) -> Any:
+    """Runtime value when present, otherwise the declared default."""
+
+    if global_filter_id in global_filter_values:
+        return global_filter_values[global_filter_id]
+    for item in global_filters:
+        if item.id == global_filter_id:
+            return item.default_value
+    return None
+
+
+def widget_has_active_overrides(
+    *,
+    global_filters: list[GlobalFilter],
+    filter_overrides: dict[str, Any],
+    global_filter_values: dict[str, Any] | None = None,
+) -> bool:
+    """True when any override differs from the effective global filter value."""
+
+    if not filter_overrides:
+        return False
+    values = global_filter_values or {}
+    for global_filter_id, override_value in filter_overrides.items():
+        global_value = resolve_global_filter_value(
+            global_filters,
+            values,
+            global_filter_id,
+        )
+        if _canonicalize(override_value) != _canonicalize(global_value):
+            return True
+    return False
+
+
 def merge_widget_parameters(
     global_filters: list[GlobalFilter],
     global_filter_values: dict[str, Any],

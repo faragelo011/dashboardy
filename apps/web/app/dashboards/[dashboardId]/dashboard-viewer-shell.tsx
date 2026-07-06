@@ -36,6 +36,7 @@ export function DashboardViewerShell({
         dashboardId={dashboard.id}
         widgets={dashboard.widgets}
         mode="view"
+        globalFilters={dashboard.definition.global_filters}
         globalFilterValues={filterValues}
       />
     </div>

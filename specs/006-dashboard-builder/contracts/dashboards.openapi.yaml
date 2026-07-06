@@ -83,9 +83,9 @@ paths:
       summary: Get dashboard detail for view or edit
       description: |
         Editor responses include widget authoring fields (`saved_question_id`,
-        `filter_overrides`). Consumer responses include `filter_bindings` for
-        bound-only auto-refresh and expose `can_export` per table widget only;
-        they omit `saved_question_id` and `filter_overrides`.
+        full `filter_overrides` editing). Consumer responses include
+        `filter_bindings` and `filter_overrides` for bound-only auto-refresh and
+        visible override indicators; they omit `saved_question_id`.
       parameters:
         - $ref: "#/components/parameters/WorkspaceId"
         - $ref: "#/components/parameters/DashboardId"
@@ -403,13 +403,15 @@ components:
       type: object
       description: |
         Consumer-safe widget shape. Includes `filter_bindings` for bound-only
-        auto-refresh; omits `saved_question_id` and `filter_overrides`.
+        auto-refresh and `filter_overrides` so viewers can see active override
+        state against the global filter bar; omits `saved_question_id`.
       required:
         - id
         - widget_type
         - layout
         - config
         - filter_bindings
+        - filter_overrides
         - has_active_overrides
         - can_export
       properties:
@@ -432,6 +434,13 @@ components:
           additionalProperties:
             type: string
           description: Maps global filter id to saved-question parameter name (needed for bound-only auto-refresh in viewer).
+        filter_overrides:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/FilterValue"
+          description: |
+            Per-widget override values for declared global filters. Exposed to
+            consumers for visible override indicators; not widget-local-only keys.
         has_active_overrides:
           type: boolean
         can_export:

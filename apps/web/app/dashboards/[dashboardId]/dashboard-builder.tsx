@@ -146,11 +146,16 @@ export function DashboardBuilder({
         setWidgets((prev) =>
           prev.map((w) => {
             const bindings = { ...(w.filter_bindings ?? {}) };
+            const overrides = { ...(w.filter_overrides ?? {}) };
             if (oldId in bindings) {
               bindings[newId] = bindings[oldId];
               delete bindings[oldId];
             }
-            return { ...w, filter_bindings: bindings };
+            if (oldId in overrides) {
+              overrides[newId] = overrides[oldId];
+              delete overrides[oldId];
+            }
+            return { ...w, filter_bindings: bindings, filter_overrides: overrides };
           }),
         );
       }
@@ -175,8 +180,10 @@ export function DashboardBuilder({
       setWidgets((prev) =>
         prev.map((w) => {
           const bindings = { ...(w.filter_bindings ?? {}) };
+          const overrides = { ...(w.filter_overrides ?? {}) };
           delete bindings[removed.id];
-          return { ...w, filter_bindings: bindings };
+          delete overrides[removed.id];
+          return { ...w, filter_bindings: bindings, filter_overrides: overrides };
         }),
       );
     }

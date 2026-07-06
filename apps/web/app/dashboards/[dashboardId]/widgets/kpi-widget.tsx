@@ -12,6 +12,7 @@ type KpiWidgetProps = {
   title?: string | null;
   filterBindings?: Record<string, string>;
   globalFilterValues?: Record<string, FilterValue>;
+  hasActiveOverrides?: boolean;
 };
 
 function scalarFromResult(data: WidgetExecuteResponse | null): string | null {
@@ -33,6 +34,7 @@ export function KpiWidget({
   title,
   filterBindings,
   globalFilterValues,
+  hasActiveOverrides,
 }: KpiWidgetProps) {
   return (
     <WidgetChrome
@@ -42,6 +44,7 @@ export function KpiWidget({
       widgetId={widgetId}
       filterBindings={filterBindings}
       globalFilterValues={globalFilterValues}
+      hasActiveOverrides={hasActiveOverrides}
     >
       {({ loading, error, data }) => {
         const value = scalarFromResult(data);

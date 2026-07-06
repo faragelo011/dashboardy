@@ -81,6 +81,7 @@ class DashboardWidgetConsumer(BaseModel):
     layout: WidgetLayout
     config: dict[str, Any] = Field(default_factory=dict)
     filter_bindings: dict[str, str] = Field(default_factory=dict)
+    filter_overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
     has_active_overrides: bool
     can_export: bool
 
