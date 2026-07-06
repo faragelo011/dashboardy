@@ -373,7 +373,7 @@ async def test_widget_mode_second_call_is_cache_hit(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
-            allow_saved_question_execution=True,
+            allow_widget_execution=True,
         )
         await s.commit()
         assert r1.meta.cache_hit is False
@@ -384,7 +384,7 @@ async def test_widget_mode_second_call_is_cache_hit(
             auth_user_id=user_id,
             payload=payload,
             connection_service=svc,
-            allow_saved_question_execution=True,
+            allow_widget_execution=True,
         )
         await s.commit()
         assert r2.meta.cache_hit is True

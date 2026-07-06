@@ -188,6 +188,38 @@ def resolve_internal_question_grant_access(
     return PermissionDecision(True, PermissionReason.allowed)
 
 
+def resolve_internal_dashboard_grant_access(
+    *,
+    actor_role: MembershipRole,
+    collection_permission: CollectionPermission | None,
+    dashboard_permission: CollectionPermission | None,
+) -> PermissionDecision:
+    return resolve_internal_question_grant_access(
+        actor_role=actor_role,
+        collection_permission=collection_permission,
+        question_permission=dashboard_permission,
+    )
+
+
+def resolve_external_client_dashboard_asset_grant(
+    *,
+    actor_role: MembershipRole,
+    actor_user_id: UUID | None,
+    actor_workspace_id: UUID | None,
+    dashboard_id: UUID,
+    grants: list[AssetGrant],
+) -> PermissionDecision:
+    if actor_role != MembershipRole.external_client:
+        return PermissionDecision(True, PermissionReason.allowed)
+    return can_access_dashboard_via_grant(
+        actor_role=actor_role,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+        dashboard_id=dashboard_id,
+        grants=grants,
+    )
+
+
 def resolve_external_client_question_asset_grant(
     *,
     actor_role: MembershipRole,
@@ -211,16 +243,17 @@ def resolve_external_client_question_asset_grant(
     return PermissionDecision(False, PermissionReason.grant_required)
 
 
-def can_export_saved_question_for_role(
+def can_export_asset_for_role(
     *,
     actor_role: MembershipRole,
-    has_visible_question_access: bool,
+    has_visible_access: bool,
     asset_grants: list[AssetGrant],
-    question_id: UUID,
+    asset_type: AssetType,
+    asset_id: UUID,
     actor_user_id: UUID | None = None,
     actor_workspace_id: UUID | None = None,
 ) -> PermissionDecision:
-    if not has_visible_question_access:
+    if not has_visible_access:
         return PermissionDecision(False, PermissionReason.grant_required)
 
     if actor_role == MembershipRole.external_client:
@@ -228,8 +261,8 @@ def can_export_saved_question_for_role(
             return PermissionDecision(False, PermissionReason.grant_required)
         for grant in asset_grants:
             if (
-                grant.asset_type == AssetType.question
-                and grant.asset_id == question_id
+                grant.asset_type == asset_type
+                and grant.asset_id == asset_id
                 and grant.user_id == actor_user_id
                 and grant.workspace_id == actor_workspace_id
                 and grant.can_export
@@ -245,3 +278,43 @@ def can_export_saved_question_for_role(
         return PermissionDecision(True, PermissionReason.allowed)
 
     return PermissionDecision(False, PermissionReason.role_not_allowed)
+
+
+def can_export_saved_question_for_role(
+    *,
+    actor_role: MembershipRole,
+    has_visible_question_access: bool,
+    asset_grants: list[AssetGrant],
+    question_id: UUID,
+    actor_user_id: UUID | None = None,
+    actor_workspace_id: UUID | None = None,
+) -> PermissionDecision:
+    return can_export_asset_for_role(
+        actor_role=actor_role,
+        has_visible_access=has_visible_question_access,
+        asset_grants=asset_grants,
+        asset_type=AssetType.question,
+        asset_id=question_id,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+    )
+
+
+def can_export_dashboard_for_role(
+    *,
+    actor_role: MembershipRole,
+    has_visible_dashboard_access: bool,
+    asset_grants: list[AssetGrant],
+    dashboard_id: UUID,
+    actor_user_id: UUID | None = None,
+    actor_workspace_id: UUID | None = None,
+) -> PermissionDecision:
+    return can_export_asset_for_role(
+        actor_role=actor_role,
+        has_visible_access=has_visible_dashboard_access,
+        asset_grants=asset_grants,
+        asset_type=AssetType.dashboard,
+        asset_id=dashboard_id,
+        actor_user_id=actor_user_id,
+        actor_workspace_id=actor_workspace_id,
+    )

@@ -22,6 +22,7 @@ class QueryAuditLogInsertDTO:
     connection_id: UUID | None
     saved_question_id: UUID | None
     dashboard_id: UUID | None
+    widget_id: UUID | None
     sql_hash: str
     bound_parameters_hash: str
     row_count: int
@@ -40,6 +41,7 @@ async def insert_audit_log(session: AsyncSession, dto: QueryAuditLogInsertDTO) -
         connection_id=dto.connection_id,
         saved_question_id=dto.saved_question_id,
         dashboard_id=dto.dashboard_id,
+        widget_id=dto.widget_id,
         sql_hash=dto.sql_hash,
         bound_parameters_hash=dto.bound_parameters_hash,
         row_count=dto.row_count,

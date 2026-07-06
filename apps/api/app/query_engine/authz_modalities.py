@@ -35,6 +35,9 @@ async def authorize_query_modality(
     if mode == QueryMode.saved_question.value:
         return PermissionDecision(True, PermissionReason.allowed)
 
+    if mode == QueryMode.widget.value:
+        return PermissionDecision(True, PermissionReason.allowed)
+
     if mode != QueryMode.adhoc.value:
         return PermissionDecision(False, PermissionReason.grant_required)
 
