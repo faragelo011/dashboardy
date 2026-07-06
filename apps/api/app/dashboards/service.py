@@ -238,6 +238,8 @@ class DashboardService:
         session: AsyncSession,
         *,
         saved_question_id: UUID,
+        collection_grants: dict[UUID, Any] | None = None,
+        asset_grants: list | None = None,
     ) -> SavedQuestion:
         row = await questions_repository.get_active_saved_question(
             session,
@@ -250,7 +252,11 @@ class DashboardService:
                 "Saved question not found.",
                 details={"saved_question_id": str(saved_question_id)},
             )
-        collection_grants = await self._collection_grant_map(session)
+        collection_grants = (
+            collection_grants
+            if collection_grants is not None
+            else await self._collection_grant_map(session)
+        )
         question_grants = (
             await questions_repository.list_question_grants_for_membership(
                 session,
@@ -260,7 +266,11 @@ class DashboardService:
             )
         )
         q_grant_map = {g.saved_question_id: g.permission for g in question_grants}
-        asset_grants = await self._asset_grants(session)
+        asset_grants = (
+            asset_grants
+            if asset_grants is not None
+            else await self._asset_grants(session)
+        )
         decision = questions_authz.can_view_question(
             actor_role=self._actor.role,
             actor_user_id=self._user_id,
@@ -326,10 +336,25 @@ class DashboardService:
         session: AsyncSession,
         *,
         dashboard: Dashboard,
+        collection_grants: dict[UUID, Any] | None = None,
+        dashboard_grants: dict[UUID, Any] | None = None,
+        asset_grants: list | None = None,
     ) -> authz.DashboardsAuthzDecision:
-        collection_grants = await self._collection_grant_map(session)
-        dashboard_grants = await self._dashboard_grant_map(session)
-        asset_grants = await self._asset_grants(session)
+        collection_grants = (
+            collection_grants
+            if collection_grants is not None
+            else await self._collection_grant_map(session)
+        )
+        dashboard_grants = (
+            dashboard_grants
+            if dashboard_grants is not None
+            else await self._dashboard_grant_map(session)
+        )
+        asset_grants = (
+            asset_grants
+            if asset_grants is not None
+            else await self._asset_grants(session)
+        )
         return authz.can_view_dashboard(
             actor_role=self._actor.role,
             actor_user_id=self._user_id,
@@ -826,7 +851,16 @@ class DashboardService:
         )
         if dashboard is None:
             raise DashboardNotFoundError()
-        view = await self._dashboard_authz(session, dashboard=dashboard)
+        collection_grants = await self._collection_grant_map(session)
+        dashboard_grants = await self._dashboard_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+        view = await self._dashboard_authz(
+            session,
+            dashboard=dashboard,
+            collection_grants=collection_grants,
+            dashboard_grants=dashboard_grants,
+            asset_grants=asset_grants,
+        )
         if not view.allowed:
             raise DashboardsAuthzDeniedError()
         execute_decision = authz.can_execute_dashboard(
@@ -834,13 +868,9 @@ class DashboardService:
             actor_user_id=self._user_id,
             actor_workspace_id=self._actor.workspace_id,
             dashboard_id=dashboard_id,
-            collection_grant=(await self._collection_grant_map(session)).get(
-                dashboard.collection_id
-            ),
-            dashboard_grant=(await self._dashboard_grant_map(session)).get(
-                dashboard_id
-            ),
-            asset_grants=await self._asset_grants(session),
+            collection_grant=collection_grants.get(dashboard.collection_id),
+            dashboard_grant=dashboard_grants.get(dashboard_id),
+            asset_grants=asset_grants,
         )
         if not execute_decision.allowed:
             raise DashboardsAuthzDeniedError()
@@ -864,6 +894,8 @@ class DashboardService:
         question = await self._require_saved_question_access(
             session,
             saved_question_id=widget.saved_question_id,
+            collection_grants=collection_grants,
+            asset_grants=asset_grants,
         )
 
         declarations = _parameters_from_json(question.parameter_schema)
