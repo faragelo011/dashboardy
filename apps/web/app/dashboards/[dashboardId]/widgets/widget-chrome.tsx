@@ -13,6 +13,7 @@ type WidgetChromeProps = {
   widgetId: string;
   filterBindings?: Record<string, string>;
   globalFilterValues?: Record<string, FilterValue>;
+  hasActiveOverrides?: boolean;
   children: (ctx: {
     loading: boolean;
     error: string | null;
@@ -27,6 +28,7 @@ export function WidgetChrome({
   widgetId,
   filterBindings = {},
   globalFilterValues = {},
+  hasActiveOverrides = false,
   children,
 }: WidgetChromeProps) {
   const { loading, error, data, refresh, forceFresh } = useWidgetExecute({
@@ -40,6 +42,14 @@ export function WidgetChrome({
 
   return (
     <div className="flex h-full flex-col gap-2">
+      {hasActiveOverrides ? (
+        <p
+          className="rounded border border-accent-border bg-accent-soft px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-accent-soft-ink"
+          role="status"
+        >
+          Filter override active
+        </p>
+      ) : null}
       <div className="flex flex-wrap items-center justify-end gap-2 text-[10px] uppercase tracking-wide text-ink-muted">
         <button
           type="button"

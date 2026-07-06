@@ -50,6 +50,7 @@ export type DashboardWidgetConsumer = {
   layout: WidgetLayout;
   config: Record<string, unknown>;
   filter_bindings: Record<string, string>;
+  filter_overrides: Record<string, FilterValue>;
   has_active_overrides: boolean;
   can_export: boolean;
 };

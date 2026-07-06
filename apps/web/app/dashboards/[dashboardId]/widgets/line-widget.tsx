@@ -22,6 +22,7 @@ type LineWidgetProps = {
   title?: string | null;
   filterBindings?: Record<string, string>;
   globalFilterValues?: Record<string, FilterValue>;
+  hasActiveOverrides?: boolean;
 };
 
 function chartData(data: WidgetExecuteResponse | null): Record<string, unknown>[] {
@@ -45,6 +46,7 @@ export function LineWidget({
   title,
   filterBindings,
   globalFilterValues,
+  hasActiveOverrides,
 }: LineWidgetProps) {
   return (
     <WidgetChrome
@@ -54,6 +56,7 @@ export function LineWidget({
       widgetId={widgetId}
       filterBindings={filterBindings}
       globalFilterValues={globalFilterValues}
+      hasActiveOverrides={hasActiveOverrides}
     >
       {({ loading, error, data }) => {
         const points = chartData(data);

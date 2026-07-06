@@ -22,6 +22,7 @@ type BarWidgetProps = {
   title?: string | null;
   filterBindings?: Record<string, string>;
   globalFilterValues?: Record<string, FilterValue>;
+  hasActiveOverrides?: boolean;
 };
 
 function chartData(data: WidgetExecuteResponse | null): Record<string, unknown>[] {
@@ -46,6 +47,7 @@ export function BarWidget({
   title,
   filterBindings,
   globalFilterValues,
+  hasActiveOverrides,
 }: BarWidgetProps) {
   return (
     <WidgetChrome
@@ -55,6 +57,7 @@ export function BarWidget({
       widgetId={widgetId}
       filterBindings={filterBindings}
       globalFilterValues={globalFilterValues}
+      hasActiveOverrides={hasActiveOverrides}
     >
       {({ loading, error, data }) => {
         const points = chartData(data);

@@ -17,6 +17,8 @@ import { BarWidget } from "./widgets/bar-widget";
 import { KpiWidget } from "./widgets/kpi-widget";
 import { LineWidget } from "./widgets/line-widget";
 import { TableWidget } from "./widgets/table-widget";
+import { filterInputForType } from "./dashboard-filter-bar";
+import { resolveHasActiveOverrides } from "./dashboard-filter-state";
 
 export type EditableWidget = DashboardWidget | DashboardWidgetCreateInput & { id?: string };
 
@@ -52,21 +54,37 @@ function widgetBindings(
   return {};
 }
 
+function widgetOverrides(
+  widget: DashboardWidget | DashboardWidgetConsumer | EditableWidget,
+): Record<string, FilterValue> {
+  if ("filter_overrides" in widget && widget.filter_overrides) {
+    return widget.filter_overrides as Record<string, FilterValue>;
+  }
+  return {};
+}
+
 function WidgetBody({
   accessToken,
   workspaceId,
   dashboardId,
   widget,
+  globalFilters = [],
   globalFilterValues = {},
 }: {
   accessToken: string;
   workspaceId: string;
   dashboardId: string;
   widget: DashboardWidget | DashboardWidgetConsumer;
+  globalFilters?: GlobalFilter[];
   globalFilterValues?: Record<string, FilterValue>;
 }) {
   const id = widget.id;
   const bindings = widgetBindings(widget);
+  const hasActiveOverrides = resolveHasActiveOverrides(
+    widget,
+    globalFilters,
+    globalFilterValues,
+  );
   const common = {
     accessToken,
     workspaceId,
@@ -75,6 +93,7 @@ function WidgetBody({
     title: widget.title,
     filterBindings: bindings,
     globalFilterValues,
+    hasActiveOverrides,
   };
   switch (widget.widget_type) {
     case "kpi":
@@ -229,9 +248,35 @@ export function DashboardGrid({
     } else {
       delete nextBindings[globalFilterId];
     }
+    const nextOverrides = { ...widgetOverrides(widget) };
+    if (!parameterName) {
+      delete nextOverrides[globalFilterId];
+    }
     updateWidget(index, {
       ...widget,
       filter_bindings: nextBindings,
+      filter_overrides: nextOverrides,
+    } as EditableWidget);
+  };
+
+  const setOverride = (
+    index: number,
+    globalFilterId: string,
+    value: FilterValue | null,
+  ) => {
+    const widget = widgets[index];
+    if (!widget || !onWidgetsChange) {
+      return;
+    }
+    const nextOverrides = { ...widgetOverrides(widget) };
+    if (value === null) {
+      delete nextOverrides[globalFilterId];
+    } else {
+      nextOverrides[globalFilterId] = value;
+    }
+    updateWidget(index, {
+      ...widget,
+      filter_overrides: nextOverrides,
     } as EditableWidget);
   };
 
@@ -356,24 +401,48 @@ export function DashboardGrid({
                       const questionId =
                         "saved_question_id" in widget ? widget.saved_question_id : "";
                       const params = questionParametersById[questionId] ?? [];
+                      const boundParameter = widgetBindings(widget)[gf.id];
                       return (
-                        <label key={gf.id} className="flex items-center gap-1">
-                          <span className="w-16 truncate">{gf.label}</span>
-                          <select
-                            className="ds-input py-0.5 text-[10px]"
-                            value={widgetBindings(widget)[gf.id] ?? ""}
-                            onChange={(e) =>
-                              setBinding(index, gf.id, e.target.value)
-                            }
-                          >
-                            <option value="">—</option>
-                            {params.map((p) => (
-                              <option key={p.name} value={p.name}>
-                                {p.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        <div key={gf.id} className="flex flex-col gap-1">
+                          <label className="flex items-center gap-1">
+                            <span className="w-16 truncate">{gf.label}</span>
+                            <select
+                              className="ds-input py-0.5 text-[10px]"
+                              value={boundParameter ?? ""}
+                              onChange={(e) =>
+                                setBinding(index, gf.id, e.target.value)
+                              }
+                            >
+                              <option value="">—</option>
+                              {params.map((p) => (
+                                <option key={p.name} value={p.name}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          {boundParameter ? (
+                            <label className="flex items-center gap-1 pl-16">
+                              <span className="w-16 truncate text-ink-muted">Override</span>
+                              {filterInputForType(
+                                gf.value_type,
+                                widgetOverrides(widget)[gf.id] ??
+                                  globalFilterValues[gf.id] ??
+                                  gf.default_value,
+                                (next) => setOverride(index, gf.id, next),
+                              )}
+                              {gf.id in widgetOverrides(widget) ? (
+                                <button
+                                  type="button"
+                                  className="rounded px-1 text-ink-muted hover:text-ink"
+                                  onClick={() => setOverride(index, gf.id, null)}
+                                >
+                                  Clear
+                                </button>
+                              ) : null}
+                            </label>
+                          ) : null}
+                        </div>
                       );
                     })}
                   </div>
@@ -385,6 +454,7 @@ export function DashboardGrid({
                   workspaceId={workspaceId}
                   dashboardId={dashboardId}
                   widget={widget as DashboardWidget | DashboardWidgetConsumer}
+                  globalFilters={globalFilters}
                   globalFilterValues={globalFilterValues}
                 />
               ) : (

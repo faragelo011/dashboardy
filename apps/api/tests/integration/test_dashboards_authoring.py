@@ -126,7 +126,10 @@ def test_dashboard_authoring_lifecycle(
         assert gone.status_code == 404
 
     async def _row_soft_deleted() -> bool:
-        from app.db.session import get_async_session_maker
+        from app.db.session import get_async_session_maker, get_engine
+
+        get_engine.cache_clear()
+        get_async_session_maker.cache_clear()
 
         maker = get_async_session_maker()
         async with maker() as session:
@@ -163,8 +166,18 @@ def test_viewer_gets_consumer_detail_without_authoring_fields(
         assert created.status_code == 201
         dashboard_id = created.json()["id"]
 
-    viewer_headers = _headers(monkeypatch, seeded.viewer_user_id, "viewer@example.com")
-    with TestClient(app) as client:
+        monkeypatch.setattr(
+            "app.auth_context.dependencies.decode_supabase_jwt",
+            lambda _t: {
+                "sub": str(seeded.viewer_user_id),
+                "email": "viewer@example.com",
+            },
+        )
+        viewer_headers = _headers(
+            monkeypatch,
+            seeded.viewer_user_id,
+            "viewer@example.com",
+        )
         detail = client.get(
             f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}",
             headers=viewer_headers,
@@ -175,5 +188,5 @@ def test_viewer_gets_consumer_detail_without_authoring_fields(
     assert body["can_edit"] is False
     for widget in body["widgets"]:
         assert "saved_question_id" not in widget
-        assert "filter_overrides" not in widget
+        assert "filter_overrides" in widget
         assert "sql_text" not in widget
