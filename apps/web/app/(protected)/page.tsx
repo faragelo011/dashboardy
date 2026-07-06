@@ -1,4 +1,10 @@
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
+import { Badge } from "@/components/ds/badge";
+import { Button } from "@/components/ds/button";
+import { Card } from "@/components/ds/card";
+import { Divider, Kicker } from "@/components/ds/card";
+import { PageHeader } from "@/components/ds/page-header";
+
 import { getProtectedMe } from "./data";
 import { WorkspaceBadge } from "./workspace-badge";
 
@@ -8,56 +14,53 @@ export default async function ProtectedHomePage() {
   return (
     <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNav />
-      <main className="mx-auto flex max-w-7xl flex-col px-4 py-10 sm:px-8 lg:py-14">
-        <header className="mb-10 flex flex-col items-start gap-3 border-b border-border-1 pb-8">
+      <main className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-14">
+        <div className="flex flex-col gap-3">
           <WorkspaceBadge workspace={me.current_workspace} />
-          <p className="ds-kicker">Overview</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
-            Dashboardy
-          </h1>
-          <p className="max-w-[60ch] text-sm leading-relaxed text-ink-muted">
-            Your workspace overview. Analytics and dashboard modules will appear here as they are provisioned.
-          </p>
-        </header>
+          <PageHeader
+            kicker={<Kicker>Overview</Kicker>}
+            title="Dashboardy"
+            description="Your workspace overview. Analytics and dashboard modules will appear here as they are provisioned."
+          />
+        </div>
 
-        <section className="ds-card flex flex-col gap-6 p-6 sm:p-7">
-          <h2 className="text-lg font-semibold tracking-tight text-ink-strong">
+        <Card padding="md" className="flex flex-col gap-6">
+          <h2 className="font-display text-[var(--text-h2)] font-semibold tracking-tight text-ink-strong">
             Session context
           </h2>
 
           <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             <div className="flex flex-col gap-1.5">
-              <dt className="ds-kicker">Workspace</dt>
+              <dt className="dby-kicker">Workspace</dt>
               <dd className="ds-mono text-ink">{me.current_workspace.workspace_name}</dd>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <dt className="ds-kicker">Role</dt>
-              <dt className="sr-only">Role:</dt>
-              <dd className="text-base capitalize text-ink">{me.current_workspace.role}</dd>
+              <dt className="dby-kicker">Role</dt>
+              <dd className="capitalize text-ink">{me.current_workspace.role}</dd>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <dt className="ds-kicker">Signed in as</dt>
+              <dt className="dby-kicker">Signed in as</dt>
               <dd className="ds-mono truncate text-ink-muted">{me.user.email}</dd>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <dt className="ds-kicker">Status</dt>
+              <dt className="dby-kicker">Status</dt>
               <dd>
-                <span className="ds-badge ds-badge--ok">{me.current_workspace.membership_status}</span>
+                <Badge tone="ok">{me.current_workspace.membership_status}</Badge>
               </dd>
             </div>
           </dl>
 
-          <hr className="ds-divider" />
+          <Divider />
 
           <form action="/sign-out" method="post">
-            <button type="submit" className="ds-btn ds-btn-ghost text-ink-muted hover:text-danger-ink">
+            <Button type="submit" variant="ghost">
               Sign out
-            </button>
+            </Button>
           </form>
-        </section>
+        </Card>
       </main>
     </div>
   );

@@ -1,0 +1,97 @@
+<!-- @dsCard group="Components" viewport="1000x640" name="Data display" subtitle="Page header, cards, stats, table, dashboard widgets" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--surface-canvas); padding: 22px; }
+  .wrap { display:flex; flex-direction:column; gap:20px; }
+  .eyebrow { font-size: var(--text-micro); font-weight:600; letter-spacing: var(--tracking-kicker);
+    text-transform:uppercase; color: var(--text-muted); margin: 0 0 8px; }
+  .wgrid { display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  .bars { display:flex; align-items:flex-end; gap:8px; height:96px; padding-top:6px; }
+  .bar { flex:1; background: oklch(var(--viz-1)); border-radius: var(--radius-xs) var(--radius-xs) 0 0; }
+</style>
+</head>
+<body>
+<div id="root" class="wrap"></div>
+<script type="text/babel" data-presets="react">
+  const NS = window.DashboardyDesignSystem_787e56;
+  const { PageHeader, Card, Stat, DataTable, Widget, Badge, Button, Divider } = NS;
+
+  const rows = [
+    { email: "amir@acme.com", role: "Admin", status: "Active", ok: true, joined: "Feb 12, 2026" },
+    { email: "lin@acme.com", role: "Analyst", status: "Active", ok: true, joined: "Mar 03, 2026" },
+    { email: "dana@acme.com", role: "Viewer", status: "Active", ok: true, joined: "Mar 21, 2026" },
+    { email: "partner@northwind.io", role: "External client", status: "Inactive", ok: false, joined: "Apr 08, 2026" },
+    { email: "sana@acme.com", role: "Analyst", status: "Active", ok: true, joined: "Apr 19, 2026" },
+    { email: "omar@acme.com", role: "Viewer", status: "Active", ok: true, joined: "May 02, 2026" },
+  ];
+  const cols = [
+    { key: "email", header: "Identity" },
+    { key: "role", header: "Role" },
+    { key: "status", header: "Status", render: (r) => <Badge tone={r.ok ? "ok" : "idle"}>{r.status}</Badge> },
+    { key: "joined", header: "Joined", mono: true, align: "right" },
+  ];
+  const bars = [42, 68, 55, 91, 73, 60, 84];
+
+  function Demo() {
+    return (
+      <React.Fragment>
+        <PageHeader
+          kicker="Workspace directory"
+          title="Members"
+          description="Manage access and roles for Acme Analytics."
+          actions={<Button variant="primary">Invite member</Button>}
+        />
+
+        <div>
+          <p className="eyebrow">Dashboard widgets — states &amp; override</p>
+          <div className="wgrid">
+            <Widget title="Total revenue" kpi="$23.8M" onRefresh={()=>{}} footer={<><span>Cache hit</span><span>10m TTL</span></>} />
+            <Widget title="Active members" kpi="128" onRefresh={()=>{}} />
+            <Widget title="Signups" state="loading" />
+            <Widget title="Churn" state="error" error="timeout: warehouse did not respond (30s)" onRefresh={()=>{}} />
+          </div>
+        </div>
+
+        <div className="wgrid" style={{gridTemplateColumns:"2fr 1fr"}}>
+          <Widget title="Revenue by region" override onRefresh={()=>{}} footer={<><span>Fresh</span><span>7 rows</span></>}>
+            <div className="bars">
+              {bars.map((h,i)=><div key={i} className="bar" style={{height:h+"%"}} />)}
+            </div>
+          </Widget>
+          <div style={{display:"flex",flexDirection:"column",gap:12}}>
+            <Card padding="md">
+              <div style={{display:"flex",gap:28}}>
+                <Stat label="Admins" value="02" />
+                <Stat label="Analysts" value="05" />
+                <Stat label="Viewers" value="11" />
+              </div>
+            </Card>
+            <Card inset padding="md">
+              <p className="eyebrow" style={{margin:0}}>Session</p>
+              <p style={{fontFamily:"var(--font-mono)",fontSize:"var(--text-body-sm)",color:"var(--text-primary)",margin:"6px 0 0"}}>acme-analytics</p>
+            </Card>
+          </div>
+        </div>
+
+        <div>
+          <p className="eyebrow">Data table — client-side pagination</p>
+          <Card padding="md">
+            <DataTable columns={cols} rows={rows} pageSize={4} getRowKey={(r)=>r.email} />
+          </Card>
+        </div>
+      </React.Fragment>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo/>);
+</script>
+</body>
+</html>

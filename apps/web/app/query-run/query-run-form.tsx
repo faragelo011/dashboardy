@@ -1,6 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Play } from "lucide-react";
+
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
 import {
   fetchFullQueryResultAction,
@@ -58,9 +62,9 @@ export function QueryRunForm() {
             />
           </label>
           <div className="flex flex-wrap items-center gap-4">
-            <button type="submit" disabled={isPending} className={primaryButtonClass}>
+            <Button type="submit" variant="primary" disabled={isPending} leftIcon={<DsIcon icon={Play} />}>
               {isPending ? "Running…" : "Execute query"}
-            </button>
+            </Button>
           </div>
         </div>
       </form>

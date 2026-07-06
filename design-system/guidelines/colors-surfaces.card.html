@@ -1,0 +1,22 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Surfaces — Elevation" subtitle="App canvas → raised surface ramp" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:16px;font-family:var(--font-body);}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .sw{height:52px;border-radius:var(--radius-sm);border:1px solid var(--border-default);}
+  .nm{margin-top:7px;font-size:10px;font-weight:600;color:var(--text-primary);}
+  .vl{margin-top:1px;font-family:var(--font-mono);font-size:9px;color:var(--text-faint);}
+</style></head>
+<body>
+  <div class="grid">
+    <div><div class="sw" style="background:var(--surface-canvas)"></div><div class="nm">app</div><div class="vl">98%</div></div>
+    <div><div class="sw" style="background:var(--surface-base)"></div><div class="nm">surface-0</div><div class="vl">100%</div></div>
+    <div><div class="sw" style="background:var(--surface-card)"></div><div class="nm">surface-1</div><div class="vl">99.2%</div></div>
+    <div><div class="sw" style="background:var(--surface-raised)"></div><div class="nm">surface-2</div><div class="vl">97%</div></div>
+    <div><div class="sw" style="background:oklch(var(--surface-3))"></div><div class="nm">surface-3</div><div class="vl">95%</div></div>
+    <div><div class="sw" style="background:oklch(var(--surface-4))"></div><div class="nm">surface-4</div><div class="vl">92.4%</div></div>
+    <div><div class="sw" style="background:oklch(var(--surface-5))"></div><div class="nm">surface-5</div><div class="vl">89.5%</div></div>
+  </div>
+</body></html>

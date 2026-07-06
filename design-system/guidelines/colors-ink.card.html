@@ -1,0 +1,20 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Ink — Text" subtitle="Foreground text ramp on the app canvas" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:16px;font-family:var(--font-body);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .cell{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-base);padding:14px 14px 12px;}
+  .big{font-size:22px;font-weight:600;letter-spacing:-0.01em;}
+  .nm{margin-top:10px;font-size:11px;font-weight:600;color:var(--text-primary);}
+  .vl{margin-top:2px;font-family:var(--font-mono);font-size:10px;color:var(--text-faint);}
+</style></head>
+<body>
+  <div class="grid">
+    <div class="cell"><div class="big" style="color:var(--text-strong)">Aa</div><div class="nm">ink-strong</div><div class="vl">titles · 22%</div></div>
+    <div class="cell"><div class="big" style="color:var(--text-primary)">Aa</div><div class="nm">ink</div><div class="vl">body · 34%</div></div>
+    <div class="cell"><div class="big" style="color:var(--text-muted)">Aa</div><div class="nm">ink-muted</div><div class="vl">secondary · 52%</div></div>
+    <div class="cell"><div class="big" style="color:var(--text-faint)">Aa</div><div class="nm">ink-faint</div><div class="vl">hints · 64%</div></div>
+  </div>
+</body></html>

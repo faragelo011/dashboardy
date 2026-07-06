@@ -27,6 +27,12 @@ export type CollectionActionState =
   | { ok: true }
   | { ok: false; message: string; errorCode?: string };
 
+function revalidateCollectionConsumers() {
+  revalidatePath("/collections");
+  revalidatePath("/questions");
+  revalidatePath("/dashboards", "layout");
+}
+
 function parseSortOrder(
   raw: string,
   { required }: { required: boolean },
@@ -67,7 +73,7 @@ export async function createCollectionAction(
       name,
       sort_order: sortOrder.value,
     });
-    revalidatePath("/collections");
+    revalidateCollectionConsumers();
     return { ok: true };
   } catch (err) {
     if (err instanceof ApiError) {
@@ -107,7 +113,7 @@ export async function updateCollectionAction(
       name,
       sort_order: sortOrderValue,
     });
-    revalidatePath("/collections");
+    revalidateCollectionConsumers();
     return { ok: true };
   } catch (err) {
     if (err instanceof ApiError) {
@@ -127,7 +133,7 @@ export async function deleteCollectionAction(formData: FormData): Promise<Collec
   const token = await requireToken();
   try {
     await deleteCollection(token, workspaceId, collectionId);
-    revalidatePath("/collections");
+    revalidateCollectionConsumers();
     return { ok: true };
   } catch (err) {
     if (err instanceof ApiError) {

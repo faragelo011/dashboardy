@@ -1,0 +1,54 @@
+/* ============================================================
+   Dashboardy Signal — Typography tokens
+   ------------------------------------------------------------
+   Display + numerals : Space Grotesk (geometric, technical)
+   Body / UI          : IBM Plex Sans (precise, humane)
+   Data / code        : IBM Plex Mono
+   Balanced scale — a touch larger than a dense admin tool, so
+   the product reads confident and premium without wasting space.
+   ============================================================ */
+
+:root {
+  /* ---- Families ---- */
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: var(--font-body);
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- Type scale (rem; 1rem = 16px) ---- */
+  --text-display: 2rem;      /* 32px — page H1 (sm:2.25rem) */
+  --text-h1: 1.625rem;       /* 26px */
+  --text-h2: 1.25rem;        /* 20px — section headings */
+  --text-h3: 1.0625rem;      /* 17px — sub-headings */
+  --text-body: 0.9375rem;    /* 15px — default body / reading */
+  --text-body-sm: 0.875rem;  /* 14px — controls, dense UI */
+  --text-caption: 0.8125rem; /* 13px — labels, help */
+  --text-micro: 0.6875rem;   /* 11px — kickers, table headers */
+  --text-nano: 0.625rem;     /* 10px */
+  --text-stat: 2.25rem;      /* 36px — big figures (Space Grotesk) */
+
+  /* ---- Weights ---- */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---- Line heights ---- */
+  --leading-none: 1;
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.65;
+
+  /* ---- Letter spacing ---- */
+  --tracking-tighter: -0.03em; /* big display / stats (Space Grotesk) */
+  --tracking-tight: -0.015em;  /* headings */
+  --tracking-normal: 0;
+  --tracking-wide: 0.01em;
+  --tracking-kicker: 0.16em;   /* uppercase eyebrows */
+  --tracking-caps: 0.14em;     /* uppercase micro labels */
+
+  /* ---- OpenType ---- */
+  --font-features: "kern" 1;
+  --numeric-tabular: "tnum" 1; /* @kind other */
+}

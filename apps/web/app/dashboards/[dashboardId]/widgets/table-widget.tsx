@@ -1,26 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 
 import type { FilterValue, WidgetExecuteResponse } from "@dashboardy/types";
 
 import { exportDashboardWidgetCsv } from "@/app/lib/dashboards-api";
 import { ApiError } from "@/app/lib/connections-api";
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
-import { WidgetChrome } from "./widget-chrome";
+import { WidgetChrome, type WidgetChromeProps } from "./widget-chrome";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const EMPTY_FILTER_VALUES: Record<string, FilterValue> = {};
 
-type TableWidgetProps = {
-  accessToken: string;
-  workspaceId: string;
-  dashboardId: string;
-  widgetId: string;
-  title?: string | null;
-  filterBindings?: Record<string, string>;
-  globalFilterValues?: Record<string, FilterValue>;
-  hasActiveOverrides?: boolean;
+type TableWidgetProps = Omit<WidgetChromeProps, "children"> & {
   canExport?: boolean;
 };
 
@@ -33,17 +28,17 @@ function encodeFilterState(
 }
 
 export function TableWidget({
+  title,
+  widgetId,
+  canExport = false,
+  globalFilterValues: globalFilterValuesProp,
   accessToken,
   workspaceId,
   dashboardId,
-  widgetId,
-  title,
-  filterBindings,
-  globalFilterValues: globalFilterValuesProp,
-  hasActiveOverrides,
-  canExport = false,
-}: TableWidgetProps) {
+  ...chromeProps
+}: TableWidgetProps & { title?: string | null }) {
   const globalFilterValues = globalFilterValuesProp ?? EMPTY_FILTER_VALUES;
+  const exportAllowed = canExport && Boolean(widgetId);
   const filterKey = useMemo(
     () => JSON.stringify(globalFilterValues),
     [globalFilterValues],
@@ -63,9 +58,8 @@ export function TableWidget({
       workspaceId={workspaceId}
       dashboardId={dashboardId}
       widgetId={widgetId}
-      filterBindings={filterBindings}
       globalFilterValues={globalFilterValues}
-      hasActiveOverrides={hasActiveOverrides}
+      {...chromeProps}
     >
       {({ loading, error, data }) => (
         <TableWidgetBody
@@ -80,7 +74,7 @@ export function TableWidget({
             setPageSize(next);
             setPage(0);
           }}
-          canExport={canExport}
+          canExport={exportAllowed}
           exporting={exporting}
           exportError={exportError}
           onExport={async () => {
@@ -172,14 +166,16 @@ function TableWidgetBody({
           <span />
         )}
         {canExport && data?.meta.status === "ok" ? (
-          <button
+          <Button
             type="button"
-            className="rounded border border-border-2 px-2 py-1 text-[10px] uppercase tracking-wide text-ink-muted hover:bg-surface-2"
+            variant="secondary"
+            size="sm"
             disabled={exporting || loading}
+            leftIcon={<DsIcon icon={Download} />}
             onClick={() => void onExport()}
           >
             {exporting ? "Exporting…" : "Export CSV"}
-          </button>
+          </Button>
         ) : null}
       </div>
       {exportError ? (

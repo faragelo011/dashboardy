@@ -1,9 +1,14 @@
 import { redirect } from "next/navigation";
+import { KeyRound, PlugZap } from "lucide-react";
 
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
 import { getWorkspaceConnection } from "@/app/lib/connections-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
+import { Alert } from "@/components/ds/alert";
+import { ALERT_ICON_LOCK } from "@/components/ds/alert-icons";
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
 import { ConnectionsForm } from "./connections-form";
 import { rotateConnectionAction, testConnectionAction } from "./actions";
@@ -120,13 +125,15 @@ export default async function ConnectionsPage() {
                 </div>
                 <form action={testConnectionAction} className="shrink-0">
                   <input type="hidden" name="workspace_id" value={workspaceId} />
-                  <button
+                  <Button
+                    type="submit"
+                    variant="secondary"
                     aria-label="Test connection"
-                    className="ds-btn ds-btn-secondary"
                     disabled={!testable}
+                    leftIcon={<DsIcon icon={PlugZap} />}
                   >
                     Test connection
-                  </button>
+                  </Button>
                 </form>
               </header>
 
@@ -246,13 +253,16 @@ export default async function ConnectionsPage() {
                   <p className="ds-help max-w-[50ch]">
                     Status returns to pending test on submit. A failed test keeps the previous credentials.
                   </p>
-                  <button
+                  <Button
+                    type="submit"
+                    variant="danger"
                     aria-label="Rotate credentials"
-                    className="ds-btn ds-btn-danger sm:shrink-0"
                     disabled={!testable}
+                    leftIcon={<DsIcon icon={KeyRound} />}
+                    className="sm:shrink-0"
                   >
                     Rotate credentials
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>
@@ -286,14 +296,13 @@ export default async function ConnectionsPage() {
               </ol>
             </div>
 
-            <div className="ds-alert ds-alert--info">
-              <div className="flex flex-col gap-1">
-                <span className="font-semibold">Security</span>
-                <span>
-                  Credentials are write-only. The API never returns secrets after they are saved.
-                </span>
-              </div>
-            </div>
+            <Alert
+              tone="info"
+              title="Security"
+              icon={<DsIcon icon={ALERT_ICON_LOCK} size="sm" />}
+            >
+              Credentials are write-only. The API never returns secrets after they are saved.
+            </Alert>
           </aside>
         </section>
       </div>

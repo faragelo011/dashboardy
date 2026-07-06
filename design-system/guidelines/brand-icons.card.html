@@ -1,0 +1,40 @@
+<!-- @dsCard group="Brand" viewport="700x170" name="Iconography — Lucide" subtitle="Lucide, 24px viewBox, stroke 2, round caps · currentColor" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:20px;font-family:var(--font-body);}
+  .grid{display:grid;grid-template-columns:repeat(10,1fr);gap:16px 10px;}
+  .cell{display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--text-muted);}
+  .cell svg{width:20px;height:20px;}
+  .cap{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);}
+  .accent{color:var(--color-accent);}
+  .note{margin-top:16px;font-size:12px;color:var(--text-muted);}
+</style></head>
+<body>
+  <div class="grid">
+    <div class="cell accent"><i data-lucide="layout-dashboard"></i><span class="cap">dashboard</span></div>
+    <div class="cell"><i data-lucide="database"></i><span class="cap">connection</span></div>
+    <div class="cell"><i data-lucide="users"></i><span class="cap">members</span></div>
+    <div class="cell"><i data-lucide="folder"></i><span class="cap">collection</span></div>
+    <div class="cell"><i data-lucide="file-question"></i><span class="cap">question</span></div>
+    <div class="cell"><i data-lucide="table"></i><span class="cap">table</span></div>
+    <div class="cell"><i data-lucide="bar-chart-3"></i><span class="cap">bar</span></div>
+    <div class="cell"><i data-lucide="line-chart"></i><span class="cap">line</span></div>
+    <div class="cell"><i data-lucide="filter"></i><span class="cap">filter</span></div>
+    <div class="cell"><i data-lucide="refresh-cw"></i><span class="cap">refresh</span></div>
+    <div class="cell"><i data-lucide="download"></i><span class="cap">export</span></div>
+    <div class="cell"><i data-lucide="key-round"></i><span class="cap">creds</span></div>
+    <div class="cell"><i data-lucide="sun"></i><span class="cap">light</span></div>
+    <div class="cell"><i data-lucide="moon"></i><span class="cap">dark</span></div>
+    <div class="cell"><i data-lucide="plus"></i><span class="cap">new</span></div>
+    <div class="cell"><i data-lucide="search"></i><span class="cap">search</span></div>
+    <div class="cell"><i data-lucide="chevron-down"></i><span class="cap">select</span></div>
+    <div class="cell"><i data-lucide="triangle-alert"></i><span class="cap">error</span></div>
+    <div class="cell"><i data-lucide="check"></i><span class="cap">ok</span></div>
+    <div class="cell"><i data-lucide="lock"></i><span class="cap">secure</span></div>
+  </div>
+  <p class="note">Lucide (stroke-2, 24px viewBox, round caps) — the app hand-inlines this style. Icons inherit <code>currentColor</code>; size 15–16px inline, 20px standalone.</p>
+  <script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+  <script>window.lucide && lucide.createIcons();</script>
+</body></html>

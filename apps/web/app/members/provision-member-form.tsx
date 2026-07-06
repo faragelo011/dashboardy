@@ -1,6 +1,10 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { UserPlus } from "lucide-react";
+
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
 import { provisionMemberAction } from "./actions";
 
@@ -103,9 +107,9 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="ds-help max-w-[48ch]">Access can be revoked from the roster below.</p>
-        <button className="ds-btn ds-btn-primary sm:shrink-0" disabled={isPending}>
+        <Button type="submit" variant="primary" disabled={isPending} className="sm:shrink-0" leftIcon={<DsIcon icon={UserPlus} />}>
           {isPending ? "Inviting…" : "Invite member"}
-        </button>
+        </Button>
       </div>
     </form>
   );

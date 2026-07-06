@@ -1,0 +1,21 @@
+<!-- @dsCard group="Spacing" viewport="700x150" name="Radii" subtitle="Rounded, modern — 8px controls, 12px cards, 16px panels" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:18px;font-family:var(--font-body);}
+  .grid{display:flex;gap:20px;align-items:flex-end;}
+  .box{width:76px;height:56px;background:var(--surface-base);border:1px solid var(--border-strong);box-shadow:var(--shadow-xs);}
+  .nm{margin-top:8px;font-size:11px;font-weight:600;color:var(--text-primary);}
+  .vl{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);}
+</style></head>
+<body>
+  <div class="grid">
+    <div><div class="box" style="border-radius:var(--radius-xs)"></div><div class="nm">xs</div><div class="vl">6px · chips</div></div>
+    <div><div class="box" style="border-radius:var(--radius-sm)"></div><div class="nm">sm</div><div class="vl">8px · controls</div></div>
+    <div><div class="box" style="border-radius:var(--radius-md)"></div><div class="nm">md</div><div class="vl">12px · cards</div></div>
+    <div><div class="box" style="border-radius:var(--radius-lg)"></div><div class="nm">lg</div><div class="vl">16px · widgets</div></div>
+    <div><div class="box" style="border-radius:var(--radius-xl)"></div><div class="nm">xl</div><div class="vl">20px · modals</div></div>
+    <div><div class="box" style="border-radius:var(--radius-full);width:56px"></div><div class="nm">full</div><div class="vl">pills</div></div>
+  </div>
+</body></html>

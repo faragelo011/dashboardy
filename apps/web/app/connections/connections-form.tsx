@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { Save } from "lucide-react";
 
 import type { DataConnection } from "@dashboardy/types";
+
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
 import { upsertConnectionAction } from "./actions";
 
@@ -207,9 +211,9 @@ export function ConnectionsForm({
             ? "Not configured yet. Saving moves the connection to pending test."
             : "Saving submits the credentials again and moves the connection to pending test."}
         </p>
-        <button aria-label="Save connection" className="ds-btn ds-btn-primary sm:shrink-0">
+        <Button type="submit" variant="primary" aria-label="Save connection" className="sm:shrink-0" leftIcon={<DsIcon icon={Save} />}>
           Save connection
-        </button>
+        </Button>
       </div>
     </form>
   );

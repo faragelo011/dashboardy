@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogIn } from "lucide-react";
 
+import { Alert } from "@/components/ds/alert";
+import { Button } from "@/components/ds/button";
+import { Card } from "@/components/ds/card";
+import { Field } from "@/components/ds/field";
+import { Input } from "@/components/ds/input";
+import { Kicker } from "@/components/ds/card";
+import { DsIcon } from "@/components/ds/icon";
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
 export default function SignInPage() {
@@ -27,8 +35,6 @@ export default function SignInPage() {
         return;
       }
 
-      // After provisioning, `/me` returns 403 password_reset_required until the user resets.
-      // This client-side check avoids relying on server-side redirects that may be opaque during debugging.
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -80,85 +86,70 @@ export default function SignInPage() {
   }
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-surface-app px-6 py-12">
-      <div className="w-full max-w-md">
+    <main
+      className="relative flex min-h-dvh items-center justify-center px-6 py-12"
+      style={{ background: "var(--surface-canvas)" }}
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-80"
+        style={{ background: "var(--gradient-brand-soft)" }}
+      />
+      <div className="relative w-full max-w-md">
         <header className="mb-8 flex flex-col items-start gap-2">
-          <p className="ds-kicker">Authorized access</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+          <Kicker>Authorized access</Kicker>
+          <h1 className="font-display text-[var(--text-display)] font-semibold tracking-tight text-ink-strong">
             Sign in
           </h1>
-          <p className="ds-help max-w-[40ch]">
+          <p className="dby-field__help max-w-[40ch]">
             Sign in with your workspace credentials.
           </p>
         </header>
 
-        <form
-          className="ds-card flex flex-col gap-5 p-6"
-          onSubmit={onSubmit}
-          aria-busy={loading}
-        >
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="ds-label">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              inputMode="email"
-              className="ds-input"
-              placeholder="you@company.com"
-              value={email}
-              onChange={(ev) => setEmail(ev.target.value)}
-              disabled={loading}
-            />
-          </div>
+        <Card padding="md" className="flex flex-col gap-5">
+          <form className="flex flex-col gap-5" onSubmit={onSubmit} aria-busy={loading}>
+            <Field label="Email" htmlFor="email">
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                inputMode="email"
+                placeholder="you@company.com"
+                value={email}
+                onChange={(ev) => setEmail(ev.target.value)}
+                disabled={loading}
+              />
+            </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="password" className="ds-label">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="ds-input"
-              placeholder="Enter password"
-              value={password}
-              onChange={(ev) => setPassword(ev.target.value)}
-              disabled={loading}
-              aria-invalid={error ? true : undefined}
-              aria-describedby={error ? "sign-in-error" : undefined}
-            />
-          </div>
+            <Field label="Password" htmlFor="password">
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                autoComplete="current-password"
+                placeholder="Enter password"
+                value={password}
+                onChange={(ev) => setPassword(ev.target.value)}
+                disabled={loading}
+                aria-invalid={error ? true : undefined}
+                aria-describedby={error ? "sign-in-error" : undefined}
+              />
+            </Field>
 
-          {error ? (
-            <div
-              id="sign-in-error"
-              role="alert"
-              aria-live="assertive"
-              aria-atomic="true"
-              className="ds-alert ds-alert--danger"
-            >
-              <div className="flex flex-col gap-1">
-                <span className="font-semibold">Sign-in failed</span>
-                <span>{error}</span>
-              </div>
-            </div>
-          ) : null}
+            {error ? (
+              <Alert tone="danger" title="Sign-in failed" id="sign-in-error">
+                {error}
+              </Alert>
+            ) : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="ds-btn ds-btn-primary w-full"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
+            <Button type="submit" variant="primary" fullWidth disabled={loading} leftIcon={<DsIcon icon={LogIn} />}>
+              {loading ? "Signing in…" : "Sign in"}
+            </Button>
+          </form>
+        </Card>
       </div>
     </main>
   );

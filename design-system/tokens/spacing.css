@@ -1,0 +1,63 @@
+/* ============================================================
+   Dashboardy Signal — Spacing, radii, sizing
+   ------------------------------------------------------------
+   4px base grid. Balanced density — comfortable but efficient.
+   Rounded shape language: 8px controls, 12px cards, 16px panels.
+   ============================================================ */
+
+:root {
+  /* ---- Spacing (4px base) ---- */
+  --space-0: 0;
+  --space-px: 1px;
+  --space-0-5: 0.125rem; /* 2px */
+  --space-1: 0.25rem;    /* 4px */
+  --space-1-5: 0.375rem; /* 6px */
+  --space-2: 0.5rem;     /* 8px */
+  --space-2-5: 0.625rem; /* 10px */
+  --space-3: 0.75rem;    /* 12px */
+  --space-4: 1rem;       /* 16px */
+  --space-5: 1.25rem;    /* 20px */
+  --space-6: 1.5rem;     /* 24px */
+  --space-7: 1.75rem;    /* 28px */
+  --space-8: 2rem;       /* 32px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-12: 3rem;      /* 48px */
+  --space-14: 3.5rem;    /* 56px */
+  --space-16: 4rem;      /* 64px */
+  --space-20: 5rem;      /* 80px */
+
+  /* ---- Radii (rounded, modern) ---- */
+  --radius-xs: 6px;    /* chips, chart bars */
+  --radius-sm: 8px;    /* buttons, inputs, badges */
+  --radius-md: 12px;   /* cards, form panels */
+  --radius-lg: 16px;   /* widgets, large panels */
+  --radius-xl: 20px;   /* modals, hero surfaces */
+  --radius-2xl: 28px;  /* feature blocks */
+  --radius-full: 9999px; /* pills, dots, avatars */
+
+  /* ---- Border widths ---- */
+  --border-width: 1px;
+  --border-width-accent: 2px;
+
+  /* ---- Control heights (balanced) ---- */
+  --control-height-sm: 2.25rem; /* 36px */
+  --control-height-md: 2.5rem;  /* 40px */
+  --control-height-lg: 2.75rem; /* 44px */
+
+  /* ---- Layout ---- */
+  --container-max: 82rem;
+  --container-pad: 1.25rem;
+  --container-pad-lg: 2rem;
+  --grid-cols: 12; /* @kind other */
+  --grid-row-height: 88px;
+  --grid-gap: 0.75rem;
+
+  /* ---- Z-index ---- */
+  --z-base: 0;         /* @kind other */
+  --z-sticky: 40;      /* @kind other */
+  --z-header: 50;      /* @kind other */
+  --z-dropdown: 60;    /* @kind other */
+  --z-overlay: 70;     /* @kind other */
+  --z-modal: 80;       /* @kind other */
+  --z-toast: 90;       /* @kind other */
+}

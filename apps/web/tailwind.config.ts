@@ -2,8 +2,7 @@ import type { Config } from "tailwindcss";
 import plugin from "tailwindcss/plugin";
 
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}"],
-  // Theme toggle sets data-theme="dark" on <html>; dark: variants respond to it.
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   darkMode: ["class", '[data-theme="dark"]'],
   theme: {
     extend: {
@@ -28,6 +27,7 @@ const config: Config = {
         "border-4": "oklch(var(--border-4))",
 
         accent: "oklch(var(--accent))",
+        "accent-2": "oklch(var(--accent-2))",
         "accent-hover": "oklch(var(--accent-hover))",
         "accent-active": "oklch(var(--accent-active))",
         "accent-soft": "oklch(var(--accent-soft))",
@@ -42,35 +42,60 @@ const config: Config = {
 
         warn: "oklch(var(--warn))",
         "warn-soft": "oklch(var(--warn-soft))",
+        "warn-soft-ink": "oklch(var(--warn-soft-ink))",
 
         "danger-border": "oklch(var(--danger-border))",
         "danger-soft": "oklch(var(--danger-soft))",
         "danger-soft-strong": "oklch(var(--danger-soft-strong))",
         "danger-ink": "oklch(var(--danger-ink))",
         "danger-ink-strong": "oklch(var(--danger-ink-strong))",
+
+        "viz-1": "oklch(var(--viz-1))",
+        "viz-2": "oklch(var(--viz-2))",
+        "viz-3": "oklch(var(--viz-3))",
+        "viz-4": "oklch(var(--viz-4))",
+        "viz-5": "oklch(var(--viz-5))",
+        "viz-6": "oklch(var(--viz-6))",
+        "viz-7": "oklch(var(--viz-7))",
+        "viz-8": "oklch(var(--viz-8))",
       },
       fontFamily: {
         sans: ["var(--font-body)", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-display)", "ui-serif", "Georgia", "serif"],
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
+        display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       borderRadius: {
-        // Dense system: tight radii. 4px for inputs/buttons, 6px for cards.
-        ds: "4px",
-        "ds-lg": "6px",
+        ds: "var(--radius-sm)",
+        "ds-md": "var(--radius-md)",
+        "ds-lg": "var(--radius-lg)",
+        "ds-xl": "var(--radius-xl)",
+        pill: "var(--radius-full)",
+      },
+      boxShadow: {
+        "ds-xs": "var(--shadow-xs)",
+        "ds-sm": "var(--shadow-sm)",
+        "ds-card": "var(--shadow-card)",
+        "ds-md": "var(--shadow-md)",
+        "ds-lg": "var(--shadow-lg)",
+        "ds-focus": "var(--shadow-focus)",
       },
       animation: {
-        "fade-in-up": "fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        "fade-in": "fadeIn 1s ease-out forwards",
+        "fade-in-up": "dby-fade-in-up var(--duration-entrance) var(--ease-out) forwards",
+        "fade-in": "dby-fade-in var(--duration-slow) var(--ease-out) forwards",
+        pulse: "dby-pulse 1.5s var(--ease-in-out) infinite",
       },
       keyframes: {
-        fadeInUp: {
-          "0%": { opacity: "0", transform: "translateY(20px)" },
+        "dby-fade-in-up": {
+          "0%": { opacity: "0", transform: "translateY(16px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        fadeIn: {
+        "dby-fade-in": {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
+        },
+        "dby-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.5" },
         },
       },
     },
@@ -79,7 +104,7 @@ const config: Config = {
     plugin(function ({ addUtilities }) {
       addUtilities({
         "@media (prefers-reduced-motion: reduce)": {
-          ".animate-fade-in-up, .animate-fade-in": {
+          ".animate-fade-in-up, .animate-fade-in, .animate-pulse": {
             animation: "none !important",
           },
         },

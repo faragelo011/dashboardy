@@ -75,12 +75,15 @@ function WidgetBody({
   accessToken: string;
   workspaceId: string;
   dashboardId: string;
-  widget: DashboardWidget | DashboardWidgetConsumer;
+  widget: DashboardWidget | DashboardWidgetConsumer | EditableWidget;
   globalFilters?: GlobalFilter[];
   globalFilterValues?: Record<string, FilterValue>;
 }) {
-  const id = widget.id;
+  const widgetId = "id" in widget && widget.id ? widget.id : "";
+  const savedQuestionId =
+    "saved_question_id" in widget ? widget.saved_question_id : undefined;
   const bindings = widgetBindings(widget);
+  const overrides = widgetOverrides(widget);
   const hasActiveOverrides = resolveHasActiveOverrides(
     widget,
     globalFilters,
@@ -90,9 +93,12 @@ function WidgetBody({
     accessToken,
     workspaceId,
     dashboardId,
-    widgetId: id,
+    widgetId,
+    savedQuestionId: widgetId ? undefined : savedQuestionId,
+    globalFilters,
     title: widget.title,
     filterBindings: bindings,
+    filterOverrides: overrides,
     globalFilterValues,
     hasActiveOverrides,
   };
@@ -165,7 +171,6 @@ export function DashboardGrid({
     }
     const maxY = widgets.reduce((acc, w) => Math.max(acc, w.layout.y + w.layout.h), 0);
     const next: EditableWidget = {
-      id: crypto.randomUUID(),
       widget_type: draftType,
       saved_question_id: draftQuestionId,
       layout: { x: 0, y: maxY, w: 4, h: draftType === "kpi" ? 2 : 4 },
@@ -184,6 +189,13 @@ export function DashboardGrid({
     index: number,
   ) => {
     if (mode !== "edit" || !onWidgetsChange) {
+      return;
+    }
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest("select, input, textarea, button, a, label, [data-no-widget-drag]")
+    ) {
       return;
     }
     event.preventDefault();
@@ -341,7 +353,8 @@ export function DashboardGrid({
       >
         {widgets.map((widget, index) => {
           const widgetKey = "id" in widget && widget.id ? widget.id : `new-${index}`;
-          const hasId = "id" in widget && Boolean(widget.id);
+          const canPreview =
+            "saved_question_id" in widget && Boolean(widget.saved_question_id);
           return (
             <div
               key={widgetKey}
@@ -373,7 +386,11 @@ export function DashboardGrid({
               }}
             >
               {mode === "edit" ? (
-                <div className="absolute right-2 top-2 z-10 flex gap-1">
+                <div
+                  className="absolute bottom-2 right-2 z-20 flex gap-1"
+                  data-no-widget-drag
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
                   <button
                     type="button"
                     className="rounded bg-surface-2 px-2 py-0.5 text-[10px] text-ink-muted hover:text-ink"
@@ -400,7 +417,11 @@ export function DashboardGrid({
                 </div>
               ) : null}
               {mode === "edit" && globalFilters.length > 0 && "saved_question_id" in widget ? (
-                <div className="absolute left-2 top-2 z-10 max-w-[calc(100%-5rem)] rounded bg-surface-2/95 p-2 text-[10px]">
+                <div
+                  className="absolute left-2 top-2 z-20 max-w-[calc(100%-5rem)] rounded bg-surface-2/95 p-2 text-[10px] shadow-sm"
+                  data-no-widget-drag
+                  onPointerDown={(event) => event.stopPropagation()}
+                >
                   <p className="mb-1 font-medium text-ink-muted">Filter bindings</p>
                   <div className="flex flex-col gap-1">
                     {globalFilters.map((gf) => {
@@ -454,18 +475,18 @@ export function DashboardGrid({
                   </div>
                 </div>
               ) : null}
-              {hasId ? (
+              {canPreview ? (
                 <WidgetBody
                   accessToken={accessToken}
                   workspaceId={workspaceId}
                   dashboardId={dashboardId}
-                  widget={widget as DashboardWidget | DashboardWidgetConsumer}
+                  widget={widget}
                   globalFilters={globalFilters}
                   globalFilterValues={globalFilterValues}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border-2 bg-surface-1 p-4 text-sm text-ink-muted">
-                  Save to render widget
+                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border-2 bg-surface-1 p-4 text-center text-sm text-ink-muted">
+                  Select a saved question to preview this widget.
                 </div>
               )}
             </div>

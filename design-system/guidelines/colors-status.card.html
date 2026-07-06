@@ -1,0 +1,36 @@
+<!-- @dsCard group="Colors" viewport="700x140" name="Status — Semantic" subtitle="Success, warn, danger, info · soft fill + ink" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:16px;font-family:var(--font-body);}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .chip{border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;font-weight:600;
+    display:flex;align-items:center;gap:7px;}
+  .dot{width:8px;height:8px;border-radius:50%;}
+  .nm{margin-top:8px;font-size:10px;font-family:var(--font-mono);color:var(--text-faint);}
+</style></head>
+<body>
+  <div class="grid">
+    <div>
+      <div class="chip" style="background:var(--color-success-soft);color:var(--color-success-ink);border:1px solid oklch(var(--success) / .3)">
+        <span class="dot" style="background:var(--color-success)"></span>active</div>
+      <div class="nm">success · 158</div>
+    </div>
+    <div>
+      <div class="chip" style="background:var(--color-warn-soft);color:var(--color-warn-ink);border:1px solid oklch(var(--warn) / .3)">
+        <span class="dot" style="background:var(--color-warn)"></span>pending test</div>
+      <div class="nm">warn · 76</div>
+    </div>
+    <div>
+      <div class="chip" style="background:var(--color-danger-soft);color:var(--color-danger);border:1px solid var(--color-danger-border)">
+        <span class="dot" style="background:var(--color-danger)"></span>test failed</div>
+      <div class="nm">danger · 22</div>
+    </div>
+    <div>
+      <div class="chip" style="background:var(--color-accent-soft);color:var(--color-accent-soft-ink);border:1px solid var(--color-accent-border)">
+        <span class="dot" style="background:var(--color-accent)"></span>override</div>
+      <div class="nm">info · 262</div>
+    </div>
+  </div>
+</body></html>

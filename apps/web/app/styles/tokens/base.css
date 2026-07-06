@@ -1,0 +1,59 @@
+/* ============================================================
+   Dashboardy — Base / reset layer
+   ------------------------------------------------------------
+   Minimal, token-driven document defaults. Mirrors the app's
+   html/body setup: dense 14px body, cool-neutral ink on the app
+   canvas, refined font rendering, themed selection + scrollbars.
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-feature-settings: var(--font-features);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--text-strong);
+}
+
+/* Thin, theme-following scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(var(--border-3)) transparent;
+}
+
+/* Headings inherit the display family; weights come from utilities/components */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  margin: 0;
+}
+
+/* Accessible focus-visible default for anything not otherwise handled */
+:where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid oklch(var(--focus));
+  outline-offset: 2px;
+}
+
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+}

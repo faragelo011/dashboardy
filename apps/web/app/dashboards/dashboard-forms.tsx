@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { useState, useTransition, type FormEvent } from "react";
 
 import type { Collection, DashboardSummary } from "@dashboardy/types";
 
 import { ApiError, createDashboard, deleteDashboard } from "@/app/lib/dashboards-api";
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
 type CreateProps = {
   accessToken: string;
@@ -84,9 +87,9 @@ export function DashboardCreateForm({
           {error}
         </p>
       ) : null}
-      <button type="submit" disabled={pending} className="ds-btn ds-btn-primary">
+      <Button type="submit" variant="primary" disabled={pending} leftIcon={<DsIcon icon={Plus} />}>
         {pending ? "Creating…" : "Create dashboard"}
-      </button>
+      </Button>
     </form>
   );
 }

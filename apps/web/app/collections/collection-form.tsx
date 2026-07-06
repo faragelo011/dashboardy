@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
+import { useEffect, useState, useTransition, type FormEvent } from "react";
 
 import type { Collection } from "@dashboardy/types";
+
+import { Button } from "@/components/ds/button";
+import { DsIcon } from "@/components/ds/icon";
 
 import {
   createCollectionAction,
@@ -31,8 +36,17 @@ type CreateProps = {
 };
 
 export function CollectionCreateForm({ workspaceId, canEdit }: CreateProps) {
+  const router = useRouter();
   const [state, setState] = useState<CollectionActionState | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!state?.ok) {
+      return;
+    }
+    router.refresh();
+  }, [state, router]);
+
   if (!canEdit) {
     return null;
   }
@@ -56,9 +70,9 @@ export function CollectionCreateForm({ workspaceId, canEdit }: CreateProps) {
         <input name="sort_order" type="number" defaultValue={0} className="ds-input" />
       </label>
       <ErrorBanner state={state} />
-      <button type="submit" disabled={pending} className="ds-btn ds-btn-primary">
+      <Button type="submit" variant="primary" disabled={pending} leftIcon={<DsIcon icon={Plus} />}>
         {pending ? "Creating…" : "Create collection"}
-      </button>
+      </Button>
     </form>
   );
 }
@@ -70,10 +84,18 @@ type RowProps = {
 };
 
 export function CollectionRow({ collection, workspaceId, canEdit }: RowProps) {
+  const router = useRouter();
   const [updateState, setUpdateState] = useState<CollectionActionState | null>(null);
   const [deleteState, setDeleteState] = useState<CollectionActionState | null>(null);
   const [updatePending, startUpdateTransition] = useTransition();
   const [deletePending, startDeleteTransition] = useTransition();
+
+  useEffect(() => {
+    if (!updateState?.ok && !deleteState?.ok) {
+      return;
+    }
+    router.refresh();
+  }, [updateState, deleteState, router]);
 
   const submitUpdate = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
