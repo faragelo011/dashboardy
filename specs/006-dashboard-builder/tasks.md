@@ -132,9 +132,9 @@ Implementation notes for US1:
 
 ### Tests for User Story 2
 
-- [ ] T040 [P] [US2] Add unit tests for `apps/api/app/dashboards/filters.py` in `apps/api/tests/unit/test_dashboard_filters.py` covering merge with bindings, ignored unbound globals, override precedence (stub for US3), and stable `filter_state_hash` changes when values change
-- [ ] T041 [P] [US2] Add contract tests for widget execute request/response with `global_filter_values` in `apps/api/tests/contract/test_dashboard_widget_execute_contract.py`
-- [ ] T042 [P] [US2] Add integration tests in `apps/api/tests/integration/test_dashboard_filter_refresh.py` proving bound widget execute uses merged parameters, unbound widgets ignore unrelated global filters, and second execute with different `global_filter_values` changes `filter_state_hash` and does not return stale cache when filter state differs
+- [X] T040 [P] [US2] Add unit tests for `apps/api/app/dashboards/filters.py` in `apps/api/tests/unit/test_dashboard_filters.py` covering merge with bindings, ignored unbound globals, override precedence (stub for US3), and stable `filter_state_hash` changes when values change
+- [X] T041 [P] [US2] Add contract tests for widget execute request/response with `global_filter_values` in `apps/api/tests/contract/test_dashboard_widget_execute_contract.py`
+- [X] T042 [P] [US2] Add integration tests in `apps/api/tests/integration/test_dashboard_filter_refresh.py` proving bound widget execute uses merged parameters, unbound widgets ignore unrelated global filters, and second execute with different `global_filter_values` changes `filter_state_hash` and does not return stale cache when filter state differs
 
 ### Implementation for User Story 2
 
@@ -146,15 +146,15 @@ Implementation notes for US2:
 - Execute must reject parameters not declared on the linked saved question (`invalid_parameters`).
 - Web filter bar initializes from `default_value` on first load.
 
-- [ ] T043 [US2] Extend `create_dashboard`/`update_dashboard` in `apps/api/app/dashboards/service.py` to validate `definition.global_filters` (unique ids, supported value types, non-empty labels) and widget `filter_bindings` keys against global filter ids
-- [ ] T044 [US2] Update `execute_widget` in `apps/api/app/dashboards/service.py` to require `WidgetExecuteRequest.global_filter_values`, merge through `filters.py`, pass resulting `filter_state_hash` to query engine, and invalidate/bypass cache per `bypass_cache` flag
-- [ ] T045 [US2] Implement `apps/web/app/dashboards/[dashboardId]/dashboard-filter-bar.tsx` rendering inputs for each global filter by `value_type` and holding current values in React state (Zustand store optional in `apps/web/app/dashboards/[dashboardId]/dashboard-filter-state.ts`)
-- [ ] T046 [US2] Update `apps/web/app/dashboards/[dashboardId]/page.tsx` and `edit/page.tsx` to render `dashboard-filter-bar` above the grid and pass `global_filter_values` into widget components
-- [ ] T047 [US2] Update widget components in `apps/web/app/dashboards/[dashboardId]/widgets/*.tsx` to accept `globalFilterValues` prop and re-call `executeDashboardWidget` immediately when a bound global filter value changes (auto-refresh per clarification); widgets without a binding for the changed filter must not execute
-- [ ] T048 [US2] Add builder UI in `apps/web/app/dashboards/[dashboardId]/edit/page.tsx` to add/edit/remove global filters and configure per-widget `filter_bindings` dropdowns mapping global filter id → saved-question parameter names from the linked question schema
-- [ ] T049 [US2] Add shared `apps/web/app/dashboards/[dashboardId]/widgets/widget-chrome.tsx` with per-widget Refresh (current filters) and Force fresh (`bypass_cache: true`) controls; display `meta.cache_hit` after run (FR-019)
-- [ ] T050 [US2] Wrap each widget component with `widget-chrome.tsx` in `apps/web/app/dashboards/[dashboardId]/widgets/*.tsx`
-- [ ] T051 [US2] Run US2 tests with `cd apps/api && uv run pytest tests/unit/test_dashboard_filters.py tests/contract/test_dashboard_widget_execute_contract.py tests/integration/test_dashboard_filter_refresh.py`
+- [X] T043 [US2] Extend `create_dashboard`/`update_dashboard` in `apps/api/app/dashboards/service.py` to validate `definition.global_filters` (unique ids, supported value types, non-empty labels) and widget `filter_bindings` keys against global filter ids
+- [X] T044 [US2] Update `execute_widget` in `apps/api/app/dashboards/service.py` to require `WidgetExecuteRequest.global_filter_values`, merge through `filters.py`, pass resulting `filter_state_hash` to query engine, and invalidate/bypass cache per `bypass_cache` flag
+- [X] T045 [US2] Implement `apps/web/app/dashboards/[dashboardId]/dashboard-filter-bar.tsx` rendering inputs for each global filter by `value_type` and holding current values in React state (Zustand store optional in `apps/web/app/dashboards/[dashboardId]/dashboard-filter-state.ts`)
+- [X] T046 [US2] Update `apps/web/app/dashboards/[dashboardId]/page.tsx` and `edit/page.tsx` to render `dashboard-filter-bar` above the grid and pass `global_filter_values` into widget components
+- [X] T047 [US2] Update widget components in `apps/web/app/dashboards/[dashboardId]/widgets/*.tsx` to accept `globalFilterValues` prop and re-call `executeDashboardWidget` immediately when a bound global filter value changes (auto-refresh per clarification); widgets without a binding for the changed filter must not execute
+- [X] T048 [US2] Add builder UI in `apps/web/app/dashboards/[dashboardId]/edit/page.tsx` to add/edit/remove global filters and configure per-widget `filter_bindings` dropdowns mapping global filter id → saved-question parameter names from the linked question schema
+- [X] T049 [US2] Add shared `apps/web/app/dashboards/[dashboardId]/widgets/widget-chrome.tsx` with per-widget Refresh (current filters) and Force fresh (`bypass_cache: true`) controls; display `meta.cache_hit` after run (FR-019)
+- [X] T050 [US2] Wrap each widget component with `widget-chrome.tsx` in `apps/web/app/dashboards/[dashboardId]/widgets/*.tsx`
+- [X] T051 [US2] Run US2 tests with `cd apps/api && uv run pytest tests/unit/test_dashboard_filters.py tests/contract/test_dashboard_widget_execute_contract.py tests/integration/test_dashboard_filter_refresh.py`
 
 **Checkpoint**: US2 delivers global filters with correct binding semantics and auto-refresh.
 

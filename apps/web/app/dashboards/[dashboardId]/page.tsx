@@ -6,7 +6,7 @@ import { getProtectedMe } from "@/app/(protected)/data";
 import { getDashboard, ApiError } from "@/app/lib/dashboards-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
-import { DashboardGrid } from "./dashboard-grid";
+import { DashboardViewerShell } from "./dashboard-viewer-shell";
 
 type PageProps = {
   params: Promise<{ dashboardId: string }>;
@@ -78,12 +78,10 @@ export default async function DashboardViewerPage({ params }: PageProps) {
                 ) : null}
               </div>
             </header>
-            <DashboardGrid
+            <DashboardViewerShell
               accessToken={token}
               workspaceId={workspaceId}
-              dashboardId={dashboardId}
-              widgets={dashboard.widgets}
-              mode="view"
+              dashboard={dashboard}
             />
           </>
         )}

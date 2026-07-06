@@ -175,6 +175,5 @@ def test_viewer_gets_consumer_detail_without_authoring_fields(
     assert body["can_edit"] is False
     for widget in body["widgets"]:
         assert "saved_question_id" not in widget
-        assert "filter_bindings" not in widget
         assert "filter_overrides" not in widget
         assert "sql_text" not in widget

@@ -49,6 +49,7 @@ export type DashboardWidgetConsumer = {
   widget_type: "kpi" | "bar" | "line" | "table";
   layout: WidgetLayout;
   config: Record<string, unknown>;
+  filter_bindings: Record<string, string>;
   has_active_overrides: boolean;
   can_export: boolean;
 };
