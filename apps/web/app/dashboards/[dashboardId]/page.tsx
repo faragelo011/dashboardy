@@ -14,10 +14,6 @@ type PageProps = {
 
 export default async function DashboardViewerPage({ params }: PageProps) {
   const me = await getProtectedMe();
-  const role = me.current_workspace.role;
-  if (role === "external_client") {
-    redirect("/");
-  }
 
   const { dashboardId } = await params;
   const supabase = await createServerSupabase();

@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dashboards import authz, repository
+from app.dashboards.csv_export import render_query_result_csv
 from app.dashboards.filters import (
     FilterValidationError,
     compute_filter_state_hash,
@@ -42,6 +43,7 @@ from app.dashboards.schemas import (
 from app.models.dashboards import Dashboard
 from app.models.dashboards import DashboardWidget as DashboardWidgetRow
 from app.models.saved_questions import SavedQuestion
+from app.query_engine.enums import ExecutionStatus
 from app.query_engine.pipeline import execute_workspace_query
 from app.query_engine.schemas import (
     QueryExecuteSuccessResponse,
@@ -129,6 +131,22 @@ class CollectionNotEmptyError(DashboardServiceError):
 class UnsupportedWidgetTypeError(DashboardServiceError):
     error_code = "unsupported_widget_type"
     default_message = "Unsupported widget type."
+
+
+class ExportExecutionRefusedError(DashboardServiceError):
+    error_code = "export_execution_refused"
+    default_message = "Widget execution did not succeed; CSV was not produced."
+
+    def __init__(
+        self,
+        message: str | None = None,
+        *,
+        error_code: str | None = None,
+        details: dict[str, Any] | None = None,
+    ) -> None:
+        super().__init__(message, details=details)
+        if error_code is not None:
+            self.error_code = error_code
 
 
 def _default_definition() -> DashboardDefinition:
@@ -879,26 +897,19 @@ class DashboardService:
         if not deleted:
             raise DashboardNotFoundError()
 
-    async def execute_widget(
+    async def _execute_widget_loaded(
         self,
         session: AsyncSession,
         *,
-        dashboard_id: UUID,
+        dashboard: Dashboard,
+        widgets: list[DashboardWidgetRow],
         widget_id: UUID,
         payload: WidgetExecuteRequest,
         connection_service: object,
+        collection_grants: dict[UUID, Any],
+        dashboard_grants: dict[UUID, Any],
+        asset_grants: list[Any],
     ) -> WidgetExecuteResponse:
-        dashboard, widgets = await repository.load_dashboard_with_widgets(
-            session,
-            tenant_id=self._actor.tenant_id,
-            workspace_id=self._actor.workspace_id,
-            dashboard_id=dashboard_id,
-        )
-        if dashboard is None:
-            raise DashboardNotFoundError()
-        collection_grants = await self._collection_grant_map(session)
-        dashboard_grants = await self._dashboard_grant_map(session)
-        asset_grants = await self._asset_grants(session)
         view = await self._dashboard_authz(
             session,
             dashboard=dashboard,
@@ -912,9 +923,9 @@ class DashboardService:
             actor_role=self._actor.role,
             actor_user_id=self._user_id,
             actor_workspace_id=self._actor.workspace_id,
-            dashboard_id=dashboard_id,
+            dashboard_id=dashboard.id,
             collection_grant=collection_grants.get(dashboard.collection_id),
-            dashboard_grant=dashboard_grants.get(dashboard_id),
+            dashboard_grant=dashboard_grants.get(dashboard.id),
             asset_grants=asset_grants,
         )
         if not execute_decision.allowed:
@@ -963,7 +974,7 @@ class DashboardService:
         cache_ttl_seconds = clamp_widget_ttl_seconds(widget.config or {}, presentation)
 
         engine_payload = WidgetQueryExecuteRequest(
-            dashboard_id=dashboard_id,
+            dashboard_id=dashboard.id,
             widget_id=widget_id,
             saved_question_id=widget.saved_question_id,
             parameters=coerced,
@@ -981,3 +992,117 @@ class DashboardService:
             allow_widget_execution=True,
         )
         return _widget_execute_response(result)
+
+    async def execute_widget(
+        self,
+        session: AsyncSession,
+        *,
+        dashboard_id: UUID,
+        widget_id: UUID,
+        payload: WidgetExecuteRequest,
+        connection_service: object,
+    ) -> WidgetExecuteResponse:
+        dashboard, widgets = await repository.load_dashboard_with_widgets(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            dashboard_id=dashboard_id,
+        )
+        if dashboard is None:
+            raise DashboardNotFoundError()
+        collection_grants = await self._collection_grant_map(session)
+        dashboard_grants = await self._dashboard_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+        return await self._execute_widget_loaded(
+            session,
+            dashboard=dashboard,
+            widgets=widgets,
+            widget_id=widget_id,
+            payload=payload,
+            connection_service=connection_service,
+            collection_grants=collection_grants,
+            dashboard_grants=dashboard_grants,
+            asset_grants=asset_grants,
+        )
+
+    async def export_widget_csv(
+        self,
+        session: AsyncSession,
+        *,
+        dashboard_id: UUID,
+        widget_id: UUID,
+        global_filter_values: dict[str, Any],
+        bypass_cache: bool,
+        connection_service: object,
+    ) -> str:
+        dashboard, widgets = await repository.load_dashboard_with_widgets(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            dashboard_id=dashboard_id,
+        )
+        if dashboard is None:
+            raise DashboardNotFoundError()
+
+        collection_grants = await self._collection_grant_map(session)
+        dashboard_grants = await self._dashboard_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+        view_decision = authz.can_view_dashboard(
+            actor_role=self._actor.role,
+            actor_user_id=self._user_id,
+            actor_workspace_id=self._actor.workspace_id,
+            dashboard_id=dashboard_id,
+            collection_grant=collection_grants.get(dashboard.collection_id),
+            dashboard_grant=dashboard_grants.get(dashboard_id),
+            asset_grants=asset_grants,
+        )
+        if not view_decision.allowed:
+            raise DashboardsAuthzDeniedError()
+
+        export_decision = authz.can_export_dashboard(
+            actor_role=self._actor.role,
+            actor_user_id=self._user_id,
+            actor_workspace_id=self._actor.workspace_id,
+            dashboard_id=dashboard_id,
+            collection_grant=collection_grants.get(dashboard.collection_id),
+            dashboard_grant=dashboard_grants.get(dashboard_id),
+            asset_grants=asset_grants,
+        )
+        if not export_decision.allowed:
+            raise ExportNotPermittedError()
+
+        widget = next((w for w in widgets if w.id == widget_id), None)
+        if widget is None:
+            raise WidgetNotFoundError(details={"widget_id": str(widget_id)})
+        if widget.widget_type != WidgetType.table.value:
+            raise UnsupportedWidgetTypeError(
+                details={"widget_type": widget.widget_type},
+            )
+
+        result = await self._execute_widget_loaded(
+            session,
+            dashboard=dashboard,
+            widgets=widgets,
+            widget_id=widget_id,
+            payload=WidgetExecuteRequest(
+                global_filter_values=global_filter_values,
+                bypass_cache=bypass_cache,
+            ),
+            connection_service=connection_service,
+            collection_grants=collection_grants,
+            dashboard_grants=dashboard_grants,
+            asset_grants=asset_grants,
+        )
+        if result.meta.status != ExecutionStatus.ok.value:
+            raise ExportExecutionRefusedError(
+                details={
+                    "status": result.meta.status,
+                    "error_code": result.meta.error_code,
+                },
+            )
+        if result.meta.truncated:
+            raise ExportExecutionRefusedError(
+                "Widget result was truncated; CSV export was not produced.",
+                details={"truncated": True},
+            )
+        return render_query_result_csv(columns=result.columns, rows=result.rows)

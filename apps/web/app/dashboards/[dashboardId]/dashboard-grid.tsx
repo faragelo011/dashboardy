@@ -37,6 +37,7 @@ type DashboardGridProps = {
 
 const COLS = 12;
 const ROW_HEIGHT = 80;
+const EMPTY_FILTER_VALUES: Record<string, FilterValue> = {};
 
 function layoutStyle(layout: WidgetLayout): CSSProperties {
   return {
@@ -69,7 +70,7 @@ function WidgetBody({
   dashboardId,
   widget,
   globalFilters = [],
-  globalFilterValues = {},
+  globalFilterValues = EMPTY_FILTER_VALUES,
 }: {
   accessToken: string;
   workspaceId: string;
@@ -103,7 +104,12 @@ function WidgetBody({
     case "line":
       return <LineWidget {...common} />;
     case "table":
-      return <TableWidget {...common} />;
+      return (
+        <TableWidget
+          {...common}
+          canExport={"can_export" in widget ? widget.can_export : false}
+        />
+      );
     default:
       return (
         <div className="rounded-lg border border-border-1 p-4 text-sm text-ink-muted">
@@ -121,7 +127,7 @@ export function DashboardGrid({
   mode = "view",
   questions = [],
   globalFilters = [],
-  globalFilterValues = {},
+  globalFilterValues = EMPTY_FILTER_VALUES,
   questionParametersById = {},
   onWidgetsChange,
 }: DashboardGridProps) {

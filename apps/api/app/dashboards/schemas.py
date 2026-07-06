@@ -181,6 +181,14 @@ class WidgetExecuteRequest(BaseModel):
     bypass_cache: bool = False
 
 
+class FilterStateExport(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    global_filter_values: dict[str, str | int | float | bool] = Field(
+        default_factory=dict,
+    )
+
+
 class ColumnDescriptor(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
