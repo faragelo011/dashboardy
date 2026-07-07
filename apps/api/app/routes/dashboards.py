@@ -26,6 +26,7 @@ from app.auth_context.context import VerifiedSupabaseUser
 from app.auth_context.dependencies import get_verified_supabase_user
 from app.dashboards.schemas import (
     DashboardConsumerDetail,
+    DashboardCloneRequest,
     DashboardCreateRequest,
     DashboardEditorDetail,
     DashboardListResponse,
@@ -244,6 +245,36 @@ async def delete_dashboard(
         _map_service_error(exc)
     await session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/dashboards/{dashboard_id}/clone",
+    response_model=DashboardEditorDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+async def clone_dashboard(
+    workspace_id: UUID,
+    dashboard_id: UUID,
+    payload: DashboardCloneRequest,
+    auth: Annotated[VerifiedSupabaseUser, Depends(get_verified_supabase_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> DashboardEditorDetail:
+    actor = await require_active_membership(
+        session=session,
+        user_id=auth.user_id,
+        workspace_id=workspace_id,
+    )
+    service = DashboardService(actor=actor, user_id=auth.user_id)
+    try:
+        result = await service.clone_dashboard(
+            session,
+            dashboard_id=dashboard_id,
+            payload=payload,
+        )
+    except DashboardServiceError as exc:
+        _map_service_error(exc)
+    await session.commit()
+    return result
 
 
 @router.post(
