@@ -1,6 +1,10 @@
 "use client";
 
+import { Filter } from "lucide-react";
+
 import type { FilterValue, GlobalFilter, GlobalFilterValueType } from "@dashboardy/types";
+
+import { DsIcon } from "@/components/ds/icon";
 
 type DashboardFilterBarProps = {
   globalFilters: GlobalFilter[];
@@ -77,7 +81,10 @@ export function DashboardFilterBar({
 
   return (
     <section className="ds-card flex flex-col gap-4 p-4">
-      <h2 className="text-sm font-semibold text-ink-strong">Global filters</h2>
+      <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-strong">
+        <DsIcon icon={Filter} size="sm" className="text-ink-muted" />
+        Global filters
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {globalFilters.map((filter) => (
           <label key={filter.id} className="flex flex-col gap-1.5">

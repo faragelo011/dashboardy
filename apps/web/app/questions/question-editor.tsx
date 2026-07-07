@@ -2,9 +2,21 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Copy,
+  Download,
+  Play,
+  Save,
+  Trash2,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { useEffect, useMemo, useState, useTransition, type FormEvent } from "react";
 
 import type { Collection, ParameterDefinition, SavedQuestionDetail } from "@dashboardy/types";
+
+import { DsIcon } from "@/components/ds/icon";
 
 import {
   cloneQuestionAction,
@@ -25,11 +37,15 @@ const fieldClass =
 const sqlClass =
   "w-full min-h-[200px] bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-[13px] font-mono focus:outline-none focus:border-[#6366F1]/50 rounded-sm";
 
+const iconInButton = (icon: LucideIcon) => (
+  <DsIcon icon={icon} className="inline-block shrink-0" />
+);
+
 const primaryButtonClass =
-  "bg-[#6366F1] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 bg-[#6366F1] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50";
 
 const quietButtonClass =
-  "text-[#94A3B8] hover:text-[#6366F1] transition-colors text-[10px] uppercase tracking-[0.15em] border border-white/10 px-4 py-3";
+  "inline-flex items-center justify-center gap-2 text-[#94A3B8] hover:text-[#6366F1] transition-colors text-[10px] uppercase tracking-[0.15em] border border-white/10 px-4 py-3";
 
 const labelClass =
   "text-[10px] uppercase tracking-[0.15em] text-[#94A3B8]";
@@ -159,7 +175,11 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
   const [deletePending, startDeleteTransition] = useTransition();
   const [executePending, startExecuteTransition] = useTransition();
 
-  const formKey = detail?.updated_at ?? (isNew ? "new" : "missing");
+  const collectionsRevision = useMemo(
+    () => collections.map((c) => `${c.id}:${c.updated_at}:${c.name}`).join("|"),
+    [collections],
+  );
+  const formKey = `${detail?.updated_at ?? (isNew ? "new" : "missing")}|${collectionsRevision}`;
   const sqlText = detail?.detail_level === "internal" ? detail.sql_text : "";
   const schemaParameters = canEdit ? parameters : (detail?.parameters ?? []);
   const canRun = Boolean(detail && !isNew);
@@ -303,6 +323,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
           {isNew ? "New question" : canEdit ? "Edit question" : "View question"}
         </h2>
         <Link href="/questions" className={quietButtonClass}>
+          {iconInButton(ArrowLeft)}
           Back to list
         </Link>
       </div>
@@ -385,6 +406,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
         <ErrorBanner state={saveState} />
         {canEdit ? (
           <button type="submit" disabled={savePending} className={primaryButtonClass}>
+            {iconInButton(Save)}
             {savePending ? "Saving..." : isNew ? "Create question" : "Update question"}
           </button>
         ) : null}
@@ -417,6 +439,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
                 disabled={executePending}
                 className={primaryButtonClass}
               >
+                {iconInButton(Play)}
                 {executePending ? "Running..." : "Execute"}
               </button>
               <button
@@ -426,6 +449,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
                 disabled={executePending}
                 className={quietButtonClass}
               >
+                {iconInButton(Zap)}
                 {executePending ? "Running..." : "Force fresh"}
               </button>
             </div>
@@ -438,6 +462,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
                   disabled={exportPending}
                   className={quietButtonClass}
                 >
+                  {iconInButton(Download)}
                   {exportPending ? "Exporting..." : "Export CSV"}
                 </button>
               </div>
@@ -448,7 +473,10 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
       ) : null}
 
       {canClone ? (
-        <section className="flex flex-col gap-6 border-t border-white/10 pt-8">
+        <section
+          key={`clone-${collectionsRevision}`}
+          className="flex flex-col gap-6 border-t border-white/10 pt-8"
+        >
           <h3 className="text-[10px] uppercase tracking-[0.2em] text-[#6366F1]">
             Clone question
           </h3>
@@ -484,6 +512,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
             </label>
             <ErrorBanner state={cloneState} title="Clone failed" />
             <button type="submit" disabled={clonePending} className={primaryButtonClass}>
+              {iconInButton(Copy)}
               {clonePending ? "Cloning..." : "Clone question"}
             </button>
           </form>
@@ -496,6 +525,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
           <input type="hidden" name="question_id" value={detail.id} />
           <ErrorBanner state={deleteState} />
           <button type="submit" disabled={deletePending} className={quietButtonClass}>
+            {iconInButton(Trash2)}
             {deletePending ? "Deleting..." : "Delete question"}
           </button>
         </form>

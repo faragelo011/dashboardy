@@ -1,0 +1,55 @@
+<!-- @dsCard group="Components" viewport="900x210" name="Navigation" subtitle="Sticky workspace shell, workspace badge, theme toggle" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="../../styles.css" />
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  body { margin: 0; background: var(--surface-canvas); }
+  .below { padding: 20px 32px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+  const NS = window.DashboardyDesignSystem_787e56;
+  const { TopNav, WorkspaceBadge, ThemeToggle, Button, Badge } = NS;
+
+  function Demo() {
+    return (
+      <React.Fragment>
+        <TopNav
+          items={[
+            { label: "Home", href: "#", active: true },
+            { label: "Members", href: "#" },
+            { label: "Connections", href: "#" },
+            { label: "Collections", href: "#" },
+            { label: "Questions", href: "#" },
+            { label: "Dashboards", href: "#" },
+          ]}
+          actions={
+            <React.Fragment>
+              <ThemeToggle />
+              <Button variant="secondary" size="sm">Sign out</Button>
+            </React.Fragment>
+          }
+        />
+        <div className="below">
+          <WorkspaceBadge name="Acme Analytics" />
+          <Badge tone="ok">active</Badge>
+          <span style={{fontSize:"var(--text-caption)",color:"var(--text-muted)"}}>
+            Role: <span style={{color:"var(--text-primary)",textTransform:"capitalize"}}>analyst</span>
+          </span>
+        </div>
+      </React.Fragment>
+    );
+  }
+  ReactDOM.createRoot(document.getElementById("root")).render(<Demo/>);
+</script>
+</body>
+</html>

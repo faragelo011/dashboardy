@@ -1,10 +1,5 @@
 import type { FilterValue, GlobalFilter } from "@dashboardy/types";
-import type {
-  DashboardWidget,
-  DashboardWidgetConsumer,
-} from "@dashboardy/types";
 
-/** Initialize runtime filter values from dashboard definition defaults. */
 export function initialGlobalFilterValues(
   globalFilters: GlobalFilter[],
 ): Record<string, FilterValue> {
@@ -27,6 +22,29 @@ export function boundGlobalFilterValues(
     }
   }
   return bound;
+}
+
+/** Map dashboard global filters into saved-question parameter names. */
+export function mergeWidgetParameters(
+  globalFilters: GlobalFilter[],
+  globalFilterValues: Record<string, FilterValue>,
+  widgetBindings: Record<string, string>,
+  filterOverrides: Record<string, FilterValue>,
+): Record<string, FilterValue> {
+  const defaults = Object.fromEntries(
+    globalFilters.map((filter) => [filter.id, filter.default_value]),
+  );
+  const merged: Record<string, FilterValue> = {};
+  for (const [globalFilterId, parameterName] of Object.entries(widgetBindings)) {
+    if (globalFilterId in filterOverrides) {
+      merged[parameterName] = filterOverrides[globalFilterId];
+    } else if (globalFilterId in globalFilterValues) {
+      merged[parameterName] = globalFilterValues[globalFilterId];
+    } else if (globalFilterId in defaults) {
+      merged[parameterName] = defaults[globalFilterId];
+    }
+  }
+  return merged;
 }
 
 export function boundValuesKey(values: Record<string, FilterValue>): string {
@@ -59,7 +77,9 @@ function filterValuesEqual(
 
 /** Whether any stored override differs from the current global filter bar value. */
 export function resolveHasActiveOverrides(
-  widget: DashboardWidget | DashboardWidgetConsumer,
+  widget: {
+    filter_overrides?: Record<string, FilterValue>;
+  },
   globalFilters: GlobalFilter[],
   globalFilterValues: Record<string, FilterValue>,
 ): boolean {

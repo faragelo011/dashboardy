@@ -1,0 +1,29 @@
+<!-- @dsCard group="Colors" viewport="700x150" name="Dark theme" subtitle="Same tokens under [data-theme=dark]" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:16px;font-family:var(--font-body);}
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+  .sw{height:44px;border-radius:var(--radius-sm);border:1px solid var(--border-subtle);}
+  .nm{margin-top:7px;font-size:10px;font-weight:600;color:var(--text-primary);}
+  .row2{margin-top:12px;display:flex;gap:8px;align-items:center;}
+  .chip{border-radius:var(--radius-sm);padding:5px 9px;font-size:11px;font-weight:600;display:inline-flex;gap:6px;align-items:center;}
+  .dot{width:7px;height:7px;border-radius:50%;}
+</style></head>
+<body>
+  <div class="grid">
+    <div><div class="sw" style="background:var(--surface-card)"></div><div class="nm">surface-1</div></div>
+    <div><div class="sw" style="background:var(--surface-raised)"></div><div class="nm">surface-2</div></div>
+    <div><div class="sw" style="background:var(--color-accent)"></div><div class="nm">accent</div></div>
+    <div><div class="sw" style="background:oklch(var(--border-3))"></div><div class="nm">border-3</div></div>
+    <div><div class="sw" style="background:var(--text-strong)"></div><div class="nm">ink-strong</div></div>
+    <div><div class="sw" style="background:var(--text-muted)"></div><div class="nm">ink-muted</div></div>
+  </div>
+  <div class="row2">
+    <span class="chip" style="background:var(--color-success-soft);color:var(--color-success-ink)"><span class="dot" style="background:var(--color-success)"></span>active</span>
+    <span class="chip" style="background:var(--color-warn-soft);color:var(--color-warn-ink)"><span class="dot" style="background:var(--color-warn)"></span>pending</span>
+    <span class="chip" style="background:var(--color-danger-soft);color:var(--color-danger)"><span class="dot" style="background:var(--color-danger)"></span>failed</span>
+    <span class="chip" style="background:var(--color-accent-soft);color:var(--color-accent-soft-ink)"><span class="dot" style="background:var(--color-accent)"></span>override</span>
+  </div>
+</body></html>

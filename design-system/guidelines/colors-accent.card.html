@@ -1,0 +1,27 @@
+<!-- @dsCard group="Colors" viewport="700x180" name="Accent — Electric Indigo + Violet" subtitle="Signature indigo, violet secondary, brand gradient" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:16px;font-family:var(--font-body);}
+  .grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;}
+  .sw{height:50px;border-radius:var(--radius-sm);border:1px solid oklch(0% 0 0 / .06);}
+  .nm{margin-top:7px;font-size:11px;font-weight:600;color:var(--text-primary);letter-spacing:-0.01em;}
+  .vl{margin-top:2px;font-family:var(--font-mono);font-size:10px;color:var(--text-faint);}
+  .row2{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-top:12px;}
+  .grad{height:40px;border-radius:var(--radius-sm);background:var(--gradient-brand);}
+</style></head>
+<body>
+  <div class="grid">
+    <div><div class="sw" style="background:var(--color-accent)"></div><div class="nm">accent</div><div class="vl">54% .23 272</div></div>
+    <div><div class="sw" style="background:var(--color-accent-hover)"></div><div class="nm">hover</div><div class="vl">48% .24 272</div></div>
+    <div><div class="sw" style="background:var(--color-accent-active)"></div><div class="nm">active</div><div class="vl">42% .23 272</div></div>
+    <div><div class="sw" style="background:var(--color-accent-soft)"></div><div class="nm">soft</div><div class="vl">95% .04 276</div></div>
+    <div><div class="sw" style="background:var(--color-accent-soft-ink)"></div><div class="nm">soft-ink</div><div class="vl">44% .19 274</div></div>
+    <div><div class="sw" style="background:var(--color-accent-border)"></div><div class="nm">border</div><div class="vl">86% .08 276</div></div>
+  </div>
+  <div class="row2">
+    <div><div class="grad"></div><div class="nm">gradient-brand</div><div class="vl">135° · indigo → violet · flourishes only</div></div>
+    <div><div class="sw" style="background:var(--color-accent-2);height:40px"></div><div class="nm">accent-2 · violet</div><div class="vl">58% .22 305</div></div>
+  </div>
+</body></html>

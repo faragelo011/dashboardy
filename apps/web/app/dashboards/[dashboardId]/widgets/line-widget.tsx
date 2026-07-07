@@ -10,20 +10,11 @@ import {
   YAxis,
 } from "recharts";
 
-import type { FilterValue, WidgetExecuteResponse } from "@dashboardy/types";
+import type { WidgetExecuteResponse } from "@dashboardy/types";
 
-import { WidgetChrome } from "./widget-chrome";
+import { WidgetChrome, type WidgetChromeProps } from "./widget-chrome";
 
-type LineWidgetProps = {
-  accessToken: string;
-  workspaceId: string;
-  dashboardId: string;
-  widgetId: string;
-  title?: string | null;
-  filterBindings?: Record<string, string>;
-  globalFilterValues?: Record<string, FilterValue>;
-  hasActiveOverrides?: boolean;
-};
+type LineWidgetProps = Omit<WidgetChromeProps, "children">;
 
 function chartData(data: WidgetExecuteResponse | null): Record<string, unknown>[] {
   if (!data || data.meta.status !== "ok") {
@@ -39,25 +30,11 @@ function chartData(data: WidgetExecuteResponse | null): Record<string, unknown>[
 }
 
 export function LineWidget({
-  accessToken,
-  workspaceId,
-  dashboardId,
-  widgetId,
   title,
-  filterBindings,
-  globalFilterValues,
-  hasActiveOverrides,
-}: LineWidgetProps) {
+  ...chromeProps
+}: LineWidgetProps & { title?: string | null }) {
   return (
-    <WidgetChrome
-      accessToken={accessToken}
-      workspaceId={workspaceId}
-      dashboardId={dashboardId}
-      widgetId={widgetId}
-      filterBindings={filterBindings}
-      globalFilterValues={globalFilterValues}
-      hasActiveOverrides={hasActiveOverrides}
-    >
+    <WidgetChrome {...chromeProps}>
       {({ loading, error, data }) => {
         const points = chartData(data);
         return (

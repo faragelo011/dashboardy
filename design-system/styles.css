@@ -1,0 +1,16 @@
+/* ============================================================
+   Dashboardy Design System — global entry point
+   ------------------------------------------------------------
+   Consumers link THIS file. It is a manifest of @import lines
+   only. Order: fonts → color tokens → typography → spacing →
+   elevation → motion → base resets.
+   Design system: "Technical Dense" · indigo accent · light+dark.
+   ============================================================ */
+
+@import "./tokens/fonts.css";
+@import "./tokens/colors.css";
+@import "./tokens/typography.css";
+@import "./tokens/spacing.css";
+@import "./tokens/elevation.css";
+@import "./tokens/motion.css";
+@import "./tokens/base.css";

@@ -1,0 +1,24 @@
+<!-- @dsCard group="Type" viewport="700x180" name="Mono & Stat" subtitle="System monospace for data, IDs, SQL, figures" -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head><meta charset="utf-8" /><link rel="stylesheet" href="../styles.css" />
+<style>
+  body{margin:0;background:var(--surface-canvas);padding:20px;font-family:var(--font-body);}
+  .wrap{display:flex;gap:40px;align-items:flex-start;}
+  .meta{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);margin-bottom:6px;}
+  .mono{font-family:var(--font-mono);font-size:13px;color:var(--text-muted);letter-spacing:-0.01em;line-height:1.7;}
+  .stat{font-family:var(--font-display);font-size:36px;font-weight:600;letter-spacing:-0.03em;color:var(--text-strong);line-height:1;font-variant-numeric:tabular-nums;}
+</style></head>
+<body>
+  <div class="wrap">
+    <div>
+      <div class="meta">mono · 13</div>
+      <div class="mono">acme.us-east-1<br/>00000000-0000-4000-8000<br/>SELECT * FROM revenue</div>
+    </div>
+    <div>
+      <div class="meta">stat · 36 / 600 · tabular</div>
+      <div class="stat">$23.8M</div>
+      <div class="stat" style="font-size:24px;margin-top:8px">1,284</div>
+    </div>
+  </div>
+</body></html>
