@@ -6,29 +6,56 @@ import { useState, useTransition, type FormEvent } from "react";
 import type { Collection } from "@dashboardy/types";
 
 import { ApiError, cloneDashboard } from "@/app/lib/dashboards-api";
+import { listCollections } from "@/app/lib/questions-api";
 import { Button } from "@/components/ds/button";
 
 type CloneActionProps = {
   accessToken: string;
   workspaceId: string;
   dashboardId: string;
-  collections: Collection[];
 };
 
 export function CloneDashboardAction({
   accessToken,
   workspaceId,
   dashboardId,
-  collections,
 }: CloneActionProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [collectionsLoading, setCollectionsLoading] = useState(false);
+  const [collectionsLoaded, setCollectionsLoaded] = useState(false);
+  const [collectionsError, setCollectionsError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  if (collections.length === 0) {
-    return null;
-  }
+  const loadCollections = () => {
+    if (collectionsLoading) {
+      return;
+    }
+    setCollectionsLoading(true);
+    setCollectionsError(null);
+    void listCollections(accessToken, workspaceId)
+      .then((response) => {
+        setCollections(response.collections.filter((c) => c.permission === "edit"));
+      })
+      .catch((err) => {
+        console.error("failed to load clone target collections", { workspaceId, err });
+        setCollectionsError("Could not load collections to clone into.");
+        setCollections([]);
+      })
+      .finally(() => {
+        setCollectionsLoading(false);
+        setCollectionsLoaded(true);
+      });
+  };
+
+  const openClone = () => {
+    setOpen(true);
+    if (!collectionsLoaded) {
+      loadCollections();
+    }
+  };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -59,7 +86,52 @@ export function CloneDashboardAction({
     });
   };
 
-  return open ? (
+  if (!open) {
+    return (
+      <Button type="button" variant="secondary" onClick={openClone}>
+        Clone
+      </Button>
+    );
+  }
+
+  if (collectionsLoading) {
+    return (
+      <Button type="button" variant="secondary" disabled>
+        Loading collections…
+      </Button>
+    );
+  }
+
+  if (collectionsError) {
+    return (
+      <div className="flex flex-col gap-1">
+        <Button type="button" variant="secondary" onClick={openClone}>
+          Clone
+        </Button>
+        <p className="text-xs text-danger-ink" role="alert">
+          {collectionsError}
+        </p>
+      </div>
+    );
+  }
+
+  if (collections.length === 0) {
+    return (
+      <div className="flex flex-col gap-1">
+        <Button type="button" variant="secondary" disabled>
+          Clone
+        </Button>
+        <p className="text-xs text-ink-muted" role="status">
+          No collections available to clone into.
+        </p>
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+
+  return (
     <form
       onSubmit={submit}
       className="flex flex-wrap items-end gap-2 rounded-lg border border-border-1 bg-surface-1 p-3"
@@ -92,10 +164,5 @@ export function CloneDashboardAction({
         </p>
       ) : null}
     </form>
-  ) : (
-    <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
-      Clone
-    </Button>
   );
 }
-

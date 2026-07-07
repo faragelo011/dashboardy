@@ -4,7 +4,6 @@ import { notFound, redirect } from "next/navigation";
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
 import { getDashboard, ApiError } from "@/app/lib/dashboards-api";
-import { listCollections } from "@/app/lib/questions-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
 import { CloneDashboardAction } from "./clone-action";
@@ -32,8 +31,6 @@ export default async function DashboardViewerPage({ params }: PageProps) {
   const canClone = role === "admin" || role === "analyst";
   let dashboard: Awaited<ReturnType<typeof getDashboard>> | null = null;
   let loadError: string | null = null;
-  let collectionsError: string | null = null;
-  let collections: Awaited<ReturnType<typeof listCollections>>["collections"] = [];
 
   try {
     dashboard = await getDashboard(token, workspaceId, dashboardId);
@@ -43,19 +40,6 @@ export default async function DashboardViewerPage({ params }: PageProps) {
     }
     console.error("failed to load dashboard", { workspaceId, dashboardId, err });
     loadError = "Failed to load this dashboard.";
-  }
-
-  if (canClone && !loadError) {
-    try {
-      const collectionsResp = await listCollections(token, workspaceId);
-      collections = collectionsResp.collections;
-    } catch (err) {
-      console.error("failed to load collections for dashboard clone", {
-        workspaceId,
-        err,
-      });
-      collectionsError = "Clone targets are unavailable right now.";
-    }
   }
 
   if (!dashboard && !loadError) {
@@ -96,16 +80,10 @@ export default async function DashboardViewerPage({ params }: PageProps) {
                     accessToken={token}
                     workspaceId={workspaceId}
                     dashboardId={dashboardId}
-                    collections={collections.filter((c) => c.permission === "edit")}
                   />
                 ) : null}
               </div>
             </header>
-            {collectionsError ? (
-              <p className="text-sm text-ink-muted" role="status">
-                {collectionsError}
-              </p>
-            ) : null}
             <DashboardViewerShell
               accessToken={token}
               workspaceId={workspaceId}
