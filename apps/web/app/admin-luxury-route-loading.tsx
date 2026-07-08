@@ -20,7 +20,6 @@ function SkeletonBlock({ className }: { className?: string }) {
 }
 
 type ShellProps = Props & {
-  showRunQuery: boolean;
   showSavedQuestions: boolean;
   showDashboards: boolean;
 };
@@ -29,14 +28,12 @@ export function AdminLuxuryRouteLoadingShell({
   kicker,
   title,
   subtitle,
-  showRunQuery,
   showSavedQuestions,
   showDashboards,
 }: ShellProps) {
   return (
     <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNavClient
-        showRunQuery={showRunQuery}
         showSavedQuestions={showSavedQuestions}
         showDashboards={showDashboards}
       />
@@ -78,7 +75,6 @@ export function AdminLuxuryRouteLoadingShell({
 export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props) {
   const me = await getProtectedMe();
   const role = me.current_workspace.role;
-  const showRunQuery = role === "admin" || role === "analyst";
   const showSavedQuestions =
     role === "admin" || role === "analyst" || role === "viewer";
   const showDashboards =
@@ -89,7 +85,6 @@ export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props
       kicker={kicker}
       title={title}
       subtitle={subtitle}
-      showRunQuery={showRunQuery}
       showSavedQuestions={showSavedQuestions}
       showDashboards={showDashboards}
     />

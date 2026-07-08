@@ -274,8 +274,8 @@ test("non-admin is redirected away from connections page", async ({
   try {
     await setSupabaseSessionCookie(context, "viewer");
     await page.goto("/connections");
-    const home = new URL("/", baseURL ?? "http://localhost:3005").href;
-    await expect(page).toHaveURL(home);
+    const dashboards = new URL("/dashboards", baseURL ?? "http://localhost:3005").href;
+    await expect(page).toHaveURL(dashboards);
   } finally {
     await stopMockApi(server);
   }

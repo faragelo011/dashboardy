@@ -24,7 +24,7 @@ export type TopNavProps = Omit<HTMLAttributes<HTMLElement>, "children"> & {
 
 export function TopNav({
   brand = "Dashboardy",
-  brandHref = "/",
+  brandHref = "/dashboards",
   items = [],
   actions,
   sticky = true,

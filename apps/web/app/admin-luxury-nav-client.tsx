@@ -10,13 +10,11 @@ import { TopNav, type TopNavItem } from "@/components/ds/top-nav";
 import { ThemeToggle } from "./theme-toggle";
 
 type Props = {
-  showRunQuery: boolean;
   showSavedQuestions: boolean;
   showDashboards: boolean;
 };
 
-const coreItems = [
-  { href: "/", label: "Home" },
+const middleItems = [
   { href: "/members", label: "Members" },
   { href: "/connections", label: "Connections" },
 ] as const;
@@ -27,32 +25,29 @@ const savedQuestionItems = [
 ] as const;
 
 const dashboardItem = { href: "/dashboards", label: "Dashboards" } as const;
-const runQueryItem = { href: "/query-run", label: "Run query" } as const;
+const profileItem = { href: "/profile", label: "Profile" } as const;
 
 export function AdminLuxuryNavClient({
-  showRunQuery,
   showSavedQuestions,
   showDashboards,
 }: Props) {
   const pathname = usePathname();
   const navItems = [
-    ...coreItems,
-    ...(showSavedQuestions ? savedQuestionItems : []),
     ...(showDashboards ? [dashboardItem] : []),
-    ...(showRunQuery ? [runQueryItem] : []),
+    ...middleItems,
+    ...(showSavedQuestions ? savedQuestionItems : []),
+    profileItem,
   ];
 
   const items: TopNavItem[] = navItems.map(({ href, label }) => ({
     href,
     label,
-    active:
-      href === "/"
-        ? pathname === "/" || pathname === ""
-        : pathname === href || pathname.startsWith(`${href}/`),
+    active: pathname === href || pathname.startsWith(`${href}/`),
   }));
 
   return (
     <TopNav
+      brandHref="/dashboards"
       items={items}
       actions={
         <>

@@ -34,7 +34,7 @@ const formatDate = (value: string) =>
 export default async function MembersPage() {
   const me = await getProtectedMe();
   if (me.current_workspace.role !== "admin") {
-    redirect("/");
+    redirect("/dashboards");
   }
 
   const supabase = await createServerSupabase();

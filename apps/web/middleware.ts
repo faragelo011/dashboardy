@@ -25,7 +25,7 @@ export function middleware(request: NextRequest) {
   });
   if (!dest.searchParams.has("next")) {
     const t = dest.searchParams.get("type");
-    dest.searchParams.set("next", t === "invite" ? "/set-password" : "/");
+    dest.searchParams.set("next", t === "invite" ? "/set-password" : "/dashboards");
   }
 
   return NextResponse.redirect(dest, 303);
