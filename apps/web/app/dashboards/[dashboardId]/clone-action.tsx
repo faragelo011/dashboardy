@@ -38,15 +38,16 @@ export function CloneDashboardAction({
     void listCollections(accessToken, workspaceId)
       .then((response) => {
         setCollections(response.collections.filter((c) => c.permission === "edit"));
+        setCollectionsLoaded(true);
       })
       .catch((err) => {
         console.error("failed to load clone target collections", { workspaceId, err });
         setCollectionsError("Could not load collections to clone into.");
         setCollections([]);
+        setCollectionsLoaded(false);
       })
       .finally(() => {
         setCollectionsLoading(false);
-        setCollectionsLoaded(true);
       });
   };
 
