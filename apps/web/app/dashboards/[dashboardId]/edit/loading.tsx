@@ -6,7 +6,6 @@ export default function DashboardEditLoading() {
       kicker="Dashboard Builder"
       title="Edit dashboard"
       subtitle="Loading dashboard builder."
-      showRunQuery
       showSavedQuestions
       showDashboards
     />

@@ -1,16 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
 
 import { Alert } from "@/components/ds/alert";
 import { Button } from "@/components/ds/button";
-import { Card } from "@/components/ds/card";
 import { Field } from "@/components/ds/field";
 import { Input } from "@/components/ds/input";
-import { Kicker } from "@/components/ds/card";
-import { DsIcon } from "@/components/ds/icon";
 import { createBrowserSupabase } from "@/app/lib/supabase-browser";
 
 export default function SignInPage() {
@@ -71,7 +68,7 @@ export default function SignInPage() {
         }
       }
 
-      router.push("/");
+      router.push("/dashboards");
       router.refresh();
     } catch (err) {
       console.error("sign-in failed", err);
@@ -86,29 +83,26 @@ export default function SignInPage() {
   }
 
   return (
-    <main
-      className="relative flex min-h-dvh items-center justify-center px-6 py-12"
-      style={{ background: "var(--surface-canvas)" }}
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-80"
-        style={{ background: "var(--gradient-brand-soft)" }}
-      />
-      <div className="relative w-full max-w-md">
-        <header className="mb-8 flex flex-col items-start gap-2">
-          <Kicker>Authorized access</Kicker>
-          <h1 className="font-display text-[var(--text-display)] font-semibold tracking-tight text-ink-strong">
-            Sign in
-          </h1>
-          <p className="dby-field__help max-w-[40ch]">
-            Sign in with your workspace credentials.
-          </p>
-        </header>
-
-        <Card padding="md" className="flex flex-col gap-5">
-          <form className="flex flex-col gap-5" onSubmit={onSubmit} aria-busy={loading}>
-            <Field label="Email" htmlFor="email">
+    <main className="dby-signin">
+      <section className="dby-signin-form-pane">
+        <div className="dby-signin-form-wrap w-full max-w-md">
+          <div className="dby-signin-brand">
+            <Image
+              src="/logo-txt.svg"
+              alt="Dashboardy"
+              width={123}
+              height={14}
+              priority
+            />
+          </div>
+          <header className="dby-signin-head">
+            <h1 className="dby-signin-title">Welcome back</h1>
+            <p className="dby-signin-lead">
+              Sign in to your analytics workspace—dashboards, filters, and exports await.
+            </p>
+          </header>
+          <form className="dby-signin-form" onSubmit={onSubmit} aria-busy={loading}>
+            <Field label="Email address" htmlFor="email">
               <Input
                 id="email"
                 name="email"
@@ -122,35 +116,76 @@ export default function SignInPage() {
                 disabled={loading}
               />
             </Field>
-
-            <Field label="Password" htmlFor="password">
+            <div className="dby-field">
+              <div className="dby-signin-pass-row">
+                <label className="dby-field__label" htmlFor="password">
+                  Password
+                </label>
+                <a className="dby-signin-forgot" href="#" onClick={(e) => e.preventDefault()}>
+                  Forgot password?
+                </a>
+              </div>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 required
                 autoComplete="current-password"
-                placeholder="Enter password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(ev) => setPassword(ev.target.value)}
                 disabled={loading}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? "sign-in-error" : undefined}
               />
-            </Field>
-
+            </div>
             {error ? (
               <Alert tone="danger" title="Sign-in failed" id="sign-in-error">
                 {error}
               </Alert>
             ) : null}
-
-            <Button type="submit" variant="primary" fullWidth disabled={loading} leftIcon={<DsIcon icon={LogIn} />}>
+            <Button type="submit" variant="primary" fullWidth disabled={loading}>
               {loading ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-        </Card>
-      </div>
+        </div>
+      </section>
+      <aside className="dby-signin-visual" aria-hidden>
+        <div className="dby-signin-visual-inner">
+          <div>
+            <p className="dby-signin-viz-title">Your analytics workspace awaits</p>
+            <p className="dby-signin-viz-copy">
+              Governed dashboards, trusted freshness, and clear filter scope—ready when you are.
+            </p>
+          </div>
+          <div className="dby-signin-chart-card">
+            <div className="dby-signin-chart-meta">
+              <span className="dby-signin-chart-label">Revenue trend</span>
+              <span className="dby-signin-chart-value">$248k</span>
+            </div>
+            <div className="dby-signin-bars">
+              <span className="dby-signin-bar" style={{ height: "38%" }} />
+              <span className="dby-signin-bar" style={{ height: "52%" }} />
+              <span className="dby-signin-bar" style={{ height: "44%" }} />
+              <span className="dby-signin-bar" style={{ height: "68%" }} />
+              <span className="dby-signin-bar" style={{ height: "61%" }} />
+              <span className="dby-signin-bar" style={{ height: "78%" }} />
+              <span className="dby-signin-bar" style={{ height: "72%" }} />
+              <span className="dby-signin-bar" style={{ height: "88%" }} />
+            </div>
+          </div>
+          <div className="dby-signin-kpi-row">
+            <div className="dby-signin-kpi">
+              <strong>94%</strong>
+              <span>Query cache hits</span>
+            </div>
+            <div className="dby-signin-kpi">
+              <strong>12</strong>
+              <span>Live dashboards</span>
+            </div>
+          </div>
+        </div>
+      </aside>
     </main>
   );
 }

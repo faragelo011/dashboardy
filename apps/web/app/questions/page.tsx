@@ -30,7 +30,7 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
   const me = await getProtectedMe();
   const role = me.current_workspace.role;
   if (role === "external_client") {
-    redirect("/");
+    redirect("/dashboards");
   }
 
   const roleCanAuthor = role === "admin" || role === "analyst";

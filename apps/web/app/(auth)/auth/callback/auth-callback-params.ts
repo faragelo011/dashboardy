@@ -14,9 +14,9 @@ const EMAIL_OTP_TYPES = new Set<string>([
  * Next path after auth callback. Only same-origin relative paths are allowed.
  */
 export function safeNextPath(raw: string | null): string {
-  if (!raw) return "/";
-  if (!raw.startsWith("/")) return "/";
-  if (raw.startsWith("//")) return "/";
+  if (!raw) return "/dashboards";
+  if (!raw.startsWith("/")) return "/dashboards";
+  if (raw.startsWith("//")) return "/dashboards";
   return raw;
 }
 

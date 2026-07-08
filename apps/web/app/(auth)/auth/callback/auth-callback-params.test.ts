@@ -3,14 +3,14 @@ import { describe, expect, it } from "vitest";
 import { parseEmailOtpType, safeNextPath } from "./auth-callback-params";
 
 describe("safeNextPath", () => {
-  it("defaults empty to root", () => {
-    expect(safeNextPath(null)).toBe("/");
+  it("defaults empty to dashboards", () => {
+    expect(safeNextPath(null)).toBe("/dashboards");
   });
 
   it("rejects non-relative paths", () => {
-    expect(safeNextPath("https://evil.com")).toBe("/");
-    expect(safeNextPath("//evil.com")).toBe("/");
-    expect(safeNextPath("evil")).toBe("/");
+    expect(safeNextPath("https://evil.com")).toBe("/dashboards");
+    expect(safeNextPath("//evil.com")).toBe("/dashboards");
+    expect(safeNextPath("evil")).toBe("/dashboards");
   });
 
   it("allows same-origin relative paths", () => {

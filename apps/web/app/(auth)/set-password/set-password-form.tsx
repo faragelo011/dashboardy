@@ -58,7 +58,7 @@ export function SetPasswordForm() {
         return;
       }
 
-      router.push("/");
+      router.push("/dashboards");
       router.refresh();
     } finally {
       setLoading(false);

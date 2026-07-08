@@ -174,11 +174,10 @@ test("non-admin is redirected away from members page", async ({
   try {
     await setSupabaseSessionCookie(context, "viewer");
     await page.goto("/members");
-    const home = new URL("/", baseURL ?? "http://localhost:3005").href;
-    await expect(page).toHaveURL(home);
-    await expect(page.getByText("Role:")).toBeVisible();
-    await expect(page.getByText("viewer", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");
+    const dashboards = new URL("/dashboards", baseURL ?? "http://localhost:3005").href;
+    await expect(page).toHaveURL(dashboards);
+    await expect(page.getByRole("heading", { name: "Dashboards" })).toBeVisible();
+    await expect(page.getByText("Acme Workspace")).toBeVisible();
     await expect(page.getByRole("button", { name: /switch workspace/i })).toHaveCount(0);
   } finally {
     await stopMockApi(server);
@@ -189,7 +188,7 @@ test("workspace name is visible and switcher is hidden", async ({ context, page 
   const server = await startMockApi("viewer");
   try {
     await setSupabaseSessionCookie(context, "viewer");
-    await page.goto("/");
+    await page.goto("/profile");
     await expect(page.getByTestId("workspace-badge")).toContainText("Acme Workspace");
     await expect(page.getByRole("button", { name: /switch workspace/i })).toHaveCount(0);
   } finally {

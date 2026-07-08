@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 
 import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
@@ -22,7 +23,12 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
-      </body>
+      {/* impeccable-live-start */}
+{process.env.NODE_ENV === "development" ? (
+  <Script src="http://localhost:8400/live.js" strategy="afterInteractive" />
+) : null}
+{/* impeccable-live-end */}
+</body>
     </html>
   );
 }

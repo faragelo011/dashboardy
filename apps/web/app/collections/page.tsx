@@ -11,7 +11,7 @@ export default async function CollectionsPage() {
   const me = await getProtectedMe();
   const role = me.current_workspace.role;
   if (role === "external_client") {
-    redirect("/");
+    redirect("/dashboards");
   }
 
   const canEdit = role === "admin" || role === "analyst";

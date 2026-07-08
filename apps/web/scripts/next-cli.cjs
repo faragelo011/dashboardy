@@ -6,7 +6,11 @@ const path = require("path");
 const { spawnSync } = require("child_process");
 
 const pkgRoot = path.join(__dirname, "..");
-const nextBin = require.resolve("next/dist/bin/next", { paths: [pkgRoot] });
+// In dev Docker we sometimes bind-mount source into `/repo/apps/web` while
+// keeping dependencies installed at the repo root (`/repo/node_modules`).
+// Next's CLI resolution must therefore consider both locations.
+const repoRoot = path.join(pkgRoot, "..", "..");
+const nextBin = require.resolve("next/dist/bin/next", { paths: [pkgRoot, repoRoot] });
 const args = process.argv.slice(2);
 const result = spawnSync(process.execPath, [nextBin, ...args], {
   stdio: "inherit",
