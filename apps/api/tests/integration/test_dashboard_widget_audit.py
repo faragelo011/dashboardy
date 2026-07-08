@@ -68,6 +68,19 @@ def test_widget_execute_writes_audit_log_ids(
     headers = {"Authorization": "Bearer fake"}
 
     with TestClient(app) as client:
+        question = client.post(
+            f"/workspaces/{seeded.workspace_id}/questions",
+            json={
+                "collection_id": str(seeded.collection_id),
+                "title": "Audit KPI",
+                "sql_text": "SELECT 42 AS amount",
+                "parameters": [],
+            },
+            headers=headers,
+        )
+        assert question.status_code == 201, question.text
+        question_id = question.json()["id"]
+
         created = client.post(
             f"/workspaces/{seeded.workspace_id}/dashboards",
             json={
@@ -76,7 +89,7 @@ def test_widget_execute_writes_audit_log_ids(
                 "widgets": [
                     {
                         "widget_type": "kpi",
-                        "saved_question_id": str(seeded.question_id),
+                        "saved_question_id": question_id,
                         "layout": {"x": 0, "y": 0, "w": 4, "h": 2},
                     }
                 ],
@@ -113,4 +126,4 @@ def test_widget_execute_writes_audit_log_ids(
     audit = asyncio.run(_latest_audit())
     assert audit.dashboard_id == uuid.UUID(dashboard_id)
     assert audit.widget_id == uuid.UUID(widget_id)
-    assert audit.saved_question_id == seeded.question_id
+    assert str(audit.saved_question_id) == question_id

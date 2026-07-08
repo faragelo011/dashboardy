@@ -80,6 +80,41 @@ def test_non_empty_collection_delete_refused(
     assert blocked.json()["error_code"] == "collection_not_empty"
 
 
+def test_non_empty_collection_delete_refused_when_only_dashboards(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seeded = asyncio.run(seed_workspace_with_author(actor_role=MembershipRole.analyst))
+    headers = _headers(monkeypatch, seeded)
+
+    with TestClient(app) as client:
+        collection = client.post(
+            f"/workspaces/{seeded.workspace_id}/collections",
+            json={"name": "Dashboard only"},
+            headers=headers,
+        )
+        assert collection.status_code == 201
+        collection_id = collection.json()["id"]
+        created = client.post(
+            f"/workspaces/{seeded.workspace_id}/dashboards",
+            json={
+                "collection_id": collection_id,
+                "title": "Revenue Overview",
+            },
+            headers=headers,
+        )
+        assert created.status_code == 201, created.text
+        blocked = client.delete(
+            f"/workspaces/{seeded.workspace_id}/collections/{collection_id}",
+            headers=headers,
+        )
+    assert blocked.status_code == 409
+    body = blocked.json()
+    assert body["error_code"] == "collection_not_empty"
+    assert body["details"]["active_dashboard_count"] == 1
+    assert body["details"].get("active_question_count", 0) == 0
+
+
 def test_stale_collection_update_rejected(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,

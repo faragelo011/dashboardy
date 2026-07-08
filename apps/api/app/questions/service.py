@@ -563,14 +563,35 @@ class QuestionService:
         collection_id: UUID,
     ) -> None:
         await self._require_collection_edit(session, collection_id=collection_id)
-        count = await repository.count_active_questions_in_collection(
+        active_question_count = await repository.count_active_questions_in_collection(
             session,
             tenant_id=self._actor.tenant_id,
             workspace_id=self._actor.workspace_id,
             collection_id=collection_id,
         )
-        if count > 0:
-            raise CollectionNotEmptyError(details={"active_question_count": count})
+        active_dashboard_count = await repository.count_active_dashboards_by_collection(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            collection_id=collection_id,
+        )
+        if active_question_count > 0 or active_dashboard_count > 0:
+            if active_dashboard_count > 0 and active_question_count == 0:
+                raise CollectionNotEmptyError(
+                    "Collection contains active dashboards.",
+                    details={"active_dashboard_count": active_dashboard_count},
+                )
+            if active_question_count > 0 and active_dashboard_count == 0:
+                raise CollectionNotEmptyError(
+                    details={"active_question_count": active_question_count},
+                )
+            raise CollectionNotEmptyError(
+                "Collection contains active saved questions and dashboards.",
+                details={
+                    "active_question_count": active_question_count,
+                    "active_dashboard_count": active_dashboard_count,
+                },
+            )
         deleted = await repository.soft_delete_collection(
             session,
             tenant_id=self._actor.tenant_id,
