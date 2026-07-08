@@ -7,6 +7,7 @@ from uuid import UUID
 
 from app.dashboards.schemas import GrantPermission
 from app.models.auth_tenancy import AssetGrant, CollectionPermission, MembershipRole
+from app.questions import authz as questions_authz
 from app.tenancy.permissions import (
     PermissionReason,
     can_export_dashboard_for_role,
@@ -166,7 +167,7 @@ def can_clone_dashboard(
     actor_role: MembershipRole,
     source_collection_grant: CollectionPermission | None,
     source_dashboard_grant: CollectionPermission | None,
-    target_collection_grant: CollectionPermission | None,  # noqa: ARG001 — wired in T076
+    target_collection_grant: CollectionPermission | None,
 ) -> DashboardsAuthzDecision:
     if not internal_author_has_implicit_edit(actor_role):
         return DashboardsAuthzDecision(False, PermissionReason.grant_required)
@@ -178,6 +179,13 @@ def can_clone_dashboard(
     )
     if not source_view.allowed:
         return DashboardsAuthzDecision(False, source_view.reason)
+
+    target_edit = questions_authz.can_edit_collection(
+        actor_role=actor_role,
+        collection_grant=target_collection_grant,
+    )
+    if not target_edit.allowed:
+        return DashboardsAuthzDecision(False, target_edit.reason)
 
     return DashboardsAuthzDecision(True, PermissionReason.allowed)
 

@@ -6,6 +6,7 @@ import { getProtectedMe } from "@/app/(protected)/data";
 import { getDashboard, ApiError } from "@/app/lib/dashboards-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 
+import { CloneDashboardAction } from "./clone-action";
 import { DashboardViewerShell } from "./dashboard-viewer-shell";
 
 type PageProps = {
@@ -26,6 +27,8 @@ export default async function DashboardViewerPage({ params }: PageProps) {
   }
 
   const workspaceId = me.current_workspace.workspace_id;
+  const role = me.current_workspace.role;
+  const canClone = role === "admin" || role === "analyst";
   let dashboard: Awaited<ReturnType<typeof getDashboard>> | null = null;
   let loadError: string | null = null;
 
@@ -71,6 +74,13 @@ export default async function DashboardViewerPage({ params }: PageProps) {
                   >
                     Edit
                   </Link>
+                ) : null}
+                {canClone ? (
+                  <CloneDashboardAction
+                    accessToken={token}
+                    workspaceId={workspaceId}
+                    dashboardId={dashboardId}
+                  />
                 ) : null}
               </div>
             </header>

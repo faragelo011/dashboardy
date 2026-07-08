@@ -5,9 +5,11 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID, uuid4
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dashboards import authz, repository
+from app.dashboards.clone import clone_dashboard_with_widgets
 from app.dashboards.csv_export import render_query_result_csv
 from app.dashboards.filters import (
     FilterValidationError,
@@ -20,6 +22,7 @@ from app.dashboards.filters import (
 )
 from app.dashboards.schemas import (
     ColumnDescriptor,
+    DashboardCloneRequest,
     DashboardConsumerDetail,
     DashboardCreateRequest,
     DashboardDefinition,
@@ -86,6 +89,18 @@ class DashboardsAuthzDeniedError(DashboardServiceError):
 class DuplicateDashboardTitleError(DashboardServiceError):
     error_code = "duplicate_dashboard_title"
     default_message = "A dashboard with this title already exists in the collection."
+
+
+def _duplicate_dashboard_title_from_integrity(exc: IntegrityError) -> bool:
+    orig = getattr(exc, "orig", None)
+    constraint = getattr(orig, "constraint_name", None)
+    if constraint == "uq_dashboards_collection_active_title":
+        return True
+    message = str(orig or exc).lower()
+    return (
+        "collection_active_title" in message
+        or "uq_dashboards_collection_active_title" in message
+    )
 
 
 class DashboardNotFoundError(DashboardServiceError):
@@ -1106,3 +1121,100 @@ class DashboardService:
                 details={"truncated": True},
             )
         return render_query_result_csv(columns=result.columns, rows=result.rows)
+
+    async def clone_dashboard(
+        self,
+        session: AsyncSession,
+        *,
+        dashboard_id: UUID,
+        payload: DashboardCloneRequest,
+    ) -> DashboardEditorDetail:
+        dashboard, widgets = await repository.load_dashboard_with_widgets(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            dashboard_id=dashboard_id,
+        )
+        if dashboard is None:
+            raise DashboardNotFoundError()
+
+        collection_grants = await self._collection_grant_map(session)
+        dashboard_grants = await self._dashboard_grant_map(session)
+        asset_grants = await self._asset_grants(session)
+
+        view_decision = await self._dashboard_authz(
+            session,
+            dashboard=dashboard,
+            collection_grants=collection_grants,
+            dashboard_grants=dashboard_grants,
+            asset_grants=asset_grants,
+        )
+        if not view_decision.allowed:
+            raise DashboardsAuthzDeniedError()
+
+        clone_decision = authz.can_clone_dashboard(
+            actor_role=self._actor.role,
+            source_collection_grant=collection_grants.get(dashboard.collection_id),
+            source_dashboard_grant=dashboard_grants.get(dashboard_id),
+            target_collection_grant=collection_grants.get(payload.target_collection_id),
+        )
+        if not clone_decision.allowed:
+            raise DashboardsAuthzDeniedError()
+
+        target_collection = await questions_repository.get_active_collection(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            collection_id=payload.target_collection_id,
+        )
+        if target_collection is None:
+            raise InvalidParametersError("Collection not found.")
+
+        base = (payload.title if payload.title is not None else dashboard.title).strip()
+        if not base:
+            raise InvalidParametersError("Dashboard title must not be blank.")
+
+        suffix = "" if payload.title is not None else " (Copy)"
+        desired = f"{base}{suffix}"
+
+        # Best-effort de-dupe by appending a counter until we find a unique title.
+        title = desired
+        for counter in range(0, 50):
+            try:
+                await self._assert_unique_title(
+                    session,
+                    collection_id=payload.target_collection_id,
+                    title=title,
+                )
+                break
+            except DuplicateDashboardTitleError:
+                title = f"{desired} ({counter + 2})"
+        else:
+            raise DuplicateDashboardTitleError()
+
+        try:
+            clone_id = await clone_dashboard_with_widgets(
+                session,
+                source_dashboard=dashboard,
+                source_widgets=widgets,
+                target_collection_id=payload.target_collection_id,
+                title=title,
+                created_by_membership_id=self._actor.membership_id,
+            )
+        except IntegrityError as exc:
+            if _duplicate_dashboard_title_from_integrity(exc):
+                raise DuplicateDashboardTitleError() from exc
+            raise
+        cloned, cloned_widgets = await repository.load_dashboard_with_widgets(
+            session,
+            tenant_id=self._actor.tenant_id,
+            workspace_id=self._actor.workspace_id,
+            dashboard_id=clone_id,
+        )
+        assert cloned is not None
+        return await self._editor_detail(
+            session,
+            dashboard=cloned,
+            widgets=cloned_widgets,
+            can_edit=True,
+        )

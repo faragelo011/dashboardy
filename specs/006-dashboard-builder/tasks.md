@@ -237,8 +237,8 @@ Implementation notes for US4:
 
 ### Tests for User Story 5
 
-- [ ] T073 [P] [US5] Add contract tests for `POST .../dashboards/{dashboard_id}/clone` in `apps/api/tests/contract/test_dashboard_clone_contract.py`
-- [ ] T074 [P] [US5] Add integration tests in `apps/api/tests/integration/test_dashboard_clone.py` covering new owner, copied layout/filters/widgets, unchanged source, target collection permissions, no copied `dashboard_grants`, and viewer/external_client clone attempts returning 403
+- [X] T073 [P] [US5] Add contract tests for `POST .../dashboards/{dashboard_id}/clone` in `apps/api/tests/contract/test_dashboard_clone_contract.py`
+- [X] T074 [P] [US5] Add integration tests in `apps/api/tests/integration/test_dashboard_clone.py` covering new owner, copied layout/filters/widgets, unchanged source, target collection permissions, no copied `dashboard_grants`, and viewer/external_client clone attempts returning 403
 
 ### Implementation for User Story 5
 
@@ -251,11 +251,11 @@ Implementation notes for US5:
 - Clone must not copy `dashboard_grants` from source.
 - Viewers/external clients attempting clone receive 403.
 
-- [ ] T075 [US5] Implement clone helper in `apps/api/app/dashboards/clone.py` and repository insert methods that duplicate dashboard + widgets into target collection
-- [ ] T076 [US5] Implement `clone_dashboard` service method in `apps/api/app/dashboards/service.py` re-checking source view permission and target collection edit permission
-- [ ] T077 [US5] Implement clone route in `apps/api/app/routes/dashboards.py` for `POST /workspaces/{workspace_id}/dashboards/{dashboard_id}/clone` returning 201 `DashboardDetail`
-- [ ] T078 [US5] Implement `cloneDashboard` client method in `apps/web/app/lib/dashboards-api.ts` and add clone action to `apps/web/app/dashboards/[dashboardId]/page.tsx` or edit page with target collection selector (visible only when `can_edit` and role is `admin`/`analyst`)
-- [ ] T079 [US5] Run US5 tests with `cd apps/api && uv run pytest tests/contract/test_dashboard_clone_contract.py tests/integration/test_dashboard_clone.py`
+- [X] T075 [US5] Implement clone helper in `apps/api/app/dashboards/clone.py` and repository insert methods that duplicate dashboard + widgets into target collection
+- [X] T076 [US5] Implement `clone_dashboard` service method in `apps/api/app/dashboards/service.py` re-checking source view permission and target collection edit permission
+- [X] T077 [US5] Implement clone route in `apps/api/app/routes/dashboards.py` for `POST /workspaces/{workspace_id}/dashboards/{dashboard_id}/clone` returning 201 `DashboardDetail`
+- [X] T078 [US5] Implement `cloneDashboard` client method in `apps/web/app/lib/dashboards-api.ts` and add clone action to `apps/web/app/dashboards/[dashboardId]/page.tsx` or edit page with target collection selector (visible only when `can_edit` and role is `admin`/`analyst`)
+- [X] T079 [US5] Run US5 tests with `cd apps/api && uv run pytest tests/contract/test_dashboard_clone_contract.py tests/integration/test_dashboard_clone.py`
 
 **Checkpoint**: US5 completes clone workflow without permission leakage.
 
