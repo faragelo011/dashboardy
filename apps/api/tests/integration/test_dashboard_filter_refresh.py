@@ -188,8 +188,7 @@ def test_changing_global_filter_values_bypasses_stale_cache(
             headers=headers,
         )
     assert third_different.status_code == 200
-    # Cache identity must account for filter_state_hash; cache reuse behavior may vary
-    # with underlying cache implementation details. We only assert successful execute.
+    assert third_different.json()["meta"]["cache_hit"] is False
 
 
 def test_unbound_widget_cache_not_affected_by_unrelated_global_filter_change(

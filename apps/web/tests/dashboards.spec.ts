@@ -1,5 +1,11 @@
 import { expect, test, type BrowserContext } from "@playwright/test";
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import {
+  createServer,
+  request as httpRequest,
+  type IncomingMessage,
+  type Server,
+  type ServerResponse,
+} from "node:http";
 
 import type {
   Collection,
@@ -97,8 +103,53 @@ function widgetExecuteResponse(value: unknown, cacheHit = true): WidgetExecuteRe
   };
 }
 
+async function listen(server: Server, port: number): Promise<number> {
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(port, "127.0.0.1", () => resolve());
+  });
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("failed to resolve mock API listen address");
+  }
+  return address.port;
+}
+
+function configuredApiPort(): number {
+  const configured =
+    process.env.API_PUBLIC_URL ??
+    process.env.NEXT_PUBLIC_API_PUBLIC_URL ??
+    "http://127.0.0.1:4010";
+  return Number(new URL(configured).port || 4010);
+}
+
+function createApiProxy(targetPort: number): Server {
+  return createServer((clientReq, clientRes) => {
+    const proxyReq = httpRequest(
+      {
+        hostname: "127.0.0.1",
+        port: targetPort,
+        path: clientReq.url,
+        method: clientReq.method,
+        headers: clientReq.headers,
+      },
+      (proxyRes) => {
+        clientRes.writeHead(proxyRes.statusCode ?? 500, proxyRes.headers);
+        proxyRes.pipe(clientRes, { end: true });
+      },
+    );
+    proxyReq.on("error", (err) => {
+      clientRes.writeHead(502);
+      clientRes.end(String(err));
+    });
+    clientReq.pipe(proxyReq, { end: true });
+  });
+}
+
 async function startMockApi(): Promise<{
-  server: Server;
+  mockServer: Server;
+  proxyServer: Server;
+  baseUrl: string;
 }> {
   let nextId = 1;
   const nextUuid = () => {
@@ -147,7 +198,7 @@ async function startMockApi(): Promise<{
   const dashboards: DashboardEditorDetail[] = [];
   const widgetExecuteCount: Record<string, number> = {};
 
-  const server = createServer(async (req, res) => {
+  const mockServer = createServer(async (req, res) => {
     const url = req.url ?? "";
     const method = req.method ?? "GET";
     if (method === "OPTIONS") {
@@ -357,14 +408,22 @@ async function startMockApi(): Promise<{
     res.end();
   });
 
-  await new Promise<void>((resolve) => server.listen(4010, "127.0.0.1", resolve));
-  return { server };
+  const mockPort = await listen(mockServer, 0);
+  const baseUrl = `http://127.0.0.1:${mockPort}`;
+  const proxyServer = createApiProxy(mockPort);
+  await listen(proxyServer, configuredApiPort());
+  return { mockServer, proxyServer, baseUrl };
 }
 
-async function stopMockApi(server: Server) {
-  await new Promise<void>((resolve, reject) =>
-    server.close((err) => (err ? reject(err) : resolve())),
-  );
+async function stopMockApi(servers: { mockServer: Server; proxyServer: Server }) {
+  await Promise.all([
+    new Promise<void>((resolve, reject) =>
+      servers.proxyServer.close((err) => (err ? reject(err) : resolve())),
+    ),
+    new Promise<void>((resolve, reject) =>
+      servers.mockServer.close((err) => (err ? reject(err) : resolve())),
+    ),
+  ]);
 }
 
 async function setSupabaseSessionCookie(
@@ -405,7 +464,7 @@ test("dashboard builder smoke: create, bind, override, viewer read-only", async 
   context,
   page,
 }) => {
-  const { server } = await startMockApi();
+  const { mockServer, proxyServer } = await startMockApi();
   try {
     await setSupabaseSessionCookie(
       context,
@@ -501,7 +560,7 @@ test("dashboard builder smoke: create, bind, override, viewer read-only", async 
     await expect(viewerPage.getByRole("link", { name: "Edit" })).toHaveCount(0);
     await viewerContext.close();
   } finally {
-    await stopMockApi(server);
+    await stopMockApi({ mockServer, proxyServer });
   }
 });
 

@@ -581,11 +581,16 @@ class QuestionService:
                     "Collection contains active dashboards.",
                     details={"active_dashboard_count": active_dashboard_count},
                 )
+            if active_question_count > 0 and active_dashboard_count == 0:
+                raise CollectionNotEmptyError(
+                    details={"active_question_count": active_question_count},
+                )
             raise CollectionNotEmptyError(
+                "Collection contains active saved questions and dashboards.",
                 details={
                     "active_question_count": active_question_count,
                     "active_dashboard_count": active_dashboard_count,
-                }
+                },
             )
         deleted = await repository.soft_delete_collection(
             session,
