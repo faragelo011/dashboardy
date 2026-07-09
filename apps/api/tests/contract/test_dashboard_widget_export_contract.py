@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from types import SimpleNamespace
 from urllib.parse import quote
 
 import pytest
@@ -14,46 +13,15 @@ from app.query_engine.enums import ExecutionStatus
 from app.query_engine.snowflake_run import SnowflakeSelectOutcome
 from fastapi.testclient import TestClient
 
-from tests.dashboards_fixtures import grant_external_dashboard_asset
+from tests.dashboards_fixtures import (
+    grant_external_dashboard_asset,
+    patch_dashboard_widget_execute,
+)
 from tests.saved_questions_fixtures import seed_question_catalog
 
 
-def _snowflake_ok() -> SnowflakeSelectOutcome:
-    return SnowflakeSelectOutcome(
-        column_names=["region", "amount"],
-        column_types=["STRING", "INTEGER"],
-        rows=[["EMEA", 42]],
-        status=ExecutionStatus.ok,
-        truncated=False,
-        snowflake_wall_ms=1,
-        bytes_scanned=None,
-        message=None,
-    )
-
-
 def _patch_execute(monkeypatch: pytest.MonkeyPatch, connection_id: uuid.UUID) -> None:
-    async def _sf(*_a, **_k):
-        return _snowflake_ok()
-
-    monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
-    conn_stub = SimpleNamespace(id=connection_id, secret_version=1)
-
-    class _ConnSvc:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
-            creds = {
-                "account": "a",
-                "username": "u",
-                "password": "p",
-                "role": "r",
-            }
-            return conn_stub, creds
-
-    monkeypatch.setattr(
-        "app.routes.dashboards.get_connection_service",
-        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
-    )
+    patch_dashboard_widget_execute(monkeypatch, connection_id)
 
 
 def _filter_state(values: dict[str, object] | None = None) -> str:
@@ -298,9 +266,10 @@ def test_export_allows_truncated_ok_execution(
         "app.auth_context.dependencies.decode_supabase_jwt",
         lambda _t: {"sub": str(seeded.admin_user_id), "email": "admin@example.com"},
     )
-
-    async def _sf_truncated(*_a, **_k):
-        return SnowflakeSelectOutcome(
+    patch_dashboard_widget_execute(
+        monkeypatch,
+        seeded.connection_id,
+        outcome=SnowflakeSelectOutcome(
             column_names=["region", "amount"],
             column_types=["STRING", "INTEGER"],
             rows=[["EMEA", 42]],
@@ -309,28 +278,7 @@ def test_export_allows_truncated_ok_execution(
             snowflake_wall_ms=1,
             bytes_scanned=None,
             message=None,
-        )
-
-    monkeypatch.setattr(
-        "app.query_engine.pipeline.execute_snowflake_select",
-        _sf_truncated,
-    )
-    conn_stub = SimpleNamespace(id=seeded.connection_id, secret_version=1)
-
-    class _ConnSvc:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
-            return conn_stub, {
-                "account": "a",
-                "username": "u",
-                "password": "p",
-                "role": "r",
-            }
-
-    monkeypatch.setattr(
-        "app.routes.dashboards.get_connection_service",
-        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
+        ),
     )
     headers = {"Authorization": "Bearer fake"}
 
@@ -343,7 +291,10 @@ def test_export_allows_truncated_ok_execution(
         )
         exported = client.get(
             f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv",
-            params={"filter_state": _filter_state()},
+            params={
+                "filter_state": _filter_state(),
+                "bypass_cache": "true",
+            },
             headers=headers,
         )
 
@@ -361,9 +312,10 @@ def test_export_rejects_non_ok_execution(
         "app.auth_context.dependencies.decode_supabase_jwt",
         lambda _t: {"sub": str(seeded.admin_user_id), "email": "admin@example.com"},
     )
-
-    async def _sf_error(*_a, **_k):
-        return SnowflakeSelectOutcome(
+    patch_dashboard_widget_execute(
+        monkeypatch,
+        seeded.connection_id,
+        outcome=SnowflakeSelectOutcome(
             column_names=["region", "amount"],
             column_types=["STRING", "INTEGER"],
             rows=[],
@@ -372,28 +324,7 @@ def test_export_rejects_non_ok_execution(
             snowflake_wall_ms=1,
             bytes_scanned=None,
             message="warehouse failed",
-        )
-
-    monkeypatch.setattr(
-        "app.query_engine.pipeline.execute_snowflake_select",
-        _sf_error,
-    )
-    conn_stub = SimpleNamespace(id=seeded.connection_id, secret_version=1)
-
-    class _ConnSvc:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
-            return conn_stub, {
-                "account": "a",
-                "username": "u",
-                "password": "p",
-                "role": "r",
-            }
-
-    monkeypatch.setattr(
-        "app.routes.dashboards.get_connection_service",
-        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
+        ),
     )
     headers = {"Authorization": "Bearer fake"}
 
@@ -406,7 +337,10 @@ def test_export_rejects_non_ok_execution(
         )
         exported = client.get(
             f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/export.csv",
-            params={"filter_state": _filter_state()},
+            params={
+                "filter_state": _filter_state(),
+                "bypass_cache": "true",
+            },
             headers=headers,
         )
 

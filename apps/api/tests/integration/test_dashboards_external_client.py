@@ -4,56 +4,18 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from types import SimpleNamespace
 
 import pytest
 from app.main import app
-from app.query_engine.enums import ExecutionStatus
-from app.query_engine.snowflake_run import SnowflakeSelectOutcome
 from fastapi.testclient import TestClient
 
 from tests.dashboards_fixtures import (
     create_test_dashboard,
     dashboard_test_headers,
     grant_external_dashboard_asset,
+    patch_dashboard_widget_execute,
 )
 from tests.saved_questions_fixtures import seed_question_catalog
-
-
-def _patch_widget_execute(
-    monkeypatch: pytest.MonkeyPatch,
-    connection_id: uuid.UUID,
-) -> None:
-    async def _sf(*_a, **_k):
-        return SnowflakeSelectOutcome(
-            column_names=["region", "amount"],
-            column_types=["STRING", "INTEGER"],
-            rows=[["EMEA", 42]],
-            status=ExecutionStatus.ok,
-            truncated=False,
-            snowflake_wall_ms=1,
-            bytes_scanned=None,
-            message=None,
-        )
-
-    monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
-    conn_stub = SimpleNamespace(id=connection_id, secret_version=1)
-
-    class _ConnSvc:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
-            return conn_stub, {
-                "account": "a",
-                "username": "u",
-                "password": "p",
-                "role": "r",
-            }
-
-    monkeypatch.setattr(
-        "app.routes.dashboards.get_connection_service",
-        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
-    )
 
 
 def _external_client_widgets(seeded) -> list[dict]:
@@ -218,7 +180,7 @@ def test_external_client_executes_widget_with_dashboard_only_grant(
         seeded.admin_user_id,
         "admin@example.com",
     )
-    _patch_widget_execute(monkeypatch, seeded.connection_id)
+    patch_dashboard_widget_execute(monkeypatch, seeded.connection_id)
 
     with TestClient(app) as client:
         created = client.post(
