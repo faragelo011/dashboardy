@@ -112,6 +112,17 @@ export function useWidgetExecute({
         if (seq !== requestSeq.current) {
           return;
         }
+        if (data.meta.status !== "ok") {
+          const code = data.meta.error_code;
+          setState({
+            loading: false,
+            error: code
+              ? `${data.meta.status}: ${code}`
+              : `Widget execution ${data.meta.status}.`,
+            data,
+          });
+          return;
+        }
         setState({ loading: false, error: null, data });
       } catch (err) {
         if (seq !== requestSeq.current) {

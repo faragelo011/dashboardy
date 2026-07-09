@@ -150,7 +150,7 @@ def test_external_client_without_export_grant_is_forbidden(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seeded = asyncio.run(seed_question_catalog())
+    seeded = asyncio.run(seed_question_catalog(grant_external_asset=False))
     admin_headers = {"Authorization": "Bearer fake"}
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
@@ -193,7 +193,8 @@ def test_external_client_with_export_grant_receives_csv(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seeded = asyncio.run(seed_question_catalog())
+    # Dashboard-only grant: no independent question asset grant.
+    seeded = asyncio.run(seed_question_catalog(grant_external_asset=False))
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
         lambda _t: {"sub": str(seeded.admin_user_id), "email": "admin@example.com"},

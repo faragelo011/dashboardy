@@ -288,10 +288,11 @@ def test_export_rejects_invalid_filter_state(
     assert too_long.json()["error_code"] == "invalid_parameters"
 
 
-def test_export_rejects_truncated_execution(
+def test_export_allows_truncated_ok_execution(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Soft truncation still yields CSV (Feature 5 parity); renderer caps at 10k."""
     seeded = asyncio.run(seed_question_catalog())
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
@@ -346,8 +347,9 @@ def test_export_rejects_truncated_execution(
             headers=headers,
         )
 
-    assert exported.status_code == 422
-    assert exported.json()["error_code"] == "export_execution_refused"
+    assert exported.status_code == 200
+    assert exported.headers["content-type"].startswith("text/csv")
+    assert "EMEA" in exported.text
 
 
 def test_export_rejects_non_ok_execution(

@@ -102,13 +102,21 @@ export function TableWidget({
               anchor.click();
               URL.revokeObjectURL(url);
             } catch (err) {
-              setExportError(
-                err instanceof ApiError
-                  ? err.message
-                  : err instanceof Error
-                    ? err.message
-                    : "Export failed.",
-              );
+              if (err instanceof ApiError) {
+                if (err.errorCode === "export_not_permitted") {
+                  setExportError("You do not have permission to export this widget.");
+                } else if (err.errorCode === "export_execution_refused") {
+                  setExportError(
+                    err.message || "Export refused because widget execution failed.",
+                  );
+                } else {
+                  setExportError(err.message);
+                }
+              } else {
+                setExportError(
+                  err instanceof Error ? err.message : "Export failed.",
+                );
+              }
             } finally {
               setExporting(false);
             }

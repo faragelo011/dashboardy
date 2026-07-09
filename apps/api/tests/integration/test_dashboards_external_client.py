@@ -4,9 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+from types import SimpleNamespace
 
 import pytest
 from app.main import app
+from app.query_engine.enums import ExecutionStatus
+from app.query_engine.snowflake_run import SnowflakeSelectOutcome
 from fastapi.testclient import TestClient
 
 from tests.dashboards_fixtures import (
@@ -15,6 +18,42 @@ from tests.dashboards_fixtures import (
     grant_external_dashboard_asset,
 )
 from tests.saved_questions_fixtures import seed_question_catalog
+
+
+def _patch_widget_execute(
+    monkeypatch: pytest.MonkeyPatch,
+    connection_id: uuid.UUID,
+) -> None:
+    async def _sf(*_a, **_k):
+        return SnowflakeSelectOutcome(
+            column_names=["region", "amount"],
+            column_types=["STRING", "INTEGER"],
+            rows=[["EMEA", 42]],
+            status=ExecutionStatus.ok,
+            truncated=False,
+            snowflake_wall_ms=1,
+            bytes_scanned=None,
+            message=None,
+        )
+
+    monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
+    conn_stub = SimpleNamespace(id=connection_id, secret_version=1)
+
+    class _ConnSvc:
+        async def resolve_active_execution_credentials(
+            self, *, session, tenant_id
+        ):  # noqa: ARG002
+            return conn_stub, {
+                "account": "a",
+                "username": "u",
+                "password": "p",
+                "role": "r",
+            }
+
+    monkeypatch.setattr(
+        "app.routes.dashboards.get_connection_service",
+        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
+    )
 
 
 def _external_client_widgets(seeded) -> list[dict]:
@@ -166,3 +205,75 @@ def test_external_client_get_denied_without_dashboard_grant(
         )
     assert detail.status_code == 403
     assert detail.json()["error_code"] == "authz_denied"
+
+
+def test_external_client_executes_widget_with_dashboard_only_grant(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Dashboard asset grant alone must allow widget execute (no question grant)."""
+    seeded = asyncio.run(seed_question_catalog(grant_external_asset=False))
+    admin_headers = dashboard_test_headers(
+        monkeypatch,
+        seeded.admin_user_id,
+        "admin@example.com",
+    )
+    _patch_widget_execute(monkeypatch, seeded.connection_id)
+
+    with TestClient(app) as client:
+        created = client.post(
+            f"/workspaces/{seeded.workspace_id}/dashboards",
+            json={
+                "collection_id": str(seeded.collection_id),
+                "title": "External execute dashboard",
+                "definition": {
+                    "layout_version": 1,
+                    "global_filters": [
+                        {
+                            "id": "gf_region",
+                            "label": "Region",
+                            "value_type": "string",
+                            "default_value": "EMEA",
+                        }
+                    ],
+                },
+                "widgets": [
+                    {
+                        "widget_type": "table",
+                        "saved_question_id": str(seeded.question_id),
+                        "layout": {"x": 0, "y": 0, "w": 12, "h": 4},
+                        "filter_bindings": {"gf_region": "region"},
+                    }
+                ],
+            },
+            headers=admin_headers,
+        )
+        assert created.status_code == 201, created.text
+        dashboard_id = created.json()["id"]
+        widget_id = created.json()["widgets"][0]["id"]
+    asyncio.run(
+        grant_external_dashboard_asset(
+            seeded,
+            dashboard_id=uuid.UUID(dashboard_id),
+            can_export=False,
+        )
+    )
+    with TestClient(app) as client:
+        client_headers = dashboard_test_headers(
+            monkeypatch,
+            seeded.external_user_id,
+            "client@example.com",
+        )
+        executed = client.post(
+            f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/execute",
+            json={
+                "global_filter_values": {"gf_region": "EMEA"},
+                "bypass_cache": False,
+            },
+            headers=client_headers,
+        )
+    assert executed.status_code == 200, executed.text
+    body = executed.json()
+    assert body["meta"]["status"] == "ok"
+    assert "sql_text" not in body
+    assert "connection_id" not in body
