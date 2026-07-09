@@ -9,7 +9,10 @@ export async function AdminLuxuryNav() {
   const showSavedQuestions =
     role === "admin" || role === "analyst" || role === "viewer";
   const showDashboards =
-    role === "admin" || role === "analyst" || role === "viewer";
+    role === "admin" ||
+    role === "analyst" ||
+    role === "viewer" ||
+    role === "external_client";
   return (
     <AdminLuxuryNavClient
       showSavedQuestions={showSavedQuestions}

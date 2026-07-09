@@ -172,6 +172,7 @@ export type DashboardsKnownErrorCode =
   | "widget_local_filter_forbidden"
   | "invalid_parameters"
   | "export_not_permitted"
+  | "export_execution_refused"
   | "collection_not_empty"
   | "unsupported_widget_type";
 

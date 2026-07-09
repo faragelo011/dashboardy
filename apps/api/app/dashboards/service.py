@@ -276,13 +276,11 @@ class DashboardService:
         if not decision.allowed:
             raise DashboardsAuthzDeniedError()
 
-    async def _require_saved_question_access(
+    async def _load_active_saved_question(
         self,
         session: AsyncSession,
         *,
         saved_question_id: UUID,
-        collection_grants: dict[UUID, Any] | None = None,
-        asset_grants: list | None = None,
     ) -> SavedQuestion:
         row = await questions_repository.get_active_saved_question(
             session,
@@ -295,6 +293,21 @@ class DashboardService:
                 "Saved question not found.",
                 details={"saved_question_id": str(saved_question_id)},
             )
+        return row
+
+    async def _require_saved_question_access(
+        self,
+        session: AsyncSession,
+        *,
+        saved_question_id: UUID,
+        collection_grants: dict[UUID, Any] | None = None,
+        asset_grants: list | None = None,
+    ) -> SavedQuestion:
+        """Authoring-time check: actor must independently view the saved question."""
+        row = await self._load_active_saved_question(
+            session,
+            saved_question_id=saved_question_id,
+        )
         collection_grants = (
             collection_grants
             if collection_grants is not None
@@ -966,11 +979,12 @@ class DashboardService:
         except FilterValidationError as exc:
             raise _map_filter_error(exc) from exc
 
-        question = await self._require_saved_question_access(
+        # Dashboard view/execute already authorized above. Do not require
+        # independent saved-question view (external clients may hold only a
+        # dashboard asset grant).
+        question = await self._load_active_saved_question(
             session,
             saved_question_id=widget.saved_question_id,
-            collection_grants=collection_grants,
-            asset_grants=asset_grants,
         )
 
         declarations = _parameters_from_json(question.parameter_schema)
@@ -1115,11 +1129,7 @@ class DashboardService:
                     "error_code": result.meta.error_code,
                 },
             )
-        if result.meta.truncated:
-            raise ExportExecutionRefusedError(
-                "Widget result was truncated; CSV export was not produced.",
-                details={"truncated": True},
-            )
+        # Soft truncation is allowed (Feature 5 parity); CSV renderer caps at 10k.
         return render_query_result_csv(columns=result.columns, rows=result.rows)
 
     async def clone_dashboard(

@@ -13,6 +13,7 @@ from tests.dashboards_fixtures import (
     create_test_dashboard,
     dashboard_test_headers,
     grant_external_dashboard_asset,
+    patch_dashboard_widget_execute,
 )
 from tests.saved_questions_fixtures import seed_question_catalog
 
@@ -166,3 +167,75 @@ def test_external_client_get_denied_without_dashboard_grant(
         )
     assert detail.status_code == 403
     assert detail.json()["error_code"] == "authz_denied"
+
+
+def test_external_client_executes_widget_with_dashboard_only_grant(
+    use_live_postgres: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Dashboard asset grant alone must allow widget execute (no question grant)."""
+    seeded = asyncio.run(seed_question_catalog(grant_external_asset=False))
+    admin_headers = dashboard_test_headers(
+        monkeypatch,
+        seeded.admin_user_id,
+        "admin@example.com",
+    )
+    patch_dashboard_widget_execute(monkeypatch, seeded.connection_id)
+
+    with TestClient(app) as client:
+        created = client.post(
+            f"/workspaces/{seeded.workspace_id}/dashboards",
+            json={
+                "collection_id": str(seeded.collection_id),
+                "title": "External execute dashboard",
+                "definition": {
+                    "layout_version": 1,
+                    "global_filters": [
+                        {
+                            "id": "gf_region",
+                            "label": "Region",
+                            "value_type": "string",
+                            "default_value": "EMEA",
+                        }
+                    ],
+                },
+                "widgets": [
+                    {
+                        "widget_type": "table",
+                        "saved_question_id": str(seeded.question_id),
+                        "layout": {"x": 0, "y": 0, "w": 12, "h": 4},
+                        "filter_bindings": {"gf_region": "region"},
+                    }
+                ],
+            },
+            headers=admin_headers,
+        )
+        assert created.status_code == 201, created.text
+        dashboard_id = created.json()["id"]
+        widget_id = created.json()["widgets"][0]["id"]
+    asyncio.run(
+        grant_external_dashboard_asset(
+            seeded,
+            dashboard_id=uuid.UUID(dashboard_id),
+            can_export=False,
+        )
+    )
+    with TestClient(app) as client:
+        client_headers = dashboard_test_headers(
+            monkeypatch,
+            seeded.external_user_id,
+            "client@example.com",
+        )
+        executed = client.post(
+            f"/workspaces/{seeded.workspace_id}/dashboards/{dashboard_id}/widgets/{widget_id}/execute",
+            json={
+                "global_filter_values": {"gf_region": "EMEA"},
+                "bypass_cache": False,
+            },
+            headers=client_headers,
+        )
+    assert executed.status_code == 200, executed.text
+    body = executed.json()
+    assert body["meta"]["status"] == "ok"
+    assert "sql_text" not in body
+    assert "connection_id" not in body

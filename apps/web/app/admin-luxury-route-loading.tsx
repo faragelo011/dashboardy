@@ -78,7 +78,10 @@ export async function AdminLuxuryRouteLoading({ kicker, title, subtitle }: Props
   const showSavedQuestions =
     role === "admin" || role === "analyst" || role === "viewer";
   const showDashboards =
-    role === "admin" || role === "analyst" || role === "viewer";
+    role === "admin" ||
+    role === "analyst" ||
+    role === "viewer" ||
+    role === "external_client";
 
   return (
     <AdminLuxuryRouteLoadingShell

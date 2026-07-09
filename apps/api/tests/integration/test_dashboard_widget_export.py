@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from types import SimpleNamespace
 from urllib.parse import quote
 
 import pytest
@@ -14,45 +13,27 @@ from app.query_engine.enums import ExecutionStatus
 from app.query_engine.snowflake_run import SnowflakeSelectOutcome
 from fastapi.testclient import TestClient
 
-from tests.dashboards_fixtures import grant_external_dashboard_asset
+from tests.dashboards_fixtures import (
+    grant_external_dashboard_asset,
+    patch_dashboard_widget_execute,
+)
 from tests.saved_questions_fixtures import seed_question_catalog
 
 
-def _snowflake_ok() -> SnowflakeSelectOutcome:
-    return SnowflakeSelectOutcome(
-        column_names=["region"],
-        column_types=["STRING"],
-        rows=[["EMEA"]],
-        status=ExecutionStatus.ok,
-        truncated=False,
-        snowflake_wall_ms=1,
-        bytes_scanned=None,
-        message=None,
-    )
-
-
 def _patch_execute(monkeypatch: pytest.MonkeyPatch, connection_id: uuid.UUID) -> None:
-    async def _sf(*_a, **_k):
-        return _snowflake_ok()
-
-    monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
-    conn_stub = SimpleNamespace(id=connection_id, secret_version=1)
-
-    class _ConnSvc:
-        async def resolve_active_execution_credentials(
-            self, *, session, tenant_id
-        ):  # noqa: ARG002
-            creds = {
-                "account": "a",
-                "username": "u",
-                "password": "p",
-                "role": "r",
-            }
-            return conn_stub, creds
-
-    monkeypatch.setattr(
-        "app.routes.dashboards.get_connection_service",
-        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
+    patch_dashboard_widget_execute(
+        monkeypatch,
+        connection_id,
+        outcome=SnowflakeSelectOutcome(
+            column_names=["region"],
+            column_types=["STRING"],
+            rows=[["EMEA"]],
+            status=ExecutionStatus.ok,
+            truncated=False,
+            snowflake_wall_ms=1,
+            bytes_scanned=None,
+            message=None,
+        ),
     )
 
 
@@ -150,7 +131,7 @@ def test_external_client_without_export_grant_is_forbidden(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seeded = asyncio.run(seed_question_catalog())
+    seeded = asyncio.run(seed_question_catalog(grant_external_asset=False))
     admin_headers = {"Authorization": "Bearer fake"}
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
@@ -193,7 +174,8 @@ def test_external_client_with_export_grant_receives_csv(
     use_live_postgres: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    seeded = asyncio.run(seed_question_catalog())
+    # Dashboard-only grant: no independent question asset grant.
+    seeded = asyncio.run(seed_question_catalog(grant_external_asset=False))
     monkeypatch.setattr(
         "app.auth_context.dependencies.decode_supabase_jwt",
         lambda _t: {"sub": str(seeded.admin_user_id), "email": "admin@example.com"},

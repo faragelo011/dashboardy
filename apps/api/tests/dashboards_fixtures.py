@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import uuid
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from app.db.session import get_async_session_maker, get_engine
 from app.models.auth_tenancy import AssetType, Membership, Tenant, Workspace
+from app.query_engine.enums import ExecutionStatus
+from app.query_engine.snowflake_run import SnowflakeSelectOutcome
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
@@ -25,6 +28,47 @@ def dashboard_test_headers(
         lambda _t: {"sub": str(user_id), "email": email},
     )
     return {"Authorization": "Bearer fake"}
+
+
+def patch_dashboard_widget_execute(
+    monkeypatch: pytest.MonkeyPatch,
+    connection_id: uuid.UUID,
+    *,
+    outcome: SnowflakeSelectOutcome | None = None,
+) -> None:
+    """Stub Snowflake select + connection service for dashboard widget execute/export."""
+    result = outcome or SnowflakeSelectOutcome(
+        column_names=["region", "amount"],
+        column_types=["STRING", "INTEGER"],
+        rows=[["EMEA", 42]],
+        status=ExecutionStatus.ok,
+        truncated=False,
+        snowflake_wall_ms=1,
+        bytes_scanned=None,
+        message=None,
+    )
+
+    async def _sf(*_a, **_k):
+        return result
+
+    monkeypatch.setattr("app.query_engine.pipeline.execute_snowflake_select", _sf)
+    conn_stub = SimpleNamespace(id=connection_id, secret_version=1)
+
+    class _ConnSvc:
+        async def resolve_active_execution_credentials(
+            self, *, session, tenant_id
+        ):  # noqa: ARG002
+            return conn_stub, {
+                "account": "a",
+                "username": "u",
+                "password": "p",
+                "role": "r",
+            }
+
+    monkeypatch.setattr(
+        "app.routes.dashboards.get_connection_service",
+        lambda vault_required=True: _ConnSvc(),  # noqa: ARG005
+    )
 
 
 def create_test_dashboard(
