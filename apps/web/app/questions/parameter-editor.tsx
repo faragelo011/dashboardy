@@ -2,8 +2,7 @@
 
 import type { ParameterDefinition, ParameterType } from "@dashboardy/types";
 
-const fieldClass =
-  "w-full bg-[#111827] border border-white/10 px-3 py-2 text-[#F8FAFC] text-[13px] focus:outline-none focus:border-[#6366F1]/50 rounded-sm";
+const fieldClass = "dby-input dby-input--sm";
 
 const types: ParameterType[] = ["string", "number", "boolean", "date"];
 
@@ -70,15 +69,18 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between gap-4">
-        <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
-          Parameters
-        </span>
+        <div>
+          <p className="text-sm font-medium text-ink-strong">Parameters</p>
+          <p className="text-xs text-ink-muted">
+            Scalar inputs bound into SQL at run time.
+          </p>
+        </div>
         <button
           type="button"
           disabled={disabled}
-          className="text-[10px] uppercase tracking-[0.15em] text-[#6366F1] hover:text-[#818CF8] disabled:opacity-50"
+          className="dby-btn dby-btn--secondary ds-btn--sm"
           onClick={() =>
             onChange([
               ...value,
@@ -91,7 +93,7 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
       </div>
 
       {value.length === 0 ? (
-        <p className="text-xs text-[#374151]">No parameters declared.</p>
+        <p className="text-sm text-ink-faint">No parameters declared.</p>
       ) : null}
 
       {value.map((row, index) => {
@@ -99,23 +101,24 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
         return (
           <div
             key={`param-${index}`}
-            className="grid gap-3 border border-white/10 p-4 sm:grid-cols-2"
+            className="grid gap-3 rounded-ds-md border border-border-1 bg-surface-0 p-4 sm:grid-cols-2"
           >
-            <label className="flex flex-col gap-1 sm:col-span-2">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Name</span>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className="ds-label">Name</span>
               <input
                 className={fieldClass}
                 value={row.name}
                 disabled={disabled}
                 onChange={(e) => updateRow(index, { name: e.target.value })}
                 aria-invalid={isDuplicate || undefined}
+                placeholder="param_name"
               />
               {isDuplicate ? (
-                <span className="text-xs text-[#EF4444]">Duplicate parameter name</span>
+                <span className="text-xs text-danger-ink">Duplicate parameter name</span>
               ) : null}
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Type</span>
+            <label className="flex flex-col gap-1.5">
+              <span className="ds-label">Type</span>
               <select
                 className={fieldClass}
                 value={row.type}
@@ -131,17 +134,17 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
                 ))}
               </select>
             </label>
-            <label className="flex items-center gap-2 pt-6">
+            <label className="dby-checkbox items-center pt-6">
               <input
                 type="checkbox"
                 checked={row.required}
                 disabled={disabled}
                 onChange={(e) => updateRow(index, { required: e.target.checked })}
               />
-              <span className="text-xs text-[#94A3B8]">Required</span>
+              <span className="dby-checkbox__text">Required</span>
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Label</span>
+            <label className="flex flex-col gap-1.5">
+              <span className="ds-label">Label</span>
               <input
                 className={fieldClass}
                 value={row.label ?? ""}
@@ -149,8 +152,8 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
                 onChange={(e) => updateRow(index, { label: e.target.value || null })}
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">Default</span>
+            <label className="flex flex-col gap-1.5">
+              <span className="ds-label">Default</span>
               {row.type === "boolean" ? (
                 <select
                   className={fieldClass}
@@ -194,7 +197,7 @@ export function ParameterEditor({ value, onChange, disabled = false }: Props) {
               <button
                 type="button"
                 disabled={disabled}
-                className="text-[10px] uppercase tracking-[0.15em] text-[#EF4444] hover:text-white"
+                className="text-xs font-medium text-danger-ink hover:underline"
                 onClick={() => removeRow(index)}
               >
                 Remove

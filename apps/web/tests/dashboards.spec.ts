@@ -89,13 +89,26 @@ function widgetHasActiveOverrides(
 }
 
 function widgetExecuteResponse(value: unknown, cacheHit = true): WidgetExecuteResponse {
+  const region = String(value ?? "");
+  const base =
+    region === "APAC"
+      ? 200
+      : region === "NA"
+        ? 150
+        : region === "EMEA"
+          ? 100
+          : 50;
+
   return {
-    columns: [{ name: "value" }],
-    rows: [[value]],
+    columns: [{ name: "x" }, { name: "region" }, { name: "purchase" }, { name: "refund" }],
+    rows: [
+      [1, region, base + 10, Math.max(0, Math.round(base / 5))],
+      [2, region, base + 20, Math.max(0, Math.round(base / 4))],
+    ],
     meta: {
       status: "ok",
       duration_ms: 1,
-      row_count: 1,
+      row_count: 2,
       truncated: false,
       cache_hit: cacheHit,
       error_code: null,
@@ -404,6 +417,22 @@ async function startMockApi(): Promise<{
       return;
     }
 
+    const savedQuestionExecuteMatch = url.match(
+      new RegExp(`^/workspaces/${workspaceId}/questions/([^/]+)/execute$`),
+    );
+    if (savedQuestionExecuteMatch && method === "POST") {
+      const questionId = savedQuestionExecuteMatch[1];
+      const key = `saved-question:${questionId}`;
+      widgetExecuteCount[key] = (widgetExecuteCount[key] ?? 0) + 1;
+
+      const payload = await readJsonBody<{
+        parameters?: Record<string, unknown>;
+      }>(req);
+      const region = payload.parameters?.region ?? "EMEA";
+      json(res, widgetExecuteResponse(region, widgetExecuteCount[key] === 1));
+      return;
+    }
+
     res.writeHead(404);
     res.end();
   });
@@ -475,6 +504,7 @@ test("dashboard builder smoke: create, bind, override, viewer read-only", async 
     await page.goto("/dashboards");
     await expect(page.getByRole("heading", { name: "Dashboards", level: 1 })).toBeVisible();
 
+    await page.getByRole("link", { name: "New dashboard" }).click();
     await page.getByLabel("Title").fill("Revenue Overview");
     const createResponsePromise = page.waitForResponse(
       (resp) =>
@@ -561,6 +591,69 @@ test("dashboard builder smoke: create, bind, override, viewer read-only", async 
     await viewerContext.close();
   } finally {
     await stopMockApi({ mockServer, proxyServer });
+  }
+});
+
+test("dashboard chart viz settings: change Y metric", async ({ context, page }) => {
+  const { mockServer, proxyServer } = await startMockApi();
+  try {
+    await setSupabaseSessionCookie(
+      context,
+      "analyst-access-token",
+      "analyst@example.com",
+    );
+
+    await page.goto("/dashboards");
+    await page.getByRole("heading", { name: "Dashboards", level: 1 }).waitFor();
+
+    await page.getByRole("link", { name: "New dashboard" }).click();
+    await page.getByLabel("Title").fill("Chart Viz Settings");
+    const createResponsePromise = page.waitForResponse(
+      (resp) =>
+        resp.request().method() === "POST" && resp.url().includes("/dashboards"),
+    );
+    await page.getByRole("button", { name: "Create dashboard" }).click();
+    const createResponse = await createResponsePromise;
+    expect(createResponse.status()).toBe(201);
+    const created = (await createResponse.json()) as { id: string };
+
+    await page.goto(`/dashboards/${created.id}/edit`);
+    await expect(page.getByRole("heading", { name: "Edit dashboard" })).toBeVisible({
+      timeout: 20_000,
+    });
+
+    await page.getByLabel("Saved question").selectOption({ label: "ARR" });
+    await page.getByLabel("Widget type").selectOption("line");
+    await page.getByRole("button", { name: "Add widget" }).click();
+
+    const vizButton = page.getByRole("button", { name: "Visualization" });
+    await expect(vizButton).toBeVisible();
+    await vizButton.click();
+
+    const vizPanel = page
+      .locator("section.ds-card")
+      .filter({ hasText: "Visualization" });
+
+    const legendToggle = vizPanel.getByRole("checkbox", { name: "Show legend" });
+    await expect(legendToggle).toBeVisible();
+    await legendToggle.check();
+
+    // Set Y to `purchase` by selecting it first, then removing the default `region`.
+    await vizPanel.getByRole("checkbox", { name: "purchase" }).check();
+    await vizPanel.getByRole("checkbox", { name: "region" }).uncheck();
+
+    const legend = page.locator(".recharts-default-legend");
+    await expect(legend).toContainText("purchase");
+    await expect(legend).not.toContainText("region");
+  } finally {
+    await Promise.all([
+      new Promise<void>((resolve, reject) =>
+        proxyServer.close((err) => (err ? reject(err) : resolve())),
+      ),
+      new Promise<void>((resolve, reject) =>
+        mockServer.close((err) => (err ? reject(err) : resolve())),
+      ),
+    ]);
   }
 });
 

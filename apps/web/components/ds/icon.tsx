@@ -1,6 +1,6 @@
 import type { LucideIcon, LucideProps } from "lucide-react";
 
-/** Signal icon sizes: 15px inline, 16px control-adjacent, 20px standalone. */
+/** Icon sizes: 15px inline, 16px control-adjacent, 20px standalone. */
 export const ICON_SIZE = {
   inline: 15,
   sm: 16,
@@ -24,7 +24,7 @@ export type DsIconProps = {
   size?: IconSize | number;
 } & Omit<LucideProps, "size" | "strokeWidth">;
 
-/** Renders a Lucide icon at Signal spec (stroke 2, currentColor). */
+/** Renders a Lucide icon (stroke 2, currentColor). */
 export function DsIcon({ icon: Icon, size = "inline", className, ...rest }: DsIconProps) {
   return <Icon {...iconProps(size)} className={className} {...rest} />;
 }

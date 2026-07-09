@@ -1,0 +1,30 @@
+services:
+  web:
+    # Override the production image with a dev/HMR container.
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      # server-side (inside docker network)
+      API_PUBLIC_URL: http://api:8000
+      # browser-side calls from client components
+      NEXT_PUBLIC_API_PUBLIC_URL: http://localhost:8000
+      # Next dev should bind on all interfaces in container
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    volumes:
+      # Bind-mount only source directories.
+      # Mounting the whole repo hides the image's node_modules (causing
+      # runtime "Module not found" like lucide-react).
+      - ../apps/web:/repo/apps/web
+      # Keep container-installed dependencies (pnpm symlinks) available.
+      - /repo/apps/web/node_modules
+      - ../packages:/repo/packages
+      - ../package.json:/repo/package.json
+      - ../pnpm-lock.yaml:/repo/pnpm-lock.yaml
+      - ../pnpm-workspace.yaml:/repo/pnpm-workspace.yaml
+      - ../turbo.json:/repo/turbo.json
+    ports:
+      - "3000:3000"
+

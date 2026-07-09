@@ -1,9 +1,8 @@
 /* ============================================================
    Dashboardy — Base / reset layer
    ------------------------------------------------------------
-   Minimal, token-driven document defaults. Mirrors the app's
-   html/body setup: dense 14px body, cool-neutral ink on the app
-   canvas, refined font rendering, themed selection + scrollbars.
+   Token-driven document defaults: cream canvas, warm ink,
+   serif display headings, themed selection + scrollbars.
    ============================================================ */
 
 *,
@@ -42,13 +41,17 @@ body {
   scrollbar-color: oklch(var(--border-3)) transparent;
 }
 
-/* Headings inherit the display family; weights come from utilities/components */
+/* Headings: display serif, regular weight, negative tracking */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-tighter);
+  color: var(--text-strong);
   margin: 0;
+  text-wrap: balance;
 }
 
-/* Accessible focus-visible default for anything not otherwise handled */
+/* Accessible focus-visible default */
 :where(a, button, [role="button"], input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid oklch(var(--focus));
   outline-offset: 2px;

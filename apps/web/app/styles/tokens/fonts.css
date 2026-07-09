@@ -1,9 +1,8 @@
 /* ============================================================
-   Dashboardy Signal — Webfonts
-   Display + numerals : Space Grotesk (technical, confident)
-   Body / UI          : IBM Plex Sans (precise, legible)
-   Data / code        : IBM Plex Mono
-   All three from Google Fonts. Swap to self-hosted in production.
+   Dashboardy — Webfonts (cream / coral editorial system)
+   Display : Cormorant Garamond (slab-serif substitute)
+   Body/UI : Inter (humanist sans)
+   Code    : JetBrains Mono
    ============================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");

@@ -8,7 +8,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-/** Lucide glyphs for workspace top-nav routes (Signal brand-icons.card). */
+/** Lucide glyphs for workspace top-nav routes. */
 export const NAV_ICON_BY_HREF: Record<string, LucideIcon> = {
   "/profile": User,
   "/members": Users,

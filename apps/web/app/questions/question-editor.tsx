@@ -16,6 +16,7 @@ import { useEffect, useMemo, useState, useTransition, type FormEvent } from "rea
 
 import type { Collection, ParameterDefinition, SavedQuestionDetail } from "@dashboardy/types";
 
+import { ConfirmDialog } from "@/components/ds/confirm-dialog";
 import { DsIcon } from "@/components/ds/icon";
 
 import {
@@ -31,24 +32,13 @@ import {
 import { ParameterEditor } from "./parameter-editor";
 import { ResultsTable } from "./results-table";
 
-const fieldClass =
-  "w-full bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-[13px] focus:outline-none focus:border-[#6366F1]/50 rounded-sm";
-
-const sqlClass =
-  "w-full min-h-[200px] bg-[#111827] border border-white/10 px-4 py-3 text-[#F8FAFC] text-[13px] font-mono focus:outline-none focus:border-[#6366F1]/50 rounded-sm";
+const fieldClass = "dby-input";
+const sqlClass = "dby-textarea dby-textarea--mono min-h-[220px] font-mono";
+const labelClass = "ds-label";
 
 const iconInButton = (icon: LucideIcon) => (
   <DsIcon icon={icon} className="inline-block shrink-0" />
 );
-
-const primaryButtonClass =
-  "inline-flex items-center justify-center gap-2 bg-[#6366F1] text-black px-6 py-3 text-[11px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8] transition-colors disabled:opacity-50";
-
-const quietButtonClass =
-  "inline-flex items-center justify-center gap-2 text-[#94A3B8] hover:text-[#6366F1] transition-colors text-[10px] uppercase tracking-[0.15em] border border-white/10 px-4 py-3";
-
-const labelClass =
-  "text-[10px] uppercase tracking-[0.15em] text-[#94A3B8]";
 
 type Props = {
   workspaceId: string;
@@ -74,11 +64,13 @@ function ErrorBanner({
     return null;
   }
   return (
-    <div className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-4 text-sm text-[#94A3B8]" role="alert">
-      <span className="block text-[10px] uppercase tracking-[0.2em] text-[#EF4444] mb-1">
-        {title ?? state.errorCode?.replace(/_/g, " ") ?? "Error"}
-      </span>
-      {state.message}
+    <div className="dby-alert dby-alert--danger" role="alert">
+      <div className="dby-alert__body">
+        <span className="dby-alert__title">
+          {title ?? state.errorCode?.replace(/_/g, " ") ?? "Error"}
+        </span>
+        <span>{state.message}</span>
+      </div>
     </div>
   );
 }
@@ -93,13 +85,15 @@ function RuntimeParameterInputs({
   onChange: (next: Record<string, string>) => void;
 }) {
   if (parameters.length === 0) {
-    return <p className="text-xs text-[#94A3B8]">No runtime parameters required.</p>;
+    return (
+      <p className="text-sm text-ink-muted">No runtime parameters required.</p>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid gap-4 sm:grid-cols-2">
       {parameters.map((param) => (
-        <label key={param.name} className="flex flex-col gap-2">
+        <label key={param.name} className="flex flex-col gap-1.5">
           <span className={labelClass}>
             {param.label ?? param.name}
             {param.required ? " *" : ""}
@@ -119,7 +113,13 @@ function RuntimeParameterInputs({
           ) : (
             <input
               className={fieldClass}
-              type={param.type === "number" ? "number" : param.type === "date" ? "date" : "text"}
+              type={
+                param.type === "number"
+                  ? "number"
+                  : param.type === "date"
+                    ? "date"
+                    : "text"
+              }
               value={values[param.name] ?? ""}
               onChange={(e) =>
                 onChange({ ...values, [param.name]: e.target.value })
@@ -155,7 +155,13 @@ function buildRuntimePayload(
   return payload;
 }
 
-export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdit }: Props) {
+export function QuestionEditor({
+  workspaceId,
+  collections,
+  detail,
+  isNew,
+  canEdit,
+}: Props) {
   const router = useRouter();
   const editableCollections = useMemo(
     () => collections.filter((c) => c.permission === "edit"),
@@ -169,8 +175,10 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     useState<ExecuteQuestionActionState | null>(null);
   const [cloneState, setCloneState] = useState<QuestionActionState | null>(null);
   const [exportState, setExportState] = useState<ExportQuestionActionState | null>(null);
+  const [showClone, setShowClone] = useState(false);
   const [clonePending, setClonePending] = useState(false);
   const [exportPending, setExportPending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [savePending, startSaveTransition] = useTransition();
   const [deletePending, startDeleteTransition] = useTransition();
   const [executePending, startExecuteTransition] = useTransition();
@@ -194,6 +202,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     setExecuteState(null);
     setCloneState(null);
     setExportState(null);
+    setShowClone(false);
   }, [detail]);
 
   const savedUpdatedAt =
@@ -213,6 +222,7 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     if (!deleteState?.ok) {
       return;
     }
+    setConfirmOpen(false);
     router.push("/questions");
     router.refresh();
   }, [deleteState, router]);
@@ -236,9 +246,13 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
     });
   };
 
-  const submitDelete = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+  const performDelete = () => {
+    if (!detail) {
+      return;
+    }
+    const formData = new FormData();
+    formData.set("workspace_id", workspaceId);
+    formData.set("question_id", detail.id);
     startDeleteTransition(() => {
       void deleteQuestionAction(formData).then(setDeleteState);
     });
@@ -316,19 +330,48 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
       .finally(() => setExportPending(false));
   };
 
+  const heading = isNew
+    ? "New question"
+    : canEdit
+      ? "Edit question"
+      : "View question";
+
   return (
-    <div className="flex flex-col gap-8 border border-white/10 p-8">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <h2 className="text-2xl font-serif text-white font-light">
-          {isNew ? "New question" : canEdit ? "Edit question" : "View question"}
-        </h2>
-        <Link href="/questions" className={quietButtonClass}>
-          {iconInButton(ArrowLeft)}
-          Back to list
-        </Link>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-3 border-b border-border-1 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <Link
+            href="/questions"
+            className="inline-flex items-center gap-1.5 text-sm text-ink-muted hover:text-accent"
+          >
+            <DsIcon icon={ArrowLeft} />
+            Questions
+          </Link>
+          <h1 className="font-display text-3xl font-medium tracking-tight text-ink-strong">
+            {heading}
+          </h1>
+          {!isNew && detail ? (
+            <p className="text-sm text-ink-muted">
+              Updated {new Date(detail.updated_at).toLocaleString()}
+              <span className="mx-1.5" aria-hidden="true">
+                ·
+              </span>
+              <span className="capitalize">{detail.permission}</span>
+            </p>
+          ) : (
+            <p className="text-sm text-ink-muted">
+              Define SQL, parameters, then save to run and share.
+            </p>
+          )}
+        </div>
       </div>
 
-      <form key={formKey} onSubmit={submitSave} className="flex flex-col gap-6">
+      <form
+        key={formKey}
+        id="question-definition-form"
+        onSubmit={submitSave}
+        className="flex flex-col gap-5 rounded-ds-md border border-border-1 bg-surface-0 p-5"
+      >
         <input type="hidden" name="workspace_id" value={workspaceId} />
         {detail && !isNew ? (
           <>
@@ -342,35 +385,37 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
         ) : null}
         <input type="hidden" name="parameters_json" value={JSON.stringify(parameters)} />
 
-        <label className="flex flex-col gap-2">
-          <span className={labelClass}>Collection</span>
-          <select
-            name="collection_id"
-            defaultValue={defaultCollectionId}
-            disabled={!canEdit}
-            className={fieldClass}
-            required
-          >
-            {(canEdit ? editableCollections : collections).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5">
+            <span className={labelClass}>Collection</span>
+            <select
+              name="collection_id"
+              defaultValue={defaultCollectionId}
+              disabled={!canEdit}
+              className={fieldClass}
+              required
+            >
+              {(canEdit ? editableCollections : collections).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={labelClass}>Title</span>
+            <input
+              name="title"
+              defaultValue={detail?.title ?? ""}
+              required
+              disabled={!canEdit}
+              className={fieldClass}
+              placeholder="Revenue by day"
+            />
+          </label>
+        </div>
 
-        <label className="flex flex-col gap-2">
-          <span className={labelClass}>Title</span>
-          <input
-            name="title"
-            defaultValue={detail?.title ?? ""}
-            required
-            disabled={!canEdit}
-            className={fieldClass}
-          />
-        </label>
-
-        <label className="flex flex-col gap-2">
+        <label className="flex flex-col gap-1.5">
           <span className={labelClass}>Description</span>
           <textarea
             name="description"
@@ -378,15 +423,16 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
             disabled={!canEdit}
             className={fieldClass}
             rows={2}
+            placeholder="Optional context for consumers"
           />
         </label>
 
         {detail?.detail_level === "consumer" ? (
-          <p className="text-sm text-[#94A3B8]">
+          <p className="rounded-ds-md border border-dashed border-border-2 bg-surface-1 px-4 py-3 text-sm text-ink-muted">
             SQL text is hidden for view-only access.
           </p>
         ) : (
-          <label className="flex flex-col gap-2">
+          <label className="flex flex-col gap-1.5">
             <span className={labelClass}>SQL</span>
             <textarea
               name="sql_text"
@@ -395,26 +441,70 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
               disabled={!canEdit}
               spellCheck={false}
               className={sqlClass}
+              placeholder="SELECT …"
             />
           </label>
         )}
 
         {canEdit ? (
-          <ParameterEditor value={parameters} onChange={setParameters} disabled={false} />
+          <div className="rounded-ds-md border border-border-1 bg-surface-1 p-4">
+            <ParameterEditor value={parameters} onChange={setParameters} disabled={false} />
+          </div>
+        ) : schemaParameters.length > 0 ? (
+          <div className="rounded-ds-md border border-border-1 bg-surface-1 p-4">
+            <p className="ds-kicker mb-3">Parameters</p>
+            <ul className="flex flex-col gap-1 text-sm text-ink-muted">
+              {schemaParameters.map((p) => (
+                <li key={p.name}>
+                  <span className="font-medium text-ink">{p.label ?? p.name}</span>
+                  <span className="text-ink-faint"> · {p.type}</span>
+                  {p.required ? <span className="text-ink-faint"> · required</span> : null}
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
 
         <ErrorBanner state={saveState} />
+
         {canEdit ? (
-          <button type="submit" disabled={savePending} className={primaryButtonClass}>
-            {iconInButton(Save)}
-            {savePending ? "Saving..." : isNew ? "Create question" : "Update question"}
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border-1 pt-4">
+            <Link href="/questions" className="dby-btn dby-btn--ghost">
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={savePending}
+              className="dby-btn dby-btn--primary"
+            >
+              {iconInButton(Save)}
+              {savePending
+                ? "Saving…"
+                : isNew
+                  ? "Create question"
+                  : "Save changes"}
+            </button>
+          </div>
         ) : null}
       </form>
 
       {canRun ? (
-        <section className="flex flex-col gap-6 border-t border-white/10 pt-8">
-          <h3 className="text-[10px] uppercase tracking-[0.2em] text-[#6366F1]">Run question</h3>
+        <section
+          className="flex flex-col gap-4 rounded-ds-md border border-border-1 bg-surface-0 p-5"
+          aria-labelledby="run-question-heading"
+        >
+          <div>
+            <h2
+              id="run-question-heading"
+              className="font-display text-lg font-medium tracking-tight text-ink-strong"
+            >
+              Run
+            </h2>
+            <p className="mt-1 text-sm text-ink-muted">
+              Execute against the warehouse with optional parameter values.
+            </p>
+          </div>
+
           <form onSubmit={submitExecute} className="flex flex-col gap-4">
             <input type="hidden" name="workspace_id" value={workspaceId} />
             <input type="hidden" name="question_id" value={detail?.id ?? ""} />
@@ -431,104 +521,160 @@ export function QuestionEditor({ workspaceId, collections, detail, isNew, canEdi
               onChange={setRuntimeValues}
             />
             <ErrorBanner state={executeState} title="Execution failed" />
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="submit"
                 name="bypass_cache"
                 value="false"
                 disabled={executePending}
-                className={primaryButtonClass}
+                className="dby-btn dby-btn--primary"
               >
                 {iconInButton(Play)}
-                {executePending ? "Running..." : "Execute"}
+                {executePending ? "Running…" : "Execute"}
               </button>
               <button
                 type="submit"
                 name="bypass_cache"
                 value="true"
                 disabled={executePending}
-                className={quietButtonClass}
+                className="dby-btn dby-btn--secondary"
               >
                 {iconInButton(Zap)}
-                {executePending ? "Running..." : "Force fresh"}
+                {executePending ? "Running…" : "Force fresh"}
               </button>
-            </div>
-            {canExport ? (
-              <div className="flex flex-col gap-3 pt-2">
-                <ErrorBanner state={exportState} title="Export failed" />
+              {canExport ? (
                 <button
                   type="button"
                   onClick={submitExport}
                   disabled={exportPending}
-                  className={quietButtonClass}
+                  className="dby-btn dby-btn--ghost"
                 >
                   {iconInButton(Download)}
-                  {exportPending ? "Exporting..." : "Export CSV"}
+                  {exportPending ? "Exporting…" : "Export CSV"}
                 </button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
+            <ErrorBanner state={exportState} title="Export failed" />
           </form>
+
           {executeState?.ok ? <ResultsTable result={executeState.result} /> : null}
         </section>
       ) : null}
 
       {canClone ? (
-        <section
-          key={`clone-${collectionsRevision}`}
-          className="flex flex-col gap-6 border-t border-white/10 pt-8"
-        >
-          <h3 className="text-[10px] uppercase tracking-[0.2em] text-[#6366F1]">
-            Clone question
-          </h3>
-          <form onSubmit={submitClone} className="flex flex-col gap-4">
-            <input type="hidden" name="workspace_id" value={workspaceId} />
-            <input type="hidden" name="question_id" value={detail?.id ?? ""} />
-            <label className="flex flex-col gap-2">
-              <span className={labelClass}>
-                Target collection
-              </span>
-              <select
-                name="target_collection_id"
-                defaultValue={editableCollections[0]?.id ?? ""}
-                className={fieldClass}
-                required
+        <section className="flex flex-col gap-3" aria-labelledby="clone-heading">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2
+                id="clone-heading"
+                className="font-display text-lg font-medium tracking-tight text-ink-strong"
               >
-                {editableCollections.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-2">
-              <span className={labelClass}>
-                Title override (optional)
-              </span>
-              <input
-                name="clone_title"
-                placeholder={detail?.title ?? ""}
-                className={fieldClass}
-              />
-            </label>
-            <ErrorBanner state={cloneState} title="Clone failed" />
-            <button type="submit" disabled={clonePending} className={primaryButtonClass}>
-              {iconInButton(Copy)}
-              {clonePending ? "Cloning..." : "Clone question"}
-            </button>
-          </form>
+                Clone
+              </h2>
+              <p className="mt-1 text-sm text-ink-muted">
+                Copy this question into another editable collection.
+              </p>
+            </div>
+            {!showClone ? (
+              <button
+                type="button"
+                className="dby-btn dby-btn--secondary"
+                onClick={() => setShowClone(true)}
+              >
+                {iconInButton(Copy)}
+                Clone question
+              </button>
+            ) : null}
+          </div>
+
+          {showClone ? (
+            <form
+              key={`clone-${collectionsRevision}`}
+              onSubmit={submitClone}
+              className="rounded-ds-md border border-border-1 bg-surface-2 p-5"
+            >
+              <input type="hidden" name="workspace_id" value={workspaceId} />
+              <input type="hidden" name="question_id" value={detail?.id ?? ""} />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Target collection</span>
+                  <select
+                    name="target_collection_id"
+                    defaultValue={editableCollections[0]?.id ?? ""}
+                    className={fieldClass}
+                    required
+                  >
+                    {editableCollections.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1.5">
+                  <span className={labelClass}>Title override (optional)</span>
+                  <input
+                    name="clone_title"
+                    placeholder={detail?.title ?? ""}
+                    className={fieldClass}
+                  />
+                </label>
+              </div>
+              <ErrorBanner state={cloneState} title="Clone failed" />
+              <div className="mt-4 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  className="dby-btn dby-btn--ghost"
+                  onClick={() => setShowClone(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={clonePending}
+                  className="dby-btn dby-btn--primary"
+                >
+                  {iconInButton(Copy)}
+                  {clonePending ? "Cloning…" : "Create clone"}
+                </button>
+              </div>
+            </form>
+          ) : null}
         </section>
       ) : null}
 
       {detail && !isNew && canEdit ? (
-        <form onSubmit={submitDelete}>
-          <input type="hidden" name="workspace_id" value={workspaceId} />
-          <input type="hidden" name="question_id" value={detail.id} />
-          <ErrorBanner state={deleteState} />
-          <button type="submit" disabled={deletePending} className={quietButtonClass}>
-            {iconInButton(Trash2)}
-            {deletePending ? "Deleting..." : "Delete question"}
-          </button>
-        </form>
+        <section className="border-t border-border-1 pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-ink-strong">Delete question</p>
+              <p className="text-xs text-ink-muted">
+                Permanently remove this question. Dashboards that reference it may break.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={deletePending}
+              onClick={() => setConfirmOpen(true)}
+              className="dby-btn dby-btn--ghost text-danger-ink hover:bg-danger-soft hover:text-danger-ink"
+            >
+              {iconInButton(Trash2)}
+              {deletePending ? "Deleting…" : "Delete"}
+            </button>
+          </div>
+          <div className="mt-3">
+            <ErrorBanner state={deleteState} />
+          </div>
+          <ConfirmDialog
+            open={confirmOpen}
+            title="Delete question?"
+            description={`“${detail.title}” will be permanently removed. Dashboards that reference it may break.`}
+            confirmLabel="Delete question"
+            pending={deletePending}
+            onCancel={() => setConfirmOpen(false)}
+            onConfirm={performDelete}
+          />
+        </section>
       ) : null}
     </div>
   );

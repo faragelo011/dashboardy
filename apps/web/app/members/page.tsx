@@ -1,10 +1,14 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Plus, UserPlus, Users } from "lucide-react";
 
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
 import { listExternalAssetGrants } from "@/app/lib/asset-grants-api";
 import { listWorkspaceMembers } from "@/app/lib/members-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
+import { DsIcon } from "@/components/ds/icon";
+import { EmptyState } from "@/components/ds/empty-state";
 
 import {
   createAssetGrantAction,
@@ -12,6 +16,8 @@ import {
   deleteAssetGrantAction,
   updateMemberRoleAction,
 } from "./actions";
+import { ConfirmActionForm } from "./confirm-action-form";
+import { MemberRoleForm } from "./member-role-form";
 import { ProvisionMemberForm } from "./provision-member-form";
 
 const roleOptions = [
@@ -21,9 +27,6 @@ const roleOptions = [
   ["external_client", "External client", "Access only granted assets."],
 ] as const;
 
-const roleLabel = (role: string) =>
-  roleOptions.find(([value]) => value === role)?.[1] ?? role;
-
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en", {
     month: "short",
@@ -31,11 +34,29 @@ const formatDate = (value: string) =>
     year: "numeric",
   }).format(new Date(value));
 
-export default async function MembersPage() {
+type PageProps = {
+  searchParams: Promise<{
+    invite?: string | string[];
+    grant?: string | string[];
+  }>;
+};
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() || undefined;
+  }
+  return value?.trim() || undefined;
+}
+
+export default async function MembersPage({ searchParams }: PageProps) {
   const me = await getProtectedMe();
   if (me.current_workspace.role !== "admin") {
     redirect("/dashboards");
   }
+
+  const params = await searchParams;
+  const showInvite = firstParam(params.invite) === "1";
+  const showGrant = firstParam(params.grant) === "1";
 
   const supabase = await createServerSupabase();
   const {
@@ -71,6 +92,8 @@ export default async function MembersPage() {
   const externalClients = members.filter(
     (member) => member.role === "external_client" && member.status === "active",
   );
+  const emailByUserId = new Map(members.map((m) => [m.user_id, m.email]));
+
   const adminCount = activeMembers.filter((member) => member.role === "admin").length;
   const analystCount = activeMembers.filter(
     (member) => member.role === "analyst",
@@ -80,293 +103,337 @@ export default async function MembersPage() {
   return (
     <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNav />
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-14">
-
-        {/* Header */}
-        <header className="flex flex-col gap-6 border-b border-border-1 pb-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-3">
+      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+        <header className="flex flex-col gap-4 border-b border-border-1 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl space-y-2">
             <p className="ds-kicker">Workspace directory</p>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-ink-strong sm:text-4xl">
               Members
             </h1>
             <p className="max-w-[55ch] text-sm leading-relaxed text-ink-muted">
               Manage access and roles for{" "}
-              <span className="font-medium text-ink">{me.current_workspace.workspace_name}</span>.
+              <span className="font-medium text-ink">
+                {me.current_workspace.workspace_name}
+              </span>
+              .
+            </p>
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-muted">
+              <span>
+                <span className="font-medium text-ink">{adminCount}</span> admin
+                {adminCount === 1 ? "" : "s"}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <span className="font-medium text-ink">{analystCount}</span> analyst
+                {analystCount === 1 ? "" : "s"}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <span className="font-medium text-ink">{viewerCount}</span> viewer
+                {viewerCount === 1 ? "" : "s"}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <span className="font-medium text-ink">{externalClients.length}</span>{" "}
+                external
+              </span>
+              {inactiveMembers.length > 0 ? (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span>{inactiveMembers.length} inactive</span>
+                </>
+              ) : null}
             </p>
           </div>
-
-          <dl className="flex gap-8 shrink-0 pt-4 lg:pt-0">
-            <div>
-              <dt className="ds-kicker">Admins</dt>
-              <dd className="ds-stat mt-1">{adminCount.toString().padStart(2, "0")}</dd>
-            </div>
-            <div>
-              <dt className="ds-kicker">Analysts</dt>
-              <dd className="ds-stat mt-1">{analystCount.toString().padStart(2, "0")}</dd>
-            </div>
-            <div>
-              <dt className="ds-kicker">Viewers</dt>
-              <dd className="ds-stat mt-1">{viewerCount.toString().padStart(2, "0")}</dd>
-            </div>
-          </dl>
+          {!showInvite ? (
+            <Link href="/members?invite=1" className="dby-btn dby-btn--primary shrink-0">
+              <DsIcon icon={UserPlus} className="dby-btn__icon" />
+              Invite member
+            </Link>
+          ) : null}
         </header>
 
         {loadError ? (
-          <section className="ds-alert ds-alert--danger" role="alert">
-            <div>
-              <h2 className="mb-1 font-semibold">Failed to load</h2>
-              <p>{loadError}</p>
+          <section className="dby-alert dby-alert--danger" role="alert">
+            <div className="dby-alert__body">
+              <span className="dby-alert__title">Failed to load</span>
+              <span>{loadError}</span>
             </div>
           </section>
         ) : null}
 
-        {/* Invite + Sidebar stats */}
-        <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10">
+        {showInvite ? (
           <ProvisionMemberForm
             workspaceId={workspaceId}
             roleOptions={roleOptions}
+            cancelHref="/members"
           />
+        ) : null}
 
-          <aside className="flex flex-col gap-6">
-            <div className="ds-card flex flex-col gap-4 p-6">
-              <h2 className="text-lg font-semibold tracking-tight text-ink-strong">Directory</h2>
-              <dl className="flex flex-col gap-3">
-                <div className="flex items-end justify-between border-b border-border-1 pb-3">
-                  <dt className="ds-label text-ink-muted">Active members</dt>
-                  <dd className="ds-mono text-ink">{activeMembers.length}</dd>
-                </div>
-                <div className="flex items-end justify-between border-b border-border-1 pb-3">
-                  <dt className="ds-label text-ink-muted">Inactive</dt>
-                  <dd className="ds-mono text-ink-faint">{inactiveMembers.length}</dd>
-                </div>
-                <div className="flex items-end justify-between">
-                  <dt className="ds-label text-ink-muted">External partners</dt>
-                  <dd className="ds-mono text-ink">{externalClients.length}</dd>
-                </div>
-              </dl>
-              <p className="ds-help italic">Ensure at least two active admins for uninterrupted access.</p>
-            </div>
-          </aside>
+        <section className="flex flex-col gap-4" aria-labelledby="roster-heading">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2
+              id="roster-heading"
+              className="font-display text-xl font-medium tracking-tight text-ink-strong"
+            >
+              Roster{" "}
+              <span className="text-ink-muted">({members.length})</span>
+            </h2>
+            <p className="text-xs text-ink-faint">
+              Keep at least two active admins.
+            </p>
+          </div>
+
+          {members.length === 0 ? (
+            <EmptyState
+              icon={<DsIcon icon={Users} size="md" />}
+              kicker="No members"
+              description="Invite someone to this workspace to get started."
+              action={
+                <Link href="/members?invite=1" className="dby-btn dby-btn--primary">
+                  <DsIcon icon={UserPlus} className="dby-btn__icon" />
+                  Invite member
+                </Link>
+              }
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {members.map((member) => {
+                const isActive = member.status === "active";
+                return (
+                  <li
+                    key={member.id}
+                    className="rounded-ds-md border border-border-1 bg-surface-0 p-4 transition-colors hover:border-border-2 hover:bg-surface-1"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-ink-strong">
+                          {member.email}
+                        </p>
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
+                          <span
+                            className={`ds-badge ${isActive ? "ds-badge--ok" : "ds-badge--idle"}`}
+                          >
+                            {isActive ? "Active" : "Inactive"}
+                          </span>
+                          <span>Joined {formatDate(member.created_at)}</span>
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <MemberRoleForm
+                          workspaceId={workspaceId}
+                          membershipId={member.id}
+                          email={member.email}
+                          role={member.role}
+                          disabled={!isActive}
+                          roleOptions={roleOptions}
+                          action={updateMemberRoleAction}
+                        />
+
+                        <ConfirmActionForm
+                          action={deactivateMemberAction}
+                          fields={{
+                            workspace_id: workspaceId,
+                            membership_id: member.id,
+                          }}
+                          title="Remove member?"
+                          description={`“${member.email}” will lose access to this workspace.`}
+                          confirmLabel="Remove member"
+                          buttonLabel="Remove"
+                          disabled={!isActive}
+                        />
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </section>
 
-        {/* Member Roster */}
-        <section>
-          <div className="mb-6 flex items-end justify-between border-b border-border-1 pb-4">
-            <h2 className="text-lg font-semibold tracking-tight text-ink-strong">Roster</h2>
-            <span className="ds-help">{members.length} {members.length === 1 ? "member" : "members"}</span>
+        <section
+          className="flex flex-col gap-4 border-t border-border-1 pt-8"
+          aria-labelledby="grants-heading"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-xl space-y-1">
+              <p className="ds-kicker">External distribution</p>
+              <h2
+                id="grants-heading"
+                className="font-display text-xl font-medium tracking-tight text-ink-strong"
+              >
+                Asset grants{" "}
+                <span className="text-ink-muted">({grants.length})</span>
+              </h2>
+              <p className="text-sm text-ink-muted">
+                Give external clients access to specific dashboards or questions.
+              </p>
+            </div>
+            {!showGrant && externalClients.length > 0 ? (
+              <Link href="/members?grant=1" className="dby-btn dby-btn--secondary shrink-0">
+                <DsIcon icon={Plus} className="dby-btn__icon" />
+                New grant
+              </Link>
+            ) : null}
           </div>
 
-          {/* Table header (desktop) */}
-          <div className="hidden gap-4 px-4 pb-3 text-[11px] font-medium uppercase tracking-wider text-ink-faint md:grid md:grid-cols-[1.4fr_0.6fr_0.4fr_0.4fr_0.6fr]">
-            <div>Identity</div>
-            <div>Role</div>
-            <div>Status</div>
-            <div>Joined</div>
-            <div className="text-right">Actions</div>
-          </div>
+          {showGrant ? (
+            <form
+              action={createAssetGrantAction}
+              className="rounded-ds-md border border-border-1 bg-surface-2 p-5"
+              aria-labelledby="new-grant-heading"
+            >
+              <input type="hidden" name="workspace_id" value={workspaceId} />
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                  <h3
+                    id="new-grant-heading"
+                    className="font-display text-lg font-medium tracking-tight text-ink-strong"
+                  >
+                    New asset grant
+                  </h3>
+                  <p className="mt-1 text-sm text-ink-muted">
+                    Authorize one asset for an external partner.
+                  </p>
+                </div>
+                <Link
+                  href="/members"
+                  className="dby-btn dby-btn--ghost ds-btn--sm"
+                >
+                  Cancel
+                </Link>
+              </div>
 
-          <div className="flex flex-col gap-1.5">
-            {members.map((member) => {
-              const isActive = member.status === "active";
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="ds-label">Partner</span>
+                  <select
+                    name="user_id"
+                    required
+                    className="ds-select"
+                    defaultValue=""
+                    disabled={externalClients.length === 0}
+                  >
+                    <option value="" disabled>
+                      {externalClients.length === 0
+                        ? "No external partners registered"
+                        : "Select partner"}
+                    </option>
+                    {externalClients.map((member) => (
+                      <option key={member.id} value={member.user_id}>
+                        {member.email}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="ds-label">Asset type</span>
+                  <select
+                    name="asset_type"
+                    className="ds-select"
+                    defaultValue="dashboard"
+                  >
+                    <option value="dashboard">Dashboard</option>
+                    <option value="question">Saved question</option>
+                  </select>
+                </label>
+
+                <label className="flex flex-col gap-1.5">
+                  <span className="ds-label">Allow export</span>
+                  <label className="dby-checkbox mt-2">
+                    <input name="can_export" type="checkbox" />
+                    <span className="dby-checkbox__text">Authorize download</span>
+                  </label>
+                </label>
+
+                <label className="flex flex-col gap-1.5 sm:col-span-2">
+                  <span className="ds-label">Asset ID</span>
+                  <input
+                    name="asset_id"
+                    required
+                    pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+                    title="Enter a UUID like 00000000-0000-4000-8000-000000000000"
+                    className="ds-input ds-mono text-xs tracking-wider"
+                    placeholder="00000000-0000-4000-8000-000000000000"
+                    autoFocus
+                  />
+                </label>
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="submit"
+                  className="ds-btn ds-btn-primary"
+                  disabled={externalClients.length === 0}
+                >
+                  Authorize grant
+                </button>
+              </div>
+            </form>
+          ) : null}
+
+          {externalClients.length === 0 && !showGrant ? (
+            <p className="rounded-ds-md border border-dashed border-border-2 bg-surface-1 px-4 py-3 text-sm text-ink-muted">
+              Invite someone with the External client role before creating grants.
+            </p>
+          ) : null}
+
+          <div className="flex flex-col gap-2">
+            {grants.map((grant) => {
+              const partnerEmail = emailByUserId.get(grant.user_id);
               return (
                 <div
-                  key={member.id}
-                  className="ds-card grid gap-4 p-4 transition-colors md:grid-cols-[1.4fr_0.6fr_0.4fr_0.4fr_0.6fr] md:items-center md:gap-4 md:px-4"
+                  key={grant.id}
+                  className="flex flex-col gap-3 rounded-ds-md border border-border-1 bg-surface-0 p-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-ink">{member.email}</div>
-                    <div className="mt-0.5 text-[11px] text-ink-faint ds-mono">
-                      {member.user_id.split("-")[0]}…
-                    </div>
+                    <p className="ds-mono truncate text-xs text-ink-strong">
+                      {grant.asset_id}
+                    </p>
+                    <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-ink-muted">
+                      <span className="inline-flex items-center rounded-pill bg-surface-2 px-2.5 py-0.5 font-medium capitalize text-ink">
+                        {grant.asset_type}
+                      </span>
+                      <span>
+                        {partnerEmail ?? `User ${grant.user_id.split("-")[0]}…`}
+                      </span>
+                      <span aria-hidden="true">·</span>
+                      <span>{grant.can_export ? "Export allowed" : "Export denied"}</span>
+                    </p>
                   </div>
-
-                  <form action={updateMemberRoleAction} className="contents">
-                    <input type="hidden" name="workspace_id" value={workspaceId} />
-                    <input type="hidden" name="membership_id" value={member.id} />
-                    <select
-                      name="role"
-                      defaultValue={member.role}
-                      className="ds-select text-xs"
-                      disabled={!isActive}
-                    >
-                      {roleOptions.map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      className="ds-btn ds-btn-ghost text-xs md:hidden"
-                      disabled={!isActive}
-                    >
-                      Apply
-                    </button>
-                  </form>
-
-                  <div>
-                    <span className={`ds-badge ${isActive ? "ds-badge--ok" : "ds-badge--idle"}`}>
-                      {isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-
-                  <div className="text-xs text-ink-muted">
-                    {formatDate(member.created_at)}
-                  </div>
-
-                  <form action={deactivateMemberAction} className="md:flex md:justify-end">
-                    <input type="hidden" name="workspace_id" value={workspaceId} />
-                    <input type="hidden" name="membership_id" value={member.id} />
-                    <button className="ds-btn ds-btn-ghost text-xs text-danger-ink hover:text-danger-ink hover:bg-danger-soft" disabled={!isActive}>
-                      Remove
-                    </button>
-                  </form>
+                  <ConfirmActionForm
+                    action={deleteAssetGrantAction}
+                    fields={{
+                      workspace_id: workspaceId,
+                      grant_id: grant.id,
+                    }}
+                    title="Revoke grant?"
+                    description={`Access for ${partnerEmail ?? "this partner"} will be removed.`}
+                    confirmLabel="Revoke grant"
+                    buttonLabel="Revoke"
+                  />
                 </div>
               );
             })}
+
+            {grantsLoadSuccess && grants.length === 0 ? (
+              <EmptyState
+                kicker="No grants yet"
+                description="Authorize a dashboard or question for an external partner when you’re ready."
+                action={
+                  externalClients.length > 0 ? (
+                    <Link href="/members?grant=1" className="dby-btn dby-btn--secondary">
+                      <DsIcon icon={Plus} className="dby-btn__icon" />
+                      New grant
+                    </Link>
+                  ) : null
+                }
+              />
+            ) : null}
           </div>
         </section>
-
-        {/* Asset Grants */}
-        <section className="border-t border-border-1 pt-10">
-          <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
-
-            <div className="flex flex-col gap-8">
-              <div>
-                <p className="ds-kicker">External distribution</p>
-                <h2 className="mt-2 text-xl font-semibold tracking-tight text-ink-strong">Asset grants</h2>
-                <p className="ds-help mt-2 max-w-[40ch]">
-                  Grant access to specific assets for external partners with the External client role.
-                </p>
-              </div>
-
-              <form action={createAssetGrantAction} className="ds-card flex flex-col gap-5 p-6">
-                <input type="hidden" name="workspace_id" value={workspaceId} />
-
-                <div className="flex flex-col gap-5">
-                  <label className="flex flex-col gap-1.5">
-                    <span className="ds-label">Partner</span>
-                    <select
-                      name="user_id"
-                      required
-                      className="ds-select"
-                      defaultValue=""
-                      disabled={externalClients.length === 0}
-                    >
-                      <option value="" disabled>
-                        {externalClients.length === 0
-                          ? "No external partners registered"
-                          : "Select partner"}
-                      </option>
-                      {externalClients.map((member) => (
-                        <option key={member.id} value={member.user_id}>
-                          {member.email} ({roleLabel(member.role)})
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <label className="flex flex-col gap-1.5">
-                      <span className="ds-label">Asset type</span>
-                      <select
-                        name="asset_type"
-                        className="ds-select"
-                        defaultValue="dashboard"
-                      >
-                        <option value="dashboard">Visual dashboard</option>
-                        <option value="question">Saved question</option>
-                      </select>
-                    </label>
-                    <label className="flex flex-col gap-1.5">
-                      <span className="ds-label">Allow export</span>
-                      <div className="flex h-9 items-center gap-3">
-                        <input
-                          name="can_export"
-                          type="checkbox"
-                          className="h-4 w-4 cursor-pointer rounded-[4px] border border-border-2 accent-accent"
-                        />
-                        <span className="text-sm text-ink-muted">Authorize download</span>
-                      </div>
-                    </label>
-                  </div>
-
-                  <label className="flex flex-col gap-1.5">
-                    <span className="ds-label">Asset ID</span>
-                    <input
-                      name="asset_id"
-                      required
-                      pattern="^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-                      title="Enter a UUID like 00000000-0000-4000-8000-000000000000"
-                      className="ds-input ds-mono text-xs tracking-wider"
-                      placeholder="00000000-0000-4000-8000-000000000000"
-                    />
-                  </label>
-
-                  <button
-                    className="ds-btn ds-btn-primary w-full"
-                    disabled={externalClients.length === 0}
-                  >
-                    Authorize distribution
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <div className="flex flex-col gap-4 pt-2">
-              {/* Table header (desktop) */}
-              <div className="hidden gap-4 border-b border-border-1 pb-3 text-[11px] font-medium uppercase tracking-wider text-ink-faint md:grid md:grid-cols-[1.2fr_100px_90px_auto]">
-                <div>Asset</div>
-                <div>Type</div>
-                <div>Export</div>
-                <div className="text-right">Action</div>
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                {grants.map((grant) => (
-                  <div
-                    key={grant.id}
-                    className="ds-card grid gap-3 p-4 transition-colors md:grid-cols-[1.2fr_100px_90px_auto] md:items-center md:gap-4 md:px-4"
-                  >
-                    <div className="min-w-0">
-                      <div className="mb-0.5 text-[11px] text-ink-faint md:hidden">Asset</div>
-                      <div className="ds-mono truncate text-xs text-ink">{grant.asset_id}</div>
-                      <div className="mt-0.5 text-[11px] text-ink-faint">
-                        User: {grant.user_id.split("-")[0]}…
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-ink-faint md:hidden">Type </span>
-                      <span className="text-xs capitalize text-ink">{grant.asset_type}</span>
-                    </div>
-                    <div>
-                      <span className="text-[11px] text-ink-faint md:hidden">Export </span>
-                      <span className="ds-badge ds-badge--idle">
-                        {grant.can_export ? "Allowed" : "Denied"}
-                      </span>
-                    </div>
-                    <form action={deleteAssetGrantAction} className="md:text-right">
-                      <input type="hidden" name="workspace_id" value={workspaceId} />
-                      <input type="hidden" name="grant_id" value={grant.id} />
-                      <button className="ds-btn ds-btn-ghost text-xs text-danger-ink hover:text-danger-ink hover:bg-danger-soft">
-                        Revoke
-                      </button>
-                    </form>
-                  </div>
-                ))}
-
-                {grantsLoadSuccess && grants.length === 0 ? (
-                  <div className="ds-card flex flex-col items-center gap-2 border-dashed p-12 text-center">
-                    <p className="ds-kicker">No grants</p>
-                    <p className="ds-help max-w-[40ch]">
-                      No external distributions have been authorized yet.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        </section>
-
       </div>
     </div>
   );

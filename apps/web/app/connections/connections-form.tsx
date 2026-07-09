@@ -20,12 +20,12 @@ export function ConnectionsForm({
   const [password, setPassword] = useState("");
   const [privateKeyPem, setPrivateKeyPem] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const isNotConfigured = connection?.status === "not_configured";
+  const isNotConfigured = !connection || connection.status === "not_configured";
 
   return (
     <form
       action={upsertConnectionAction}
-      className="ds-card flex flex-col gap-8 p-6 sm:p-7"
+      className="rounded-ds-md border border-border-1 bg-surface-0 p-5"
       onSubmit={(e) => {
         if (password.length > 0 && privateKeyPem.length > 0) {
           e.preventDefault();
@@ -42,19 +42,18 @@ export function ConnectionsForm({
     >
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight text-ink-strong">
-            Connection details
-          </h2>
-          <span className="ds-badge ds-badge--idle">Admin</span>
-        </div>
-        <p className="ds-help max-w-[60ch]">
-          Saved metadata is shown below. Credentials are write-only and never displayed back after saving.
+      <header className="mb-5 flex flex-col gap-1">
+        <h2 className="font-display text-lg font-medium tracking-tight text-ink-strong">
+          {isNotConfigured ? "Configure connection" : "Connection details"}
+        </h2>
+        <p className="text-sm text-ink-muted">
+          {isNotConfigured
+            ? "Enter warehouse metadata and initial credentials. Secrets are write-only."
+            : "Update metadata anytime. Leave credential fields blank to keep the current secret."}
         </p>
       </header>
 
-      <fieldset className="grid gap-5 md:grid-cols-2">
+      <fieldset className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5">
           <span className="ds-label">Display name</span>
           <input
@@ -101,23 +100,24 @@ export function ConnectionsForm({
         </label>
       </fieldset>
 
-      <hr className="ds-divider" />
+      <div className="my-5 border-t border-border-1" />
 
-      <section className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1">
-          <h3 className="text-sm font-semibold text-ink-strong">Credentials</h3>
-          <p className="ds-help max-w-[65ch]">
-            Leave blank to keep existing credentials. Use a password or an encrypted private key (PEM), not both.
+      <section className="flex flex-col gap-4">
+        <div>
+          <h3 className="text-sm font-medium text-ink-strong">Credentials</h3>
+          <p className="mt-0.5 text-xs text-ink-muted">
+            Password or key-pair — not both.
+            {!isNotConfigured ? " Leave blank to keep existing credentials." : null}
           </p>
         </div>
 
-        {error && (
+        {error ? (
           <div role="alert" aria-live="assertive" className="ds-alert ds-alert--danger">
             {error}
           </div>
-        )}
+        ) : null}
 
-        <div className="grid gap-5 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5">
             <span className="ds-label">Account</span>
             <input
@@ -136,7 +136,7 @@ export function ConnectionsForm({
               autoComplete="off"
             />
           </label>
-          <label className="flex flex-col gap-1.5 md:col-span-2">
+          <label className="flex flex-col gap-1.5 sm:col-span-2">
             <span className="ds-label">Username</span>
             <input
               name="username"
@@ -146,11 +146,11 @@ export function ConnectionsForm({
             />
           </label>
 
-          <label className="flex flex-col gap-1.5 md:col-span-2">
+          <label className="flex flex-col gap-1.5 sm:col-span-2">
             <span className="ds-label">
               Password{" "}
               <span className="text-ink-faint">
-                {privateKeyPem.length > 0 ? "(disabled while key is set)" : "(password auth)"}
+                {privateKeyPem.length > 0 ? "(disabled while key is set)" : ""}
               </span>
             </span>
             <input
@@ -167,11 +167,11 @@ export function ConnectionsForm({
             />
           </label>
 
-          <label className="flex flex-col gap-1.5 md:col-span-2">
+          <label className="flex flex-col gap-1.5 sm:col-span-2">
             <span className="ds-label">
               Private key (PEM){" "}
               <span className="text-ink-faint">
-                {password.length > 0 ? "(disabled while password is set)" : "(key-pair auth)"}
+                {password.length > 0 ? "(disabled while password is set)" : ""}
               </span>
             </span>
             <textarea
@@ -181,13 +181,13 @@ export function ConnectionsForm({
                 if (password.length === 0) setPrivateKeyPem(event.currentTarget.value);
               }}
               disabled={password.length > 0}
-              rows={6}
+              rows={4}
               className="ds-textarea"
               placeholder="-----BEGIN PRIVATE KEY-----"
               autoComplete="off"
             />
           </label>
-          <label className="flex flex-col gap-1.5 md:col-span-2">
+          <label className="flex flex-col gap-1.5 sm:col-span-2">
             <span className="ds-label">
               PEM passphrase <span className="text-ink-faint">(if encrypted)</span>
             </span>
@@ -203,15 +203,19 @@ export function ConnectionsForm({
         </div>
       </section>
 
-      <hr className="ds-divider" />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="ds-help max-w-[48ch]">
+      <div className="mt-5 flex flex-col gap-3 border-t border-border-1 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-ink-muted max-w-[48ch]">
           {isNotConfigured
-            ? "Not configured yet. Saving moves the connection to pending test."
-            : "Saving submits the credentials again and moves the connection to pending test."}
+            ? "Saving moves the connection to pending test."
+            : "Saving credentials again moves the connection to pending test."}
         </p>
-        <Button type="submit" variant="primary" aria-label="Save connection" className="sm:shrink-0" leftIcon={<DsIcon icon={Save} />}>
+        <Button
+          type="submit"
+          variant="primary"
+          aria-label="Save connection"
+          className="sm:shrink-0"
+          leftIcon={<DsIcon icon={Save} />}
+        >
           Save connection
         </Button>
       </div>

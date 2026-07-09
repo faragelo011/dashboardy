@@ -295,17 +295,18 @@ test("authoring loop covers collection, question, execute, clone, and export", a
     await expect(
       page.getByRole("heading", { name: "Collections", level: 1 }),
     ).toBeVisible();
+    await page.getByRole("link", { name: "New collection" }).click();
     await page.getByPlaceholder("Revenue").fill("Revenue");
     await page.getByRole("button", { name: "Create collection" }).click();
-    await expect(page.getByRole("button", { name: "Create collection" })).toBeEnabled();
+    await expect(page.getByRole("heading", { name: "Revenue", level: 3 })).toBeVisible();
 
     await page.goto("/questions?new=1");
-    await expect(page.getByRole("heading", { name: "New question" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "New question", level: 1 })).toBeVisible();
     await page.locator('input[name="title"]').fill("Revenue by Day");
     await page.locator('textarea[name="sql_text"]').fill("SELECT 42 AS revenue");
     await page.getByRole("button", { name: "Create question" }).click();
     await page.waitForURL(/\/questions\?id=/);
-    await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit question", level: 1 })).toBeVisible();
 
     await expect(page.getByRole("button", { name: "Execute" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Force fresh" })).toBeVisible();
@@ -321,6 +322,7 @@ test("authoring loop covers collection, question, execute, clone, and export", a
     expect(sourceQuestionId).toBeTruthy();
 
     await page.getByRole("button", { name: "Clone question" }).click();
+    await page.getByRole("button", { name: "Create clone" }).click();
     await page.waitForURL((url) => {
       const nextId = questionIdFromUrl(url.toString());
       return nextId !== null && nextId !== sourceQuestionId;
@@ -328,7 +330,7 @@ test("authoring loop covers collection, question, execute, clone, and export", a
     const clonedQuestionId = questionIdFromUrl(page.url());
     expect(clonedQuestionId).toBeTruthy();
     expect(clonedQuestionId).not.toBe(sourceQuestionId);
-    await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Edit question", level: 1 })).toBeVisible();
 
     const exportResponsePromise = page.waitForResponse(
       (response) =>

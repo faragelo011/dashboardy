@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { KeyRound, PlugZap } from "lucide-react";
 
@@ -39,14 +40,43 @@ function statusBadgeClass(status: string) {
   }
 }
 
+function statusHint(status?: string) {
+  switch (status) {
+    case "active":
+      return "Handshake succeeded. Queries can use this connection.";
+    case "pending_test":
+      return "Saved — run a diagnostic test to activate.";
+    case "test_failed":
+      return "Last test failed. Fix credentials or network, then retest.";
+    case "not_configured":
+      return "No warehouse configured yet.";
+    default:
+      return "Configure Snowflake metadata and credentials below.";
+  }
+}
+
 const isTestable = (status?: string) =>
   !!status && status !== "not_configured";
 
-export default async function ConnectionsPage() {
+type PageProps = {
+  searchParams: Promise<{ rotate?: string | string[] }>;
+};
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0]?.trim() || undefined;
+  }
+  return value?.trim() || undefined;
+}
+
+export default async function ConnectionsPage({ searchParams }: PageProps) {
   const me = await getProtectedMe();
   if (me.current_workspace.role !== "admin") {
     redirect("/dashboards");
   }
+
+  const params = await searchParams;
+  const showRotate = firstParam(params.rotate) === "1";
 
   const supabase = await createServerSupabase();
   const {
@@ -69,118 +99,196 @@ export default async function ConnectionsPage() {
 
   const status = connection?.status;
   const testable = isTestable(status);
+  const configured = !!connection && status !== "not_configured";
 
   return (
     <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNav />
-      <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-8 lg:py-14">
-        {/* Header */}
-        <header className="flex flex-col gap-6 border-b border-border-1 pb-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl space-y-3">
+      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+        <header className="flex flex-col gap-4 border-b border-border-1 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl space-y-2">
             <p className="ds-kicker">Administrative settings</p>
-            <h1 className="text-2xl font-semibold leading-tight tracking-tight text-ink-strong sm:text-3xl">
+            <h1 className="font-display text-3xl font-medium tracking-tight text-ink-strong sm:text-4xl">
               Data connection
             </h1>
-            <p className="max-w-[60ch] text-sm leading-relaxed text-ink-muted">
-              Configure connectivity metadata and deploy credentials. Secrets are stored write-only and never returned after saving.
+            <p className="max-w-[55ch] text-sm leading-relaxed text-ink-muted">
+              Snowflake connectivity for{" "}
+              <span className="font-medium text-ink">
+                {me.current_workspace.workspace_name}
+              </span>
+              . Secrets are write-only and never returned after saving.
             </p>
           </div>
-
           {connection ? (
-            <div className="flex flex-col items-start gap-2 lg:items-end">
-              <span className={statusBadgeClass(connection.status)}>
-                {connection.status.replace(/_/g, " ")}
-              </span>
-              <span className="ds-help">
-                Workspace{" "}
-                <span className="ds-mono text-ink">{me.current_workspace.workspace_name}</span>
-              </span>
-            </div>
+            <span className={statusBadgeClass(connection.status)}>
+              {connection.status.replace(/_/g, " ")}
+            </span>
           ) : null}
         </header>
 
         {loadError ? (
-          <section className="ds-alert ds-alert--danger" role="alert">
-            <div>
-              <h2 className="mb-1 font-semibold">Failed to load</h2>
-              <p>{loadError}</p>
+          <section className="dby-alert dby-alert--danger" role="alert">
+            <div className="dby-alert__body">
+              <span className="dby-alert__title">Failed to load</span>
+              <span>{loadError}</span>
             </div>
           </section>
         ) : null}
 
-        <section className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-10">
-          <div className="flex flex-col gap-8">
-            <ConnectionsForm workspaceId={workspaceId} connection={connection} />
-
-            {/* Diagnostic test */}
-            <div className="ds-card flex flex-col gap-6 p-6 sm:p-7">
-              <header className="flex flex-col gap-4 border-b border-border-1 pb-5 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-lg font-semibold tracking-tight text-ink-strong">
-                    Diagnostic test
-                  </h2>
-                  <p className="ds-help max-w-[44ch]">
-                    Runs a connection handshake against the warehouse. On success the connection becomes active.
-                  </p>
-                </div>
-                <form action={testConnectionAction} className="shrink-0">
-                  <input type="hidden" name="workspace_id" value={workspaceId} />
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    aria-label="Test connection"
-                    disabled={!testable}
-                    leftIcon={<DsIcon icon={PlugZap} />}
-                  >
-                    Test connection
-                  </Button>
-                </form>
-              </header>
-
-              <dl className="grid gap-5 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <dt className="ds-kicker">Last tested</dt>
-                  <dd className="ds-mono text-ink">
-                    {connection?.last_tested_at ? formatUtcDateTime(connection.last_tested_at) : "Never"}
-                  </dd>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <dt className="ds-kicker">Last successful</dt>
-                  <dd className="ds-mono text-ink">
-                    {connection?.last_successful_test_at
-                      ? formatUtcDateTime(connection.last_successful_test_at)
-                      : "Never"}
-                  </dd>
-                </div>
-              </dl>
-
-              {connection?.last_error ? (
-                <div className="ds-alert ds-alert--danger" role="alert">
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold">Test failed</span>
-                    <pre className="ds-mono whitespace-pre-wrap break-all text-ink-muted">
-                      {connection.last_error}
-                    </pre>
+        {/* Status + test — primary operational surface */}
+        <section
+          className="rounded-ds-md border border-border-1 bg-surface-2 p-5"
+          aria-labelledby="connection-status-heading"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-2">
+              <h2
+                id="connection-status-heading"
+                className="font-display text-lg font-medium tracking-tight text-ink-strong"
+              >
+                {configured
+                  ? connection?.name || "Snowflake connection"
+                  : "Not configured"}
+              </h2>
+              <p className="text-sm text-ink-muted">{statusHint(status)}</p>
+              {configured ? (
+                <dl className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-muted">
+                  {connection?.warehouse ? (
+                    <div>
+                      <dt className="inline text-ink-faint">Warehouse </dt>
+                      <dd className="inline ds-mono text-ink">{connection.warehouse}</dd>
+                    </div>
+                  ) : null}
+                  {connection?.database ? (
+                    <div>
+                      <dt className="inline text-ink-faint">Database </dt>
+                      <dd className="inline ds-mono text-ink">{connection.database}</dd>
+                    </div>
+                  ) : null}
+                  {connection?.schema ? (
+                    <div>
+                      <dt className="inline text-ink-faint">Schema </dt>
+                      <dd className="inline ds-mono text-ink">{connection.schema}</dd>
+                    </div>
+                  ) : null}
+                  <div>
+                    <dt className="inline text-ink-faint">Credentials </dt>
+                    <dd className="inline text-ink">
+                      {connection?.has_credentials ? "Stored" : "Missing"}
+                    </dd>
                   </div>
-                </div>
+                </dl>
               ) : null}
             </div>
 
-            {/* Credential rotation */}
-            <div className="ds-card flex flex-col gap-6 p-6 sm:p-7">
-              <header className="flex flex-col gap-2 border-b border-border-1 pb-5">
-                <h2 className="text-lg font-semibold tracking-tight text-ink-strong">
+            <form action={testConnectionAction} className="shrink-0">
+              <input type="hidden" name="workspace_id" value={workspaceId} />
+              <Button
+                type="submit"
+                variant={status === "pending_test" ? "primary" : "secondary"}
+                aria-label="Test connection"
+                disabled={!testable}
+                leftIcon={<DsIcon icon={PlugZap} />}
+              >
+                Test connection
+              </Button>
+            </form>
+          </div>
+
+          {configured ? (
+            <dl className="mt-4 grid gap-3 border-t border-border-1 pt-4 sm:grid-cols-2">
+              <div>
+                <dt className="ds-kicker">Last tested</dt>
+                <dd className="mt-1 ds-mono text-sm text-ink">
+                  {connection?.last_tested_at
+                    ? formatUtcDateTime(connection.last_tested_at)
+                    : "Never"}
+                </dd>
+              </div>
+              <div>
+                <dt className="ds-kicker">Last successful</dt>
+                <dd className="mt-1 ds-mono text-sm text-ink">
+                  {connection?.last_successful_test_at
+                    ? formatUtcDateTime(connection.last_successful_test_at)
+                    : "Never"}
+                </dd>
+              </div>
+            </dl>
+          ) : null}
+
+          {connection?.last_error ? (
+            <div className="dby-alert dby-alert--danger mt-4" role="alert">
+              <div className="dby-alert__body">
+                <span className="dby-alert__title">Test failed</span>
+                <pre className="ds-mono whitespace-pre-wrap break-all text-sm">
+                  {connection.last_error}
+                </pre>
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <Alert
+          tone="info"
+          title="Security"
+          icon={<DsIcon icon={ALERT_ICON_LOCK} size="sm" />}
+        >
+          Credentials are write-only. The API never returns secrets after they are saved.
+        </Alert>
+
+        <ConnectionsForm workspaceId={workspaceId} connection={connection} />
+
+        {/* Rotate — progressive, only when a connection exists */}
+        {testable ? (
+          <section className="flex flex-col gap-4" aria-labelledby="rotate-heading">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-xl space-y-1">
+                <h2
+                  id="rotate-heading"
+                  className="font-display text-xl font-medium tracking-tight text-ink-strong"
+                >
                   Rotate credentials
                 </h2>
-                <p className="ds-help max-w-[60ch]">
-                  Rotation is test-gated: the connection returns to pending test until a successful diagnostic. Provide a password or a key-pair, not both.
+                <p className="text-sm text-ink-muted">
+                  Replace the stored secret. Status returns to pending test until a successful diagnostic.
                 </p>
-              </header>
+              </div>
+              {!showRotate ? (
+                <Link
+                  href="/connections?rotate=1"
+                  className="dby-btn dby-btn--secondary shrink-0"
+                >
+                  <DsIcon icon={KeyRound} className="dby-btn__icon" />
+                  Rotate credentials
+                </Link>
+              ) : null}
+            </div>
 
-              <form action={rotateConnectionAction} className="flex flex-col gap-5">
+            {showRotate ? (
+              <form
+                action={rotateConnectionAction}
+                className="rounded-ds-md border border-border-1 bg-surface-2 p-5"
+                aria-labelledby="rotate-form-heading"
+              >
                 <input type="hidden" name="workspace_id" value={workspaceId} />
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3
+                      id="rotate-form-heading"
+                      className="font-display text-lg font-medium tracking-tight text-ink-strong"
+                    >
+                      New credentials
+                    </h3>
+                    <p className="mt-1 text-sm text-ink-muted">
+                      Provide a password or a key-pair, not both. A failed test keeps the previous secret.
+                    </p>
+                  </div>
+                  <Link href="/connections" className="dby-btn dby-btn--ghost ds-btn--sm">
+                    Cancel
+                  </Link>
+                </div>
 
-                <div className="grid gap-5 md:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2">
                   <label className="flex flex-col gap-1.5">
                     <span className="ds-label">Account</span>
                     <input
@@ -189,6 +297,7 @@ export default async function ConnectionsPage() {
                       placeholder="acme.us-east-1"
                       autoComplete="off"
                       required
+                      autoFocus
                     />
                   </label>
                   <label className="flex flex-col gap-1.5">
@@ -201,7 +310,7 @@ export default async function ConnectionsPage() {
                       required
                     />
                   </label>
-                  <label className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="flex flex-col gap-1.5 sm:col-span-2">
                     <span className="ds-label">Username</span>
                     <input
                       name="rotate_username"
@@ -211,8 +320,7 @@ export default async function ConnectionsPage() {
                       required
                     />
                   </label>
-
-                  <label className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="flex flex-col gap-1.5 sm:col-span-2">
                     <span className="ds-label">Password</span>
                     <input
                       name="rotate_password"
@@ -222,18 +330,17 @@ export default async function ConnectionsPage() {
                       autoComplete="new-password"
                     />
                   </label>
-
-                  <label className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="flex flex-col gap-1.5 sm:col-span-2">
                     <span className="ds-label">Private key (PEM)</span>
                     <textarea
                       name="rotate_private_key_pem"
-                      rows={5}
+                      rows={4}
                       className="ds-textarea"
                       placeholder="-----BEGIN PRIVATE KEY-----"
                       autoComplete="off"
                     />
                   </label>
-                  <label className="flex flex-col gap-1.5 md:col-span-2">
+                  <label className="flex flex-col gap-1.5 sm:col-span-2">
                     <span className="ds-label">
                       PEM passphrase <span className="text-ink-faint">(if encrypted)</span>
                     </span>
@@ -247,64 +354,20 @@ export default async function ConnectionsPage() {
                   </label>
                 </div>
 
-                <hr className="ds-divider" />
-
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="ds-help max-w-[50ch]">
-                    Status returns to pending test on submit. A failed test keeps the previous credentials.
-                  </p>
+                <div className="mt-4 flex justify-end">
                   <Button
                     type="submit"
                     variant="danger"
                     aria-label="Rotate credentials"
-                    disabled={!testable}
                     leftIcon={<DsIcon icon={KeyRound} />}
-                    className="sm:shrink-0"
                   >
                     Rotate credentials
                   </Button>
                 </div>
               </form>
-            </div>
-          </div>
-
-          {/* Sidebar / procedure */}
-          <aside className="flex flex-col gap-6">
-            <div className="ds-card flex flex-col gap-4 p-6 sm:p-7">
-              <h2 className="text-lg font-semibold tracking-tight text-ink-strong">
-                Procedure
-              </h2>
-              <ol className="flex flex-col gap-5">
-                <li className="flex flex-col gap-1">
-                  <span className="ds-kicker">Step 1 · Save</span>
-                  <span className="text-sm leading-relaxed text-ink-muted">
-                    Enter connection metadata and initial credentials. The connection moves to pending test.
-                  </span>
-                </li>
-                <li className="flex flex-col gap-1">
-                  <span className="ds-kicker">Step 2 · Test</span>
-                  <span className="text-sm leading-relaxed text-ink-muted">
-                    Run the diagnostic. A successful handshake activates the connection.
-                  </span>
-                </li>
-                <li className="flex flex-col gap-1">
-                  <span className="ds-kicker">Step 3 · Rotate</span>
-                  <span className="text-sm leading-relaxed text-ink-muted">
-                    Replace credentials when needed. Rotation is gated by a successful test.
-                  </span>
-                </li>
-              </ol>
-            </div>
-
-            <Alert
-              tone="info"
-              title="Security"
-              icon={<DsIcon icon={ALERT_ICON_LOCK} size="sm" />}
-            >
-              Credentials are write-only. The API never returns secrets after they are saved.
-            </Alert>
-          </aside>
-        </section>
+            ) : null}
+          </section>
+        ) : null}
       </div>
     </div>
   );

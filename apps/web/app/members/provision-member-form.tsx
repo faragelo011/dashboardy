@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
-import { UserPlus } from "lucide-react";
+import { UserPlus, X } from "lucide-react";
 
 import { Button } from "@/components/ds/button";
 import { DsIcon } from "@/components/ds/icon";
@@ -13,9 +14,14 @@ type RoleOption = readonly [value: string, label: string, description: string];
 type Props = {
   workspaceId: string;
   roleOptions: readonly RoleOption[];
+  cancelHref?: string;
 };
 
-export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
+export function ProvisionMemberForm({
+  workspaceId,
+  roleOptions,
+  cancelHref = "/members",
+}: Props) {
   const formRef = useRef<HTMLFormElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -23,7 +29,8 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
   return (
     <form
       ref={formRef}
-      className="ds-card flex flex-col gap-6 p-6 sm:p-7"
+      aria-labelledby="invite-member-heading"
+      className="rounded-ds-md border border-border-1 bg-surface-2 p-5"
       onSubmit={(e) => {
         e.preventDefault();
         setError(null);
@@ -43,18 +50,29 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
     >
       <input type="hidden" name="workspace_id" value={workspaceId} />
 
-      <header className="flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight text-ink-strong">Invite member</h2>
-          <span className="ds-badge ds-badge--idle">Admin</span>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h2
+            id="invite-member-heading"
+            className="font-display text-lg font-medium tracking-tight text-ink-strong"
+          >
+            Invite member
+          </h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            They’ll get a temporary password and must reset it on first sign-in.
+          </p>
         </div>
-        <p className="ds-help max-w-[55ch]">
-          Grant workspace access. A temporary password will be created and must be reset on first sign-in.
-        </p>
-      </header>
+        <Link
+          href={cancelHref}
+          className="dby-iconbtn dby-iconbtn--ghost"
+          aria-label="Cancel invite"
+        >
+          <DsIcon icon={X} />
+        </Link>
+      </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <label className="flex flex-col gap-1.5">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5 sm:col-span-2">
           <span className="ds-label">Email</span>
           <input
             name="email"
@@ -62,6 +80,7 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
             required
             className="ds-input"
             placeholder="you@company.com"
+            autoFocus
             disabled={isPending}
           />
         </label>
@@ -82,7 +101,7 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
           </select>
         </label>
 
-        <label className="flex flex-col gap-1.5 lg:col-span-2">
+        <label className="flex flex-col gap-1.5">
           <span className="ds-label">Temporary password</span>
           <input
             name="initial_password"
@@ -90,7 +109,7 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
             required
             minLength={8}
             className="ds-input"
-            placeholder="Minimum 8 characters"
+            placeholder="Min. 8 characters"
             autoComplete="new-password"
             disabled={isPending}
           />
@@ -98,16 +117,21 @@ export function ProvisionMemberForm({ workspaceId, roleOptions }: Props) {
       </div>
 
       {error ? (
-        <div role="alert" className="ds-alert ds-alert--danger">
+        <div role="alert" className="ds-alert ds-alert--danger mt-4">
           {error}
         </div>
       ) : null}
 
-      <hr className="ds-divider" />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="ds-help max-w-[48ch]">Access can be revoked from the roster below.</p>
-        <Button type="submit" variant="primary" disabled={isPending} className="sm:shrink-0" leftIcon={<DsIcon icon={UserPlus} />}>
+      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+        <Link href={cancelHref} className="dby-btn dby-btn--ghost">
+          Cancel
+        </Link>
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={isPending}
+          leftIcon={<DsIcon icon={UserPlus} />}
+        >
           {isPending ? "Inviting…" : "Invite member"}
         </Button>
       </div>

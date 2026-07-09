@@ -6,6 +6,7 @@ import type {
   DashboardWidget,
   DashboardWidgetConsumer,
   DashboardWidgetCreateInput,
+  ChartVizConfig,
   FilterValue,
   GlobalFilter,
   ParameterDefinition,
@@ -71,6 +72,8 @@ function WidgetBody({
   widget,
   globalFilters = [],
   globalFilterValues = EMPTY_FILTER_VALUES,
+  canEdit = false,
+  onWidgetConfigChange,
 }: {
   accessToken: string;
   workspaceId: string;
@@ -78,6 +81,8 @@ function WidgetBody({
   widget: DashboardWidget | DashboardWidgetConsumer | EditableWidget;
   globalFilters?: GlobalFilter[];
   globalFilterValues?: Record<string, FilterValue>;
+  canEdit?: boolean;
+  onWidgetConfigChange?: (next: ChartVizConfig) => void;
 }) {
   const widgetId = "id" in widget && widget.id ? widget.id : "";
   const savedQuestionId =
@@ -101,6 +106,16 @@ function WidgetBody({
     filterOverrides: overrides,
     globalFilterValues,
     hasActiveOverrides,
+    widgetType: widget.widget_type,
+    widgetConfig:
+      widget.widget_type === "bar" || widget.widget_type === "line"
+        ? (widget.config as ChartVizConfig | undefined)
+        : undefined,
+    onWidgetConfigChange:
+      canEdit && (widget.widget_type === "bar" || widget.widget_type === "line")
+        ? onWidgetConfigChange
+        : undefined,
+    enableVizSettings: canEdit,
   };
   switch (widget.widget_type) {
     case "kpi":
@@ -118,7 +133,7 @@ function WidgetBody({
       );
     default:
       return (
-        <div className="rounded-lg border border-border-1 p-4 text-sm text-ink-muted">
+        <div className="rounded-ds-md border border-border-1 p-4 text-sm text-ink-muted">
           Unsupported widget type
         </div>
       );
@@ -483,9 +498,19 @@ export function DashboardGrid({
                   widget={widget}
                   globalFilters={globalFilters}
                   globalFilterValues={globalFilterValues}
+                  canEdit={mode === "edit"}
+                  onWidgetConfigChange={
+                    mode === "edit" && onWidgetsChange && (widget.widget_type === "bar" || widget.widget_type === "line")
+                      ? (next) =>
+                          updateWidget(index, {
+                            ...(widget as EditableWidget),
+                            config: next,
+                          })
+                      : undefined
+                  }
                 />
               ) : (
-                <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-border-2 bg-surface-1 p-4 text-center text-sm text-ink-muted">
+                <div className="flex h-full items-center justify-center rounded-ds-md border border-dashed border-border-2 bg-surface-1 p-4 text-center text-sm text-ink-muted">
                   Select a saved question to preview this widget.
                 </div>
               )}

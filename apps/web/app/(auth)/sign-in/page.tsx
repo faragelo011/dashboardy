@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -86,15 +85,7 @@ export default function SignInPage() {
     <main className="dby-signin">
       <section className="dby-signin-form-pane">
         <div className="dby-signin-form-wrap w-full max-w-md">
-          <div className="dby-signin-brand">
-            <Image
-              src="/logo-txt.svg"
-              alt="Dashboardy"
-              width={123}
-              height={14}
-              priority
-            />
-          </div>
+          <p className="dby-signin-brand">Dashboardy</p>
           <header className="dby-signin-head">
             <h1 className="dby-signin-title">Welcome back</h1>
             <p className="dby-signin-lead">
@@ -150,38 +141,59 @@ export default function SignInPage() {
           </form>
         </div>
       </section>
+
       <aside className="dby-signin-visual" aria-hidden>
+        <div className="dby-signin-visual-glow" />
         <div className="dby-signin-visual-inner">
-          <div>
-            <p className="dby-signin-viz-title">Your analytics workspace awaits</p>
-            <p className="dby-signin-viz-copy">
-              Governed dashboards, trusted freshness, and clear filter scope—ready when you are.
-            </p>
-          </div>
-          <div className="dby-signin-chart-card">
-            <div className="dby-signin-chart-meta">
-              <span className="dby-signin-chart-label">Revenue trend</span>
-              <span className="dby-signin-chart-value">$248k</span>
+          <p className="dby-signin-viz-kicker">Product preview</p>
+          <p className="dby-signin-viz-title">Governed analytics, ready to read</p>
+          <p className="dby-signin-viz-copy">
+            Trusted freshness, clear filter scope, and dashboards built from reusable questions.
+          </p>
+
+          <div className="dby-signin-mock">
+            <div className="dby-signin-mock-chrome">
+              <span className="dby-signin-mock-dot" />
+              <span className="dby-signin-mock-dot" />
+              <span className="dby-signin-mock-dot" />
+              <span className="dby-signin-mock-title">Revenue Overview</span>
             </div>
-            <div className="dby-signin-bars">
-              <span className="dby-signin-bar" style={{ height: "38%" }} />
-              <span className="dby-signin-bar" style={{ height: "52%" }} />
-              <span className="dby-signin-bar" style={{ height: "44%" }} />
-              <span className="dby-signin-bar" style={{ height: "68%" }} />
-              <span className="dby-signin-bar" style={{ height: "61%" }} />
-              <span className="dby-signin-bar" style={{ height: "78%" }} />
-              <span className="dby-signin-bar" style={{ height: "72%" }} />
-              <span className="dby-signin-bar" style={{ height: "88%" }} />
-            </div>
-          </div>
-          <div className="dby-signin-kpi-row">
-            <div className="dby-signin-kpi">
-              <strong>94%</strong>
-              <span>Query cache hits</span>
-            </div>
-            <div className="dby-signin-kpi">
-              <strong>12</strong>
-              <span>Live dashboards</span>
+            <div className="dby-signin-mock-body">
+              <div className="dby-signin-mock-filters">
+                <span className="dby-signin-mock-chip">Region · EMEA</span>
+                <span className="dby-signin-mock-chip">Q2 2026</span>
+                <span className="dby-signin-mock-chip dby-signin-mock-chip--accent">Fresh · 4m</span>
+              </div>
+              <div className="dby-signin-mock-grid">
+                <div className="dby-signin-mock-kpi">
+                  <span className="dby-signin-mock-kpi-label">ARR</span>
+                  <strong className="dby-signin-mock-kpi-value">$248k</strong>
+                  <span className="dby-signin-mock-kpi-delta">+12.4%</span>
+                </div>
+                <div className="dby-signin-mock-kpi">
+                  <span className="dby-signin-mock-kpi-label">Active seats</span>
+                  <strong className="dby-signin-mock-kpi-value">1,284</strong>
+                  <span className="dby-signin-mock-kpi-delta">+3.1%</span>
+                </div>
+                <div className="dby-signin-chart-card">
+                  <div className="dby-signin-chart-meta">
+                    <span className="dby-signin-chart-label">Weekly revenue</span>
+                    <span className="dby-signin-chart-value">Trend</span>
+                  </div>
+                  <div className="dby-signin-bars" role="presentation">
+                    <span className="dby-signin-bar" style={{ height: "34%" }} />
+                    <span className="dby-signin-bar" style={{ height: "48%" }} />
+                    <span className="dby-signin-bar" style={{ height: "42%" }} />
+                    <span className="dby-signin-bar" style={{ height: "61%" }} />
+                    <span className="dby-signin-bar" style={{ height: "55%" }} />
+                    <span className="dby-signin-bar" style={{ height: "74%" }} />
+                    <span className="dby-signin-bar" style={{ height: "68%" }} />
+                    <span className="dby-signin-bar" style={{ height: "86%" }} />
+                    <span className="dby-signin-bar" style={{ height: "79%" }} />
+                    <span className="dby-signin-bar" style={{ height: "92%" }} />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

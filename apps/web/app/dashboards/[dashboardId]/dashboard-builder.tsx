@@ -296,7 +296,7 @@ export function DashboardBuilder({
 
       <section className="ds-card flex flex-col gap-4 p-4">
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-ink-strong">Global filter definitions</h2>
+          <h2 className="text-sm font-medium text-ink-strong">Global filter definitions</h2>
           <button type="button" className="ds-btn ds-btn-secondary" onClick={addGlobalFilter}>
             Add filter
           </button>

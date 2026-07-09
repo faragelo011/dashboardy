@@ -249,6 +249,7 @@ test("admin can access connections page and submit credentials", async ({
       page.getByText("—", { exact: true }),
     ).toHaveCount(0);
 
+    await page.getByRole("link", { name: "Rotate credentials" }).click();
     await page.locator('input[name="rotate_account"]').fill("acct");
     await page.locator('input[name="rotate_username"]').fill("user");
     await page.locator('input[name="rotate_role"]').fill("SYSADMIN");
