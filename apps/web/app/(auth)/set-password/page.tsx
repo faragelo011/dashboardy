@@ -20,7 +20,7 @@ export default async function SetPasswordPage() {
       <div className="w-full max-w-md">
         <header className="mb-8 flex flex-col items-start gap-2">
           <p className="ds-kicker">Account setup</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+          <h1 className="font-display text-2xl font-medium tracking-tight text-ink-strong sm:text-3xl">
             Set your password
           </h1>
           <p className="ds-help max-w-[40ch]">

@@ -1,155 +1,153 @@
 /* ============================================================
-   Dashboardy Signal — Color tokens
+   Dashboardy — Color tokens (cream / coral editorial)
    ------------------------------------------------------------
-   Bold, modern identity. Electric-indigo signature (hue ~272)
-   with a violet secondary (hue ~305). Refined cool-neutral
-   greys with a faint indigo undertone. Vivid, legible status +
-   data-viz. Both themes are first-class.
+   Warm cream canvas, coral primary, warm-navy dark surfaces.
+   Color-block elevation; hairline borders. Both themes first-class.
 
    Storage model: bare oklch triplet "L% C H", consumed as
    oklch(var(--x)) so alpha layers per use.
    ============================================================ */
 
 :root {
-  /* ---- Ink (foreground) ---- */
-  --ink-strong: 22% 0.02 275; /* @kind color */
-  --ink: 34% 0.016 272; /* @kind color */
-  --ink-muted: 52% 0.014 270; /* @kind color */
-  --ink-faint: 64% 0.012 268; /* @kind color */
+  /* ---- Ink (foreground) — warm dark ---- */
+  --ink-strong: 19.1% 0.002 107; /* @kind color */ /* #141413 */
+  --ink: 35.9% 0.0051 107; /* @kind color */ /* #3d3d3a body */
+  --ink-muted: 52.4% 0.0096 92; /* @kind color */ /* #6c6a64 */
+  --ink-faint: 63.7% 0.0136 92; /* @kind color */ /* #8e8b82 */
 
-  /* ---- Surfaces (white cards pop off a tinted canvas) ---- */
-  --surface-app: 98% 0.004 275; /* @kind color */
-  --surface-0: 100% 0 0; /* @kind color */
-  --surface-1: 99.2% 0.003 275; /* @kind color */
-  --surface-2: 97.2% 0.005 274; /* @kind color */
-  --surface-3: 95% 0.007 272; /* @kind color */
-  --surface-4: 92.4% 0.008 272; /* @kind color */
-  --surface-5: 89.5% 0.009 272; /* @kind color */
+  /* ---- Surfaces (warm cream ramp) ---- */
+  --surface-app: 98.2% 0.0054 95; /* @kind color */ /* #faf9f5 canvas */
+  --surface-0: 98.2% 0.0054 95; /* @kind color */ /* canvas = base */
+  --surface-1: 95.7% 0.0119 80; /* @kind color */ /* #f5f0e8 soft */
+  --surface-2: 93.6% 0.0161 83; /* @kind color */ /* #efe9de card */
+  --surface-3: 90.9% 0.0207 82; /* @kind color */ /* #e8e0d2 cream-strong */
+  --surface-4: 88% 0.022 80; /* @kind color */
+  --surface-5: 84% 0.024 78; /* @kind color */
 
-  /* ---- Borders (hairline ramp) ---- */
-  --border-0: 96% 0.005 274; /* @kind color */
-  --border-1: 92.5% 0.006 274; /* @kind color */
-  --border-2: 87% 0.009 272; /* @kind color */
-  --border-3: 79% 0.012 272; /* @kind color */
-  --border-4: 68% 0.014 270; /* @kind color */
+  /* ---- Borders (hairline cream) ---- */
+  --border-0: 92.7% 0.0109 77; /* @kind color */ /* #ebe6df soft */
+  --border-1: 90.7% 0.0122 68; /* @kind color */ /* #e6dfd8 hairline */
+  --border-2: 86% 0.016 70; /* @kind color */
+  --border-3: 78% 0.02 68; /* @kind color */
+  --border-4: 68% 0.022 65; /* @kind color */
 
-  /* ---- Accent — Electric Indigo ---- */
-  --accent: 54% 0.23 272; /* @kind color */
-  --accent-hover: 48% 0.24 272; /* @kind color */
-  --accent-active: 42% 0.23 272; /* @kind color */
-  --accent-soft: 95% 0.04 276; /* @kind color */
-  --accent-soft-ink: 44% 0.19 274; /* @kind color */
-  --accent-border: 86% 0.08 276; /* @kind color */
+  /* ---- Accent — Coral ---- */
+  --accent: 65.8% 0.1131 39; /* @kind color */ /* #cc785c */
+  --accent-hover: 55.2% 0.1133 38; /* @kind color */ /* #a9583e */
+  --accent-active: 48% 0.11 38; /* @kind color */
+  --accent-soft: 93.6% 0.03 50; /* @kind color */
+  --accent-soft-ink: 48% 0.1 38; /* @kind color */
+  --accent-border: 82% 0.05 45; /* @kind color */
 
-  /* ---- Accent 2 — Violet (secondary / gradient / viz) ---- */
-  --accent-2: 58% 0.22 305; /* @kind color */
-  --accent-2-soft: 95% 0.045 308; /* @kind color */
+  /* ---- Accent 2 — Teal (secondary / viz companion) ---- */
+  --accent-2: 72.1% 0.0918 179; /* @kind color */ /* #5db8a6 */
+  --accent-2-soft: 94% 0.03 179; /* @kind color */
 
   /* ---- Focus ---- */
-  --focus: 54% 0.23 272; /* @kind color */
-  --focus-ring: 66% 0.17 274; /* @kind color */
+  --focus: 65.8% 0.1131 39; /* @kind color */
+  --focus-ring: 72% 0.09 40; /* @kind color */
 
-  /* ---- Success (emerald) ---- */
-  --success: 56% 0.15 158; /* @kind color */
-  --success-soft: 95% 0.045 162; /* @kind color */
-  --success-soft-ink: 40% 0.11 160; /* @kind color */
+  /* ---- Success ---- */
+  --success: 70.8% 0.1343 149; /* @kind color */ /* #5db872 */
+  --success-soft: 95% 0.04 149; /* @kind color */
+  --success-soft-ink: 42% 0.1 149; /* @kind color */
 
   /* ---- Warn (amber) ---- */
-  --warn: 70% 0.15 76; /* @kind color */
-  --warn-soft: 95% 0.06 82; /* @kind color */
-  --warn-soft-ink: 47% 0.11 68; /* @kind color */
+  --warn: 73.5% 0.1462 84; /* @kind color */ /* #d4a017 */
+  --warn-soft: 95% 0.05 80; /* @kind color */
+  --warn-soft-ink: 48% 0.1 75; /* @kind color */
 
-  /* ---- Danger (rose-red) ---- */
-  --danger-border: 88% 0.06 20; /* @kind color */
-  --danger-soft: 95% 0.04 20; /* @kind color */
-  --danger-soft-strong: 93% 0.06 20; /* @kind color */
-  --danger-ink: 55% 0.21 22; /* @kind color */
-  --danger-ink-strong: 48% 0.22 22; /* @kind color */
+  /* ---- Danger ---- */
+  --danger-border: 88% 0.05 24; /* @kind color */
+  --danger-soft: 95% 0.035 24; /* @kind color */
+  --danger-soft-strong: 92% 0.05 24; /* @kind color */
+  --danger-ink: 57% 0.1649 24; /* @kind color */ /* #c64545 */
+  --danger-ink-strong: 48% 0.17 24; /* @kind color */
 
-  /* ---- Data-visualization series (vivid, ordered) ---- */
-  --viz-1: 54% 0.23 272; /* @kind color */ /* indigo */
-  --viz-2: 58% 0.22 305; /* @kind color */ /* violet */
-  --viz-3: 66% 0.13 210; /* @kind color */ /* sky    */
-  --viz-4: 70% 0.15 76;  /* @kind color */ /* amber  */
-  --viz-5: 60% 0.16 158; /* @kind color */ /* emerald*/
-  --viz-6: 62% 0.20 12;  /* @kind color */ /* rose   */
-  --viz-7: 62% 0.12 190; /* @kind color */ /* teal   */
-  --viz-8: 60% 0.16 40;  /* @kind color */ /* orange */
+  /* ---- Data-visualization (coral-led) ---- */
+  --viz-1: 65.8% 0.1131 39; /* @kind color */ /* coral */
+  --viz-2: 72.1% 0.0918 179; /* @kind color */ /* teal */
+  --viz-3: 77.2% 0.1212 67; /* @kind color */ /* amber */
+  --viz-4: 70.8% 0.1343 149; /* @kind color */ /* green */
+  --viz-5: 55% 0.12 250; /* @kind color */ /* muted blue */
+  --viz-6: 57% 0.1649 24; /* @kind color */ /* rose */
+  --viz-7: 62% 0.1 200; /* @kind color */ /* cyan-teal */
+  --viz-8: 60% 0.14 45; /* @kind color */ /* orange */
 
-  --viz-grid: 87% 0.009 272;   /* @kind color */
-  --viz-axis-ink: 52% 0.014 270; /* @kind color */
+  --viz-grid: 86% 0.016 70; /* @kind color */
+  --viz-axis-ink: 52.4% 0.0096 92; /* @kind color */
 
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  /* ---- Ink ---- */
-  --ink-strong: 97% 0.006 270; /* @kind color */
-  --ink: 88% 0.010 272; /* @kind color */
-  --ink-muted: 69% 0.016 272; /* @kind color */
-  --ink-faint: 55% 0.016 272; /* @kind color */
+  /* ---- Ink — cream-tinted on warm navy ---- */
+  --ink-strong: 98.2% 0.0054 95; /* @kind color */ /* #faf9f5 */
+  --ink: 92% 0.008 90; /* @kind color */
+  --ink-muted: 69.6% 0.0106 87; /* @kind color */ /* #a09d96 */
+  --ink-faint: 55% 0.012 85; /* @kind color */
 
-  /* ---- Surfaces (deep indigo-charcoal) ---- */
-  --surface-app: 17% 0.022 282; /* @kind color */
-  --surface-0: 15% 0.021 282; /* @kind color */
-  --surface-1: 20% 0.024 281; /* @kind color */
-  --surface-2: 24% 0.026 280; /* @kind color */
-  --surface-3: 28% 0.028 279; /* @kind color */
-  --surface-4: 32% 0.028 278; /* @kind color */
-  --surface-5: 37% 0.028 278; /* @kind color */
+  /* ---- Surfaces (warm navy) ---- */
+  --surface-app: 20.5% 0.0042 85; /* @kind color */ /* #181715 */
+  --surface-0: 20.5% 0.0042 85; /* @kind color */
+  --surface-1: 23.5% 0.0058 92; /* @kind color */ /* #1f1e1b soft */
+  --surface-2: 25.7% 0.0063 78; /* @kind color */ /* #252320 elevated */
+  --surface-3: 30% 0.008 80; /* @kind color */
+  --surface-4: 34% 0.009 78; /* @kind color */
+  --surface-5: 40% 0.01 78; /* @kind color */
 
   /* ---- Borders ---- */
-  --border-0: 25% 0.022 282; /* @kind color */
-  --border-1: 30% 0.024 281; /* @kind color */
-  --border-2: 37% 0.026 280; /* @kind color */
-  --border-3: 46% 0.026 279; /* @kind color */
-  --border-4: 57% 0.026 278; /* @kind color */
+  --border-0: 26% 0.006 85; /* @kind color */
+  --border-1: 30% 0.008 80; /* @kind color */
+  --border-2: 36% 0.01 78; /* @kind color */
+  --border-3: 45% 0.012 75; /* @kind color */
+  --border-4: 55% 0.014 72; /* @kind color */
 
-  /* ---- Accent ---- */
-  --accent: 70% 0.20 274; /* @kind color */
-  --accent-hover: 76% 0.17 274; /* @kind color */
-  --accent-active: 82% 0.15 275; /* @kind color */
-  --accent-soft: 33% 0.10 277; /* @kind color */
-  --accent-soft-ink: 82% 0.14 278; /* @kind color */
-  --accent-border: 45% 0.12 277; /* @kind color */
+  /* ---- Accent — coral (brighter on dark) ---- */
+  --accent: 72% 0.12 40; /* @kind color */
+  --accent-hover: 78% 0.11 42; /* @kind color */
+  --accent-active: 82% 0.1 44; /* @kind color */
+  --accent-soft: 32% 0.05 40; /* @kind color */
+  --accent-soft-ink: 85% 0.08 42; /* @kind color */
+  --accent-border: 42% 0.07 40; /* @kind color */
 
-  /* ---- Accent 2 ---- */
-  --accent-2: 72% 0.18 305; /* @kind color */
-  --accent-2-soft: 34% 0.11 307; /* @kind color */
+  /* ---- Accent 2 — teal ---- */
+  --accent-2: 76% 0.09 179; /* @kind color */
+  --accent-2-soft: 32% 0.05 179; /* @kind color */
 
   /* ---- Focus ---- */
-  --focus: 70% 0.20 274; /* @kind color */
-  --focus-ring: 55% 0.15 277; /* @kind color */
+  --focus: 72% 0.12 40; /* @kind color */
+  --focus-ring: 55% 0.09 40; /* @kind color */
 
   /* ---- Success ---- */
-  --success: 72% 0.16 160; /* @kind color */
-  --success-soft: 31% 0.08 162; /* @kind color */
-  --success-soft-ink: 80% 0.14 162; /* @kind color */
+  --success: 76% 0.13 149; /* @kind color */
+  --success-soft: 30% 0.06 149; /* @kind color */
+  --success-soft-ink: 82% 0.1 149; /* @kind color */
 
   /* ---- Warn ---- */
-  --warn: 81% 0.15 80; /* @kind color */
-  --warn-soft: 33% 0.09 74; /* @kind color */
-  --warn-soft-ink: 86% 0.13 82; /* @kind color */
+  --warn: 80% 0.13 80; /* @kind color */
+  --warn-soft: 32% 0.06 75; /* @kind color */
+  --warn-soft-ink: 86% 0.1 80; /* @kind color */
 
   /* ---- Danger ---- */
-  --danger-border: 45% 0.12 20; /* @kind color */
-  --danger-soft: 33% 0.10 20; /* @kind color */
-  --danger-soft-strong: 38% 0.11 20; /* @kind color */
-  --danger-ink: 76% 0.16 20; /* @kind color */
-  --danger-ink-strong: 82% 0.14 20; /* @kind color */
+  --danger-border: 42% 0.1 24; /* @kind color */
+  --danger-soft: 30% 0.07 24; /* @kind color */
+  --danger-soft-strong: 35% 0.09 24; /* @kind color */
+  --danger-ink: 72% 0.14 24; /* @kind color */
+  --danger-ink-strong: 80% 0.12 24; /* @kind color */
 
   /* ---- Data-viz (brightened) ---- */
-  --viz-1: 70% 0.20 274; /* @kind color */
-  --viz-2: 72% 0.18 305; /* @kind color */
-  --viz-3: 74% 0.12 210; /* @kind color */
-  --viz-4: 81% 0.15 80;  /* @kind color */
-  --viz-5: 72% 0.16 160; /* @kind color */
-  --viz-6: 70% 0.17 14;  /* @kind color */
-  --viz-7: 72% 0.11 190; /* @kind color */
-  --viz-8: 70% 0.15 42;  /* @kind color */
+  --viz-1: 72% 0.12 40; /* @kind color */
+  --viz-2: 76% 0.09 179; /* @kind color */
+  --viz-3: 82% 0.12 67; /* @kind color */
+  --viz-4: 76% 0.13 149; /* @kind color */
+  --viz-5: 70% 0.1 250; /* @kind color */
+  --viz-6: 72% 0.14 24; /* @kind color */
+  --viz-7: 74% 0.09 200; /* @kind color */
+  --viz-8: 74% 0.12 45; /* @kind color */
 
-  --viz-grid: 34% 0.026 280; /* @kind color */
-  --viz-axis-ink: 69% 0.016 272; /* @kind color */
+  --viz-grid: 34% 0.008 80; /* @kind color */
+  --viz-axis-ink: 69.6% 0.0106 87; /* @kind color */
 
   color-scheme: dark;
 }
@@ -168,8 +166,8 @@
   /* Surfaces */
   --surface-canvas: oklch(var(--surface-app));
   --surface-base: oklch(var(--surface-0));
-  --surface-card: oklch(var(--surface-1));
-  --surface-raised: oklch(var(--surface-2));
+  --surface-card: oklch(var(--surface-2));
+  --surface-raised: oklch(var(--surface-1));
   --surface-sunken: oklch(var(--surface-app));
 
   /* Borders */
@@ -186,9 +184,9 @@
   --color-accent-border: oklch(var(--accent-border));
   --color-accent-2: oklch(var(--accent-2));
 
-  /* Signature gradient — sign-in hero, brand flourishes (use sparingly) */
-  --gradient-brand: linear-gradient(135deg, oklch(var(--accent)) 0%, oklch(var(--accent-2)) 100%);
-  --gradient-brand-soft: linear-gradient(135deg, oklch(var(--accent) / 0.12) 0%, oklch(var(--accent-2) / 0.12) 100%);
+  /* Signature gradient — coral → amber (flourishes only) */
+  --gradient-brand: linear-gradient(135deg, oklch(var(--accent)) 0%, oklch(77.2% 0.1212 67) 100%);
+  --gradient-brand-soft: linear-gradient(135deg, oklch(var(--accent) / 0.12) 0%, oklch(77.2% 0.1212 67 / 0.12) 100%);
 
   /* Status */
   --color-success: oklch(var(--success));
@@ -202,7 +200,7 @@
   --color-danger-soft: oklch(var(--danger-soft));
   --color-danger-border: oklch(var(--danger-border));
 
-  /* Focus + selection */
-  --ring-focus: 0 0 0 3px oklch(var(--accent) / 0.22);
-  --selection-bg: oklch(var(--accent) / 0.20);
+  /* Focus + selection — coral at ~15% alpha */
+  --ring-focus: 0 0 0 3px oklch(var(--accent) / 0.15);
+  --selection-bg: oklch(var(--accent) / 0.18);
 }

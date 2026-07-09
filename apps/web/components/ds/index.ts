@@ -3,6 +3,8 @@ export { ALERT_ICON_BY_TONE, ALERT_ICON_LOCK } from "./alert-icons";
 export { Badge } from "./badge";
 export { Button } from "./button";
 export { Card, Divider, Kicker, Stat } from "./card";
+export { ConfirmDialog } from "./confirm-dialog";
+export type { ConfirmDialogProps } from "./confirm-dialog";
 export { DataTable } from "./data-table";
 export type { DataTableColumn, DataTableProps } from "./data-table";
 export { EmptyState } from "./empty-state";

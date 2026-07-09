@@ -25,6 +25,105 @@ export type WidgetLayout = {
   h: number;
 };
 
+export type ChartVizSortKey = "x" | "first_y" | "column";
+
+export type ChartVizSortOrder = "asc" | "desc";
+
+export type ChartVizSortConfig = {
+  /** Sort by the x-axis column. */
+  key?: ChartVizSortKey;
+  /** When `key === "column"`, the column name to sort by. */
+  column?: string;
+  order?: ChartVizSortOrder;
+};
+
+export type ChartVizNullHandlingConfig = {
+  /** Coerce null/undefined Y values to 0, or skip them entirely. */
+  mode?: "zero" | "skip";
+};
+
+export type ChartVizLegendConfig = {
+  enabled?: boolean;
+};
+
+export type ChartVizFormatConfig = {
+  x?: {
+    kind?: "date" | "string";
+  };
+  y?: {
+    maximumFractionDigits?: number;
+  };
+};
+
+export type ChartPivotConfig = {
+  /** When present, reshaping will pivot the long table into a wide table. */
+  enabled?: boolean;
+  /** Column holding the pivot “category” values (one column becomes multiple series). */
+  pivotKey?: string;
+  /** Column holding the pivot values, which are placed into the generated series columns. */
+  pivotValue?: string;
+};
+
+export type ChartCalculatedFieldExpression =
+  | {
+      kind: "add" | "sub" | "mul" | "div";
+      left: string;
+      right: string;
+    }
+  | {
+      kind: "coalesce";
+      args: string[];
+    }
+  | {
+      kind: "concat";
+      args: string[];
+      separator?: string;
+    };
+
+export type ChartCalculatedField = {
+  /**
+   * Identifier for the calculated field.
+   * Used as a “virtual column name” inside the reshaping pipeline.
+   */
+  id: string;
+  label?: string;
+  expression: ChartCalculatedFieldExpression;
+};
+
+export type ChartVizConfig = {
+  /**
+   * X-axis column name (from query `columns[].name`).
+   * If omitted, the first result column is used.
+   */
+  xKey?: string;
+  /**
+   * One or more Y-axis metric column names (from query `columns[].name`).
+   * If omitted, the second result column is used.
+   */
+  yKeys?: string[];
+  /**
+   * Optional breakout column. When provided, the unique values in this column
+   * generate multiple series.
+   */
+  seriesKey?: string;
+
+  sort?: ChartVizSortConfig;
+  limit?: number;
+  nullHandling?: ChartVizNullHandlingConfig;
+  legend?: ChartVizLegendConfig;
+  format?: ChartVizFormatConfig;
+
+  /** Optional “long → wide” reshaping. */
+  pivot?: ChartPivotConfig;
+  /** Optional virtual columns computed from the returned dataset. */
+  calculatedFields?: ChartCalculatedField[];
+  /** Optional per-widget cache TTL override (seconds). */
+  ttl_seconds?: number;
+};
+
+/** Widget JSON config. Chart fields apply to bar/line; other widget types may use `{}`. */
+export type WidgetConfig = ChartVizConfig;
+
 export type DashboardDefinition = {
   layout_version: number;
   global_filters: GlobalFilter[];
@@ -36,7 +135,7 @@ export type DashboardWidget = {
   widget_type: "kpi" | "bar" | "line" | "table";
   saved_question_id: string;
   layout: WidgetLayout;
-  config: Record<string, unknown>;
+  config: WidgetConfig;
   filter_bindings: Record<string, string>;
   filter_overrides: Record<string, FilterValue>;
   has_active_overrides: boolean;
@@ -48,7 +147,7 @@ export type DashboardWidgetConsumer = {
   title?: string | null;
   widget_type: "kpi" | "bar" | "line" | "table";
   layout: WidgetLayout;
-  config: Record<string, unknown>;
+  config: WidgetConfig;
   filter_bindings: Record<string, string>;
   filter_overrides: Record<string, FilterValue>;
   has_active_overrides: boolean;
@@ -60,7 +159,7 @@ export type DashboardWidgetCreateInput = {
   widget_type: "kpi" | "bar" | "line" | "table";
   saved_question_id: string;
   layout: WidgetLayout;
-  config: Record<string, unknown>;
+  config: WidgetConfig;
   filter_bindings: Record<string, string>;
   filter_overrides: Record<string, FilterValue>;
 };

@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.query_engine.cache_ttl import presentation_class_ttl_seconds
 from app.query_engine.enums import PresentationClass
@@ -57,6 +57,127 @@ class WidgetLayout(BaseModel):
     h: int = Field(ge=1)
 
 
+class ChartVizSortConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # "x" | "first_y" | "column"
+    key: str | None = None
+    column: str | None = None
+    order: str | None = None
+
+
+class ChartVizNullHandlingConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # "zero" | "skip"
+    mode: str | None = None
+
+
+class ChartVizLegendConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool | None = None
+
+
+class ChartVizFormatXConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # "date" | "string"
+    kind: str | None = None
+
+
+class ChartVizFormatYConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    maximumFractionDigits: int | None = None
+
+
+class ChartVizFormatConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    x: ChartVizFormatXConfig | None = None
+    y: ChartVizFormatYConfig | None = None
+
+
+class ChartPivotConfig(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: bool | None = None
+    pivotKey: str | None = None
+    pivotValue: str | None = None
+
+
+class ChartCalculatedExpressionAddSubMulDiv(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str
+    left: str
+    right: str
+
+
+class ChartCalculatedExpressionCoalesce(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str
+    args: list[str]
+
+
+class ChartCalculatedExpressionConcat(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    kind: str
+    args: list[str]
+    separator: str | None = None
+
+
+ChartCalculatedExpression = (
+    ChartCalculatedExpressionAddSubMulDiv
+    | ChartCalculatedExpressionCoalesce
+    | ChartCalculatedExpressionConcat
+)
+
+
+class ChartCalculatedField(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str
+    label: str | None = None
+    expression: ChartCalculatedExpression
+
+
+class ChartVizConfig(BaseModel):
+    """
+    Validation/coercion for chart widget `config`.
+
+    Note: `extra="allow"` for forward/backward compatibility (e.g. `ttl_seconds`).
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    xKey: str | None = None
+    yKeys: list[str] | None = None
+    seriesKey: str | None = None
+
+    sort: ChartVizSortConfig | None = None
+    limit: int | None = Field(default=None, ge=0)
+    nullHandling: ChartVizNullHandlingConfig | None = None
+    legend: ChartVizLegendConfig | None = None
+    format: ChartVizFormatConfig | None = None
+
+    pivot: ChartPivotConfig | None = None
+    calculatedFields: list[ChartCalculatedField] | None = None
+
+
+def _coerce_chart_config(
+    widget_type: WidgetType, raw: dict[str, Any]
+) -> dict[str, Any]:
+    if widget_type not in {WidgetType.bar, WidgetType.line}:
+        return raw or {}
+    chart = ChartVizConfig.model_validate(raw or {})
+    # Keep extra/unknown keys so callers like `clamp_widget_ttl_seconds()` still work.
+    return chart.model_dump(mode="json")
+
+
 class DashboardWidget(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -70,6 +191,11 @@ class DashboardWidget(BaseModel):
     filter_overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
     has_active_overrides: bool = False
     can_export: bool = False
+
+    @model_validator(mode="after")
+    def _validate_chart_config(self) -> "DashboardWidget":
+        self.config = _coerce_chart_config(self.widget_type, self.config)
+        return self
 
 
 class DashboardWidgetConsumer(BaseModel):
@@ -85,6 +211,11 @@ class DashboardWidgetConsumer(BaseModel):
     has_active_overrides: bool
     can_export: bool
 
+    @model_validator(mode="after")
+    def _validate_chart_config(self) -> "DashboardWidgetConsumer":
+        self.config = _coerce_chart_config(self.widget_type, self.config)
+        return self
+
 
 class DashboardWidgetCreateInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -96,6 +227,11 @@ class DashboardWidgetCreateInput(BaseModel):
     config: dict[str, Any] = Field(default_factory=dict)
     filter_bindings: dict[str, str] = Field(default_factory=dict)
     filter_overrides: dict[str, str | int | float | bool] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _validate_chart_config(self) -> "DashboardWidgetCreateInput":
+        self.config = _coerce_chart_config(self.widget_type, self.config)
+        return self
 
 
 class DashboardWidgetUpdateInput(DashboardWidgetCreateInput):

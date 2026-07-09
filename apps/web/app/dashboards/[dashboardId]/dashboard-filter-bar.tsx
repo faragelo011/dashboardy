@@ -81,7 +81,7 @@ export function DashboardFilterBar({
 
   return (
     <section className="ds-card flex flex-col gap-4 p-4">
-      <h2 className="flex items-center gap-2 text-sm font-semibold text-ink-strong">
+      <h2 className="flex items-center gap-2 text-sm font-medium text-ink-strong">
         <DsIcon icon={Filter} size="sm" className="text-ink-muted" />
         Global filters
       </h2>

@@ -84,7 +84,7 @@ export default async function DashboardEditPage({ params }: PageProps) {
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-14">
         <header className="space-y-2 border-b border-border-1 pb-6">
           <p className="ds-kicker">Dashboard builder</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+          <h1 className="font-display text-2xl font-medium tracking-tight text-ink-strong sm:text-3xl">
             Edit dashboard
           </h1>
         </header>

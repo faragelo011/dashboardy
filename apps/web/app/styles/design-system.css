@@ -4,7 +4,7 @@
    Consumers link THIS file. It is a manifest of @import lines
    only. Order: fonts → color tokens → typography → spacing →
    elevation → motion → base resets.
-   Design system: "Technical Dense" · indigo accent · light+dark.
+   Design system: cream canvas · coral accent · warm navy dark.
    ============================================================ */
 
 @import "./tokens/fonts.css";

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { FileCode2, Plus } from "lucide-react";
 
 import { AdminLuxuryNav } from "@/app/admin-luxury-nav";
 import { getProtectedMe } from "@/app/(protected)/data";
@@ -11,8 +12,11 @@ import {
 } from "@/app/lib/questions-api";
 import { createServerSupabase } from "@/app/lib/supabase-server";
 import type { SavedQuestionDetail } from "@dashboardy/types";
+import { DsIcon } from "@/components/ds/icon";
+import { EmptyState } from "@/components/ds/empty-state";
 
 import { QuestionEditor } from "./question-editor";
+import { QuestionRow } from "./question-row";
 
 function firstSearchParam(value: string | string[] | undefined): string | undefined {
   if (Array.isArray(value)) {
@@ -86,91 +90,125 @@ export default async function QuestionsPage({ searchParams }: PageProps) {
     ? true
     : loadedDetail?.permission === "edit";
 
+  const collectionNameById = new Map(collections.map((c) => [c.id, c.name]));
+
+  if (showEditor) {
+    return (
+      <div className="min-h-screen bg-surface-app text-ink">
+        <AdminLuxuryNav />
+        <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 sm:px-8 lg:py-10">
+          {editingId && questionLoadError ? (
+            <div className="dby-alert dby-alert--danger" role="alert">
+              <div className="dby-alert__body">
+                <p className="text-sm">{questionLoadError}</p>
+                <Link
+                  href="/questions"
+                  className="mt-3 inline-block text-sm font-medium text-accent hover:text-accent-hover"
+                >
+                  Back to list
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <QuestionEditor
+              workspaceId={workspaceId}
+              collections={collections}
+              detail={showNewEditor ? null : loadedDetail}
+              isNew={showNewEditor}
+              canEdit={editorCanEdit}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#6366F1]/30 selection:text-[#6366F1]">
+    <div className="min-h-screen bg-surface-app text-ink">
       <AdminLuxuryNav />
-      <div className="mx-auto flex max-w-7xl flex-col gap-16 px-4 py-12 sm:px-8 lg:py-24 animate-fade-in">
-        <header className="flex flex-col gap-6 border-b border-white/10 pb-12 max-w-3xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.25em] text-[#6366F1]">
-            Saved questions
-          </p>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-white tracking-tight font-light leading-none">
-            Questions
-          </h1>
-          <p className="text-sm text-[#94A3B8] font-light leading-relaxed max-w-[60ch]">
-            Author and maintain governed SQL questions with scalar parameter schemas.
-          </p>
+      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-4 py-10 sm:px-8 lg:py-12">
+        <header className="flex flex-col gap-4 border-b border-border-1 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl space-y-2">
+            <p className="ds-kicker">Saved questions</p>
+            <h1 className="font-display text-3xl font-medium tracking-tight text-ink-strong sm:text-4xl">
+              Questions
+            </h1>
+            <p className="max-w-[55ch] text-sm leading-relaxed text-ink-muted">
+              Author and maintain governed SQL questions with scalar parameter schemas for{" "}
+              <span className="font-medium text-ink">
+                {me.current_workspace.workspace_name}
+              </span>
+              .
+            </p>
+          </div>
+          {roleCanAuthor ? (
+            <Link href="/questions?new=1" className="dby-btn dby-btn--primary shrink-0">
+              <DsIcon icon={Plus} className="dby-btn__icon" />
+              New question
+            </Link>
+          ) : null}
         </header>
 
         {listLoadError ? (
-          <p className="text-sm text-[#EF4444]" role="alert">
+          <p className="text-sm text-danger-ink" role="alert">
             {listLoadError}
           </p>
         ) : null}
 
         {editingId && questionLoadError ? (
-          <div className="border-l-2 border-[#EF4444] bg-[#EF4444]/5 p-5" role="alert">
-            <p className="text-sm text-[#94A3B8]">{questionLoadError}</p>
-            <Link
-              href="/questions"
-              className="mt-4 inline-block text-[10px] uppercase tracking-[0.15em] text-[#6366F1] hover:text-[#818CF8]"
-            >
-              Back to list
-            </Link>
+          <div className="dby-alert dby-alert--danger" role="alert">
+            <div className="dby-alert__body">
+              <p className="text-sm">{questionLoadError}</p>
+              <Link
+                href="/questions"
+                className="mt-3 inline-block text-sm font-medium text-accent hover:text-accent-hover"
+              >
+                Back to list
+              </Link>
+            </div>
           </div>
         ) : null}
 
-        {showEditor ? (
-          <QuestionEditor
-            workspaceId={workspaceId}
-            collections={collections}
-            detail={showNewEditor ? null : loadedDetail}
-            isNew={showNewEditor}
-            canEdit={editorCanEdit}
-          />
-        ) : editingId && questionLoadError ? null : (
-          <section className="flex flex-col gap-8">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-[10px] uppercase tracking-[0.2em] text-[#374151]">
-                Active questions ({questions.length})
-              </h2>
-              {roleCanAuthor ? (
-                <Link
-                  href="/questions?new=1"
-                  className="bg-[#6366F1] text-black px-5 py-2 text-[10px] uppercase tracking-[0.15em] font-medium hover:bg-[#818CF8]"
-                >
-                  New question
-                </Link>
-              ) : null}
-            </div>
+        <section className="flex flex-col gap-4" aria-labelledby="questions-list-heading">
+          <h2
+            id="questions-list-heading"
+            className="font-display text-xl font-medium tracking-tight text-ink-strong"
+          >
+            All <span className="text-ink-muted">({questions.length})</span>
+          </h2>
 
-            {questions.length === 0 ? (
-              <p className="text-sm text-[#94A3B8]">No saved questions yet.</p>
-            ) : (
-              <ul className="flex flex-col gap-4">
-                {questions.map((q) => (
-                  <li key={q.id} className="border border-white/10 p-5 flex flex-col gap-2">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h3 className="text-lg font-serif text-white">{q.title}</h3>
-                      <Link
-                        href={`/questions?id=${encodeURIComponent(q.id)}`}
-                        className="text-[10px] uppercase tracking-[0.15em] text-[#6366F1] hover:text-[#818CF8]"
-                      >
-                        Open
-                      </Link>
-                    </div>
-                    {q.description ? (
-                      <p className="text-sm text-[#94A3B8]">{q.description}</p>
-                    ) : null}
-                    <p className="text-[10px] uppercase tracking-[0.15em] text-[#374151]">
-                      Permission: {q.permission}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
+          {questions.length === 0 ? (
+            <EmptyState
+              icon={<DsIcon icon={FileCode2} size="md" />}
+              kicker="No questions yet"
+              description={
+                roleCanAuthor
+                  ? "Create a governed SQL question to reuse across dashboards."
+                  : "No saved questions are available in this workspace yet."
+              }
+              action={
+                roleCanAuthor ? (
+                  <Link href="/questions?new=1" className="dby-btn dby-btn--primary">
+                    <DsIcon icon={Plus} className="dby-btn__icon" />
+                    New question
+                  </Link>
+                ) : null
+              }
+            />
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {questions.map((q) => (
+                <QuestionRow
+                  key={q.id}
+                  workspaceId={workspaceId}
+                  question={q}
+                  collectionName={collectionNameById.get(q.collection_id) ?? null}
+                  canEdit={q.permission === "edit"}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
       </div>
     </div>
   );

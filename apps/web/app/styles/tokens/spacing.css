@@ -1,8 +1,8 @@
 /* ============================================================
-   Dashboardy Signal — Spacing, radii, sizing
+   Dashboardy — Spacing, radii, sizing
    ------------------------------------------------------------
-   4px base grid. Balanced density — comfortable but efficient.
-   Rounded shape language: 8px controls, 12px cards, 16px panels.
+   4px base grid. Product density (comfortable, not marketing 96px).
+   Radii: 8px controls, 12px cards, 16px widgets/hero, pill badges.
    ============================================================ */
 
 :root {
@@ -25,27 +25,28 @@
   --space-14: 3.5rem;    /* 56px */
   --space-16: 4rem;      /* 64px */
   --space-20: 5rem;      /* 80px */
+  --space-section: 6rem; /* 96px — rare, marketing-scale bands */
 
-  /* ---- Radii (rounded, modern) ---- */
-  --radius-xs: 6px;    /* chips, chart bars */
-  --radius-sm: 8px;    /* buttons, inputs, badges */
-  --radius-md: 12px;   /* cards, form panels */
-  --radius-lg: 16px;   /* widgets, large panels */
-  --radius-xl: 20px;   /* modals, hero surfaces */
-  --radius-2xl: 28px;  /* feature blocks */
-  --radius-full: 9999px; /* pills, dots, avatars */
+  /* ---- Radii ---- */
+  --radius-xs: 4px;    /* badge accents, tiny dropdowns */
+  --radius-sm: 8px;    /* buttons, inputs, category tabs */
+  --radius-md: 12px;   /* content cards, panels */
+  --radius-lg: 16px;   /* widgets, hero containers */
+  --radius-xl: 20px;   /* modals, large marquee */
+  --radius-2xl: 28px;
+  --radius-full: 9999px; /* pills, avatars */
 
   /* ---- Border widths ---- */
   --border-width: 1px;
   --border-width-accent: 2px;
 
-  /* ---- Control heights (balanced) ---- */
-  --control-height-sm: 2.25rem; /* 36px */
-  --control-height-md: 2.5rem;  /* 40px */
+  /* ---- Control heights ---- */
+  --control-height-sm: 2.25rem; /* 36px — icon buttons */
+  --control-height-md: 2.5rem;  /* 40px — standard CTA / input */
   --control-height-lg: 2.75rem; /* 44px */
 
   /* ---- Layout ---- */
-  --container-max: 82rem;
+  --container-max: 75rem; /* ~1200px */
   --container-pad: 1.25rem;
   --container-pad-lg: 2rem;
   --grid-cols: 12; /* @kind other */

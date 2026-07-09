@@ -59,7 +59,7 @@ export default async function DashboardViewerPage({ params }: PageProps) {
             <header className="flex flex-wrap items-start justify-between gap-4 border-b border-border-1 pb-6">
               <div className="space-y-2">
                 <p className="ds-kicker">Dashboard</p>
-                <h1 className="text-2xl font-semibold tracking-tight text-ink-strong sm:text-3xl">
+                <h1 className="font-display text-2xl font-medium tracking-tight text-ink-strong sm:text-3xl">
                   {dashboard.title}
                 </h1>
               </div>

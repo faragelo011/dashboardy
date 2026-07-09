@@ -40,7 +40,7 @@ export function TopNav({
   return (
     <header className={classes} {...rest}>
       <div className="dby-nav__inner" style={{ maxWidth }}>
-        <Link className="dby-nav__brand" href={brandHref}>
+        <Link className="dby-nav__brand font-display font-medium" href={brandHref}>
           {brand}
         </Link>
         <div className="dby-nav__right">

@@ -135,7 +135,7 @@ export function CloneDashboardAction({
   return (
     <form
       onSubmit={submit}
-      className="flex flex-wrap items-end gap-2 rounded-lg border border-border-1 bg-surface-1 p-3"
+      className="flex flex-wrap items-end gap-2 rounded-ds-md border border-border-1 bg-surface-2 p-3"
     >
       <label className="flex flex-col gap-1.5">
         <span className="ds-label">Clone into</span>
